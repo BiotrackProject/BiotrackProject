@@ -1,0 +1,52 @@
+# ─── Estrategia: ignorar todo, permitir explícitamente ───────────────────────
+# La ÚLTIMA regla que coincide gana en gitignore.
+
+# 1. Ignorar absolutamente todo
+*
+
+# 2. Permitir navegación de directorios (necesario para que las exclusiones
+#    funcionen en subdirectorios; las re-exclusiones vienen después)
+!*/
+
+# ─── Directorios completamente ignorados ─────────────────────────────────────
+node_modules/
+dist/
+uploads/
+coverage/
+reports/
+
+# ─── Archivos raíz permitidos ─────────────────────────────────────────────────
+!.gitignore
+!.dockerignore
+!.env.example
+!package.json
+!pnpm-lock.yaml
+!tsconfig.json
+!tsconfig.jest.json
+!README.md
+!LICENSE
+!sonar-project.properties
+!Dockerfile
+!docker-compose.yml
+!docker-compose.prod.yml
+!prisma.config.ts
+
+# ─── Código fuente TypeScript ────────────────────────────────────────────────
+!src/
+!src/**
+
+# ─── Prisma (esquema, seed, migraciones) ─────────────────────────────────────
+!prisma/
+!prisma/**
+
+# ─── Scripts ─────────────────────────────────────────────────────────────────
+!scripts/
+!scripts/**
+
+# ─── Tests ───────────────────────────────────────────────────────────────────
+!tests/
+!tests/**
+
+# ─── GitHub Actions ──────────────────────────────────────────────────────────
+!.github/
+!.github/**

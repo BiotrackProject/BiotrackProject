@@ -1,0 +1,128 @@
+name: SCA Scan
+
+on:
+  push:
+    branches: [main, dev]
+  pull_request:
+    branches: [main, dev]
+  schedule:
+    # Ejecutar todos los lunes a las 07:00 UTC
+    - cron: '0 7 * * 1'
+
+permissions:
+  contents: read
+
+jobs:
+  # ─── Job 1: pnpm audit ───────────────────────────────────────────────────────
+  pnpm-audit:
+    name: pnpm audit
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@08c4be7e2e672a47d11bd04269e27e5f3e8529cb
+        with:
+          version: 11.1.2
+
+      - name: Setup Node.js
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e
+        with:
+          node-version: '24'
+          cache: 'pnpm'
+
+      # --ignore-scripts evita que paquetes ejecuten preinstall/postinstall
+      # durante el análisis de dependencias (vector de ataque supply chain)
+      - name: Instalar dependencias (sin scripts de ciclo de vida)
+        run: pnpm install --frozen-lockfile --ignore-scripts
+
+      - name: pnpm audit (high + critical)
+        run: pnpm audit --audit-level=high --json > pnpm-audit-report.json || true
+
+      - name: Mostrar resumen de vulnerabilidades
+        run: |
+          echo "## pnpm audit summary" >> $GITHUB_STEP_SUMMARY
+          node -e "
+            import { readFileSync } from 'fs';
+            const r = JSON.parse(readFileSync('./pnpm-audit-report.json', 'utf8'));
+            const m = r.metadata?.vulnerabilities ?? {};
+            console.log('| Severidad | Cantidad |');
+            console.log('|-----------|----------|');
+            ['critical','high','moderate','low','info'].forEach(s =>
+              console.log(\`| \${s} | \${m[s] ?? 0} |\`)
+            );
+          " >> $GITHUB_STEP_SUMMARY
+
+      - name: Fallar si hay vulnerabilidades críticas o altas
+        run: pnpm audit --audit-level=high
+
+  # ─── Job 2: Dependency Review (solo en PRs) ──────────────────────────────────
+  dependency-review:
+    name: Dependency Review
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+
+      - name: Revisar dependencias del PR
+        uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294
+        with:
+          fail-on-severity: high
+          deny-licenses: GPL-2.0, GPL-3.0, LGPL-2.0, LGPL-2.1
+
+  # ─── Job 3: OWASP Dependency-Check ──────────────────────────────────────────
+  owasp-dependency-check:
+    name: OWASP Dependency-Check
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@08c4be7e2e672a47d11bd04269e27e5f3e8529cb
+        with:
+          version: 11.1.2
+
+      - name: Setup Node.js
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e
+        with:
+          node-version: '24'
+          cache: 'pnpm'
+
+      - name: Instalar dependencias (sin scripts de ciclo de vida)
+        run: pnpm install --frozen-lockfile --ignore-scripts
+
+      - name: OWASP Dependency-Check
+        uses: dependency-check/Dependency-Check_Action@1e54355a8b4c8abaa8cc7d0b70aa655a3bb15a6c
+        id: dep-check
+        with:
+          project: 'biotrack-api'
+          path: '.'
+          format: 'SARIF'
+          out: 'reports'
+          args: >
+            --enableRetired
+            --failOnCVSS 7
+            --disableYarnAudit
+            --disableNodeAudit
+            --exclude "**/node_modules/esbuild/**"
+            --exclude "**/node_modules/@esbuild/**"
+
+      - name: Subir reporte SARIF al Security tab
+        uses: github/codeql-action/upload-sarif@9e0d7b8d25671d64c341c19c0152d693099fb5ba
+        if: always()
+        with:
+          sarif_file: reports/dependency-check-report.sarif
+
+      - name: Subir reporte HTML como artefacto
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        if: always()
+        with:
+          name: owasp-dependency-check-report
+          path: reports/dependency-check-report.html
+          retention-days: 30

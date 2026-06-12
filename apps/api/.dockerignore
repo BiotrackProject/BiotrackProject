@@ -1,0 +1,34 @@
+# ─── .dockerignore — Excluir del contexto de build Docker ────────────────────
+# Reduce el tamaño del contexto y evita copiar secretos a la imagen.
+
+# Dependencias (se instalan dentro del contenedor)
+node_modules/
+
+# Compilado previo (se genera dentro del contenedor)
+dist/
+
+# Secretos y configuración local
+.env
+.env.*
+!.env.example
+
+# Archivos generados
+openapi.json
+*.tsbuildinfo
+
+# Subidas de usuarios
+uploads/
+
+# Control de versiones
+.git/
+.gitignore
+
+# Herramientas de desarrollo locales
+.claude/
+.vscode/
+coverage/
+reports/
+
+# Logs
+*.log
+logs/

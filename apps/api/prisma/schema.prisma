@@ -1,0 +1,319 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─── Enums ───────────────────────────────────────────────────────────────────
+
+enum EstadoUsuario {
+  PENDIENTE_APROBACION
+  ACTIVO
+  INACTIVO
+}
+
+enum ModuloSistema {
+  MOD_01_AUTH
+  MOD_02_DENUNCIAS
+  MOD_03_ZONAS
+  MOD_04_INDICADORES
+  MOD_05_ACCIONES
+  MOD_06_ADMIN
+}
+
+enum AccionPermiso {
+  LEER
+  CREAR
+  EDITAR
+  ELIMINAR_LOGICO
+  EXPORTAR
+  PUBLICAR
+  CONFIGURAR
+}
+
+enum EstadoDenunciaEnum {
+  PENDIENTE
+  EN_INVESTIGACION
+  VERIFICADA
+  RESUELTA
+  DESESTIMADA
+}
+
+enum EstadoSolicitud {
+  PENDIENTE_APROBACION
+  PENDIENTE_INFO
+  APROBADA
+  RECHAZADA
+}
+
+enum NivelRiesgo {
+  BAJO
+  MEDIO
+  ALTO
+  CRITICO
+}
+
+enum TipoSensor {
+  TURBIDEZ
+  TEMPERATURA
+  MOVIMIENTO
+  NIVEL_AGUA
+  AUDIO
+  GPS_TRACKER
+  OTRO
+}
+
+enum TipoActividad {
+  EXTRACCION_RIO
+  EXTRACCION_PLAYA
+  EXTRACCION_ZONA_PROTEGIDA
+  TRANSPORTE_ILEGAL
+  OTRO
+}
+
+// ─── Módulo de Usuarios y RBAC (MOD-01, MOD-06) ──────────────────────────────
+
+model Usuario {
+  id                 String        @id @default(uuid())
+  auth0_id           String        @unique
+  nombre_completo    String
+  correo_electronico String        @unique
+  telefono           String?
+  cargo              String
+  institucion        String
+  estado             EstadoUsuario @default(PENDIENTE_APROBACION)
+  rol_id             String?
+  created_at         DateTime      @default(now())
+  updated_at         DateTime      @updatedAt
+
+  rol              Rol?               @relation(fields: [rol_id], references: [id])
+  tokensRevocados  TokenRevocado[]
+  denuncias        Denuncia[]
+  logAuditoria     LogAuditoria[]
+  accionesCreadas  AccionCorrectiva[]
+
+  @@map("usuarios")
+}
+
+model Rol {
+  id          String   @id @default(uuid())
+  nombre      String   @unique
+  descripcion String?
+  created_at  DateTime @default(now())
+
+  usuarios Usuario[]
+  permisos RolPermiso[]
+
+  @@map("roles")
+}
+
+model Permiso {
+  id     String        @id @default(uuid())
+  modulo ModuloSistema
+  accion AccionPermiso
+
+  rolPermisos RolPermiso[]
+
+  @@unique([modulo, accion], name: "modulo_accion")
+  @@map("permisos")
+}
+
+model RolPermiso {
+  id        String @id @default(uuid())
+  rol_id    String
+  permiso_id String
+
+  rol     Rol     @relation(fields: [rol_id], references: [id], onDelete: Cascade)
+  permiso Permiso @relation(fields: [permiso_id], references: [id], onDelete: Cascade)
+
+  @@unique([rol_id, permiso_id])
+  @@map("rol_permisos")
+}
+
+model SolicitudRegistro {
+  id                 String          @id @default(uuid())
+  auth0_user_id      String?
+  nombre_completo    String
+  correo_electronico String
+  cargo              String
+  institucion        String
+  estado             EstadoSolicitud @default(PENDIENTE_APROBACION)
+  comentario_admin   String?
+  created_at         DateTime        @default(now())
+  updated_at         DateTime        @updatedAt
+
+  @@map("solicitudes_registro")
+}
+
+// RF-1.3 — Blacklist de tokens para logout explícito
+model TokenRevocado {
+  id          String   @id @default(uuid())
+  jti         String   @unique
+  usuario_id  String
+  expires_at  DateTime
+  revocado_at DateTime @default(now())
+
+  usuario Usuario @relation(fields: [usuario_id], references: [id])
+
+  @@map("tokens_revocados")
+}
+
+// ─── Módulo de Denuncias (MOD-02) ────────────────────────────────────────────
+
+model Denuncia {
+  id                   String              @id @default(uuid())
+  codigo_seguimiento   String              @unique
+  tipo_actividad       TipoActividad
+  descripcion          String
+  ubicacion            Json?
+  evidencias_urls      String[]
+  es_anonima           Boolean             @default(false)
+  contacto_denunciante String?             // AES-256-GCM si no es anónima
+  estado               EstadoDenunciaEnum  @default(PENDIENTE)
+  usuario_id           String?
+  created_at           DateTime            @default(now())
+  updated_at           DateTime            @updatedAt
+
+  usuario        Usuario?         @relation(fields: [usuario_id], references: [id])
+  historialEstados EstadoDenuncia[]
+  adjuntos       Adjunto[]
+  accionesDenuncia AccionDenuncia[]
+
+  @@map("denuncias")
+}
+
+model EstadoDenuncia {
+  id          String              @id @default(uuid())
+  denuncia_id String
+  estado      EstadoDenunciaEnum
+  comentario  String?
+  created_at  DateTime            @default(now())
+
+  denuncia Denuncia @relation(fields: [denuncia_id], references: [id])
+
+  @@map("estados_denuncia")
+}
+
+// ─── Módulo de Zonas y Telemetría (MOD-03) ───────────────────────────────────
+
+model ZonaCritica {
+  id            String      @id @default(uuid())
+  nombre        String
+  descripcion   String?
+  ubicacion     Json
+  nivel_riesgo  NivelRiesgo @default(MEDIO)
+  api_key_hash  String      @unique
+  activa        Boolean     @default(true)
+  created_at    DateTime    @default(now())
+  updated_at    DateTime    @updatedAt
+
+  historialRiesgo  HistorialRiesgoZona[]
+  registrosTelemetria RegistroTelemetria[]
+  accionesZona     AccionZona[]
+
+  @@map("zonas_criticas")
+}
+
+model HistorialRiesgoZona {
+  id            String      @id @default(uuid())
+  zona_id       String
+  nivel_riesgo  NivelRiesgo
+  created_at    DateTime    @default(now())
+
+  zona ZonaCritica @relation(fields: [zona_id], references: [id])
+
+  @@map("historial_riesgo_zonas")
+}
+
+model RegistroTelemetria {
+  id           String     @id @default(uuid())
+  zona_id      String
+  timestamp    DateTime
+  tipo_sensor  TipoSensor
+  valor        Float
+  unidad       String     @db.VarChar(20)
+  coordenadas  Json?
+  received_at  DateTime   @default(now())
+
+  zona ZonaCritica @relation(fields: [zona_id], references: [id])
+
+  @@map("registros_telemetria")
+}
+
+// ─── Módulo de Acciones Correctivas (MOD-05) ─────────────────────────────────
+
+model AccionCorrectiva {
+  id           String    @id @default(uuid())
+  titulo       String
+  descripcion  String
+  publicada    Boolean   @default(false)
+  creada_por   String
+  created_at   DateTime  @default(now())
+  updated_at   DateTime  @updatedAt
+
+  autor        Usuario        @relation(fields: [creada_por], references: [id])
+  adjuntos     Adjunto[]
+  denuncias    AccionDenuncia[]
+  zonas        AccionZona[]
+
+  @@map("acciones_correctivas")
+}
+
+model AccionDenuncia {
+  accion_id   String
+  denuncia_id String
+
+  accion   AccionCorrectiva @relation(fields: [accion_id], references: [id], onDelete: Cascade)
+  denuncia Denuncia         @relation(fields: [denuncia_id], references: [id], onDelete: Cascade)
+
+  @@id([accion_id, denuncia_id])
+  @@map("acciones_denuncias")
+}
+
+model AccionZona {
+  accion_id String
+  zona_id   String
+
+  accion AccionCorrectiva @relation(fields: [accion_id], references: [id], onDelete: Cascade)
+  zona   ZonaCritica      @relation(fields: [zona_id], references: [id], onDelete: Cascade)
+
+  @@id([accion_id, zona_id])
+  @@map("acciones_zonas")
+}
+
+// ─── Adjuntos ─────────────────────────────────────────────────────────────────
+
+model Adjunto {
+  id           String   @id @default(uuid())
+  url          String
+  mime_type    String
+  nombre       String
+  denuncia_id  String?
+  accion_id    String?
+  created_at   DateTime @default(now())
+
+  denuncia Denuncia?         @relation(fields: [denuncia_id], references: [id])
+  accion   AccionCorrectiva? @relation(fields: [accion_id], references: [id])
+
+  @@map("adjuntos")
+}
+
+// ─── Auditoría ────────────────────────────────────────────────────────────────
+
+model LogAuditoria {
+  id          String   @id @default(uuid())
+  usuario_id  String?
+  accion      String
+  modulo      String
+  recurso_id  String?
+  ip          String?
+  detalle     Json?
+  resultado   String
+  created_at  DateTime @default(now())
+
+  usuario Usuario? @relation(fields: [usuario_id], references: [id])
+
+  @@map("logs_auditoria")
+}

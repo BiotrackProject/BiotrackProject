@@ -1,0 +1,97 @@
+# ─── docker-compose.yml — Entorno de DESARROLLO ──────────────────────────────
+# Uso: docker compose up -d
+#
+# Para producción usa: docker compose -f docker-compose.prod.yml up -d
+# Para migraciones:    docker compose run --rm migrate
+# Para seed:           docker compose run --rm seed
+
+name: biotrack
+
+services:
+  # ─── Base de datos ──────────────────────────────────────────────────────────
+  postgres:
+    image: postgres:15-alpine
+    container_name: biotrack_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: biotrack_db
+      POSTGRES_USER: biotrack
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U biotrack -d biotrack_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
+  # ─── API (modo desarrollo con hot-reload) ───────────────────────────────────
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: builder         # Usa el stage builder que tiene tsx y devDeps
+    container_name: biotrack_api_dev
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      NODE_ENV: development
+      DATABASE_URL: postgresql://biotrack:${POSTGRES_PASSWORD}@postgres:5432/biotrack_db
+    ports:
+      - "${PORT:-3000}:3000"
+    volumes:
+      - ./src:/app/src:ro           # Hot-reload: monta fuentes en modo lectura
+      - ./prisma:/app/prisma:ro
+      - uploads_dev:/app/uploads
+    command: pnpm dev
+
+  # ─── Herramientas (ejecutar manualmente con --profile tools) ─────────────────
+
+  migrate:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: builder
+    container_name: biotrack_migrate
+    depends_on:
+      postgres:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql://biotrack:${POSTGRES_PASSWORD}@postgres:5432/biotrack_db
+    command: pnpm exec prisma migrate dev
+    profiles:
+      - tools
+
+  seed:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: builder
+    container_name: biotrack_seed
+    depends_on:
+      postgres:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql://biotrack:${POSTGRES_PASSWORD}@postgres:5432/biotrack_db
+    command: pnpm db:seed
+    profiles:
+      - tools
+
+volumes:
+  postgres_data:
+  uploads_dev:
+
+networks:
+  default:
+    name: biotrack_dev_network

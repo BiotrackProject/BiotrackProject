@@ -1,0 +1,185 @@
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap');
+@import "tailwindcss";
+
+@theme {
+  /* Brand colors */
+  --color-primary: #13356C;
+  --color-secondary: #9FD0FD;
+  --color-action: #CA2C35;
+  --color-grey: #D0D0D0;
+  --color-dark: #282828;
+  --color-surface: #F5F5F7;
+
+  /* Typography */
+  --font-family-sans: 'Manrope', 'Segoe UI', sans-serif;
+  --font-family-display: 'Manrope', 'Segoe UI', sans-serif;
+
+  /* Motion */
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: var(--font-family-sans);
+  color: var(--color-dark);
+  background: #eceff3;
+  line-height: 1.45;
+  text-rendering: optimizeLegibility;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--font-family-display);
+  letter-spacing: -0.015em;
+}
+
+a {
+  transition: color 180ms var(--ease-out);
+}
+
+::selection {
+  background: color-mix(in srgb, var(--color-secondary) 56%, white);
+  color: var(--color-primary);
+}
+
+@keyframes modalIn {
+  from { opacity: 0; transform: scale(0.95) translateY(8px); }
+  to   { opacity: 1; transform: scale(1)    translateY(0);   }
+}
+
+@keyframes revealUp {
+  from { opacity: 0; transform: translateY(14px) scale(0.985); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes gentleFloat {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-8px); }
+}
+
+@keyframes pulseDot {
+  0%, 100% { opacity: 0.55; transform: scale(1); }
+  50%      { opacity: 1; transform: scale(1.15); }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .reveal-up {
+    animation: revealUp 560ms var(--ease-out) both;
+  }
+
+  .reveal-delay-1 { animation-delay: 90ms; }
+  .reveal-delay-2 { animation-delay: 170ms; }
+  .reveal-delay-3 { animation-delay: 250ms; }
+  .reveal-delay-4 { animation-delay: 330ms; }
+
+  .gentle-float {
+    animation: gentleFloat 6.5s var(--ease-in-out) infinite;
+  }
+
+  .pulse-dot {
+    animation: pulseDot 1.8s var(--ease-in-out) infinite;
+  }
+}
+
+/* ── Intro.js — BIOTRACK theme overrides ─────────────────────────────────── */
+.introjs-tooltip {
+  font-family: var(--font-family-sans) !important;
+  border-radius: 1rem !important;
+  box-shadow: 0 12px 40px rgba(19,53,108,0.18), 0 2px 8px rgba(0,0,0,0.08) !important;
+  border: 1px solid rgba(19,53,108,0.1) !important;
+  min-width: 280px;
+  max-width: 360px;
+  padding: 1.25rem !important;
+}
+
+.introjs-tooltiptext {
+  font-size: 0.875rem !important;
+  line-height: 1.65 !important;
+  color: #374151 !important;
+  padding: 0 !important;
+}
+
+.introjs-tooltip-title {
+  font-size: 0.9375rem !important;
+  font-weight: 700 !important;
+  color: #13356C !important;
+  margin-bottom: 0.4rem !important;
+}
+
+.introjs-button {
+  font-family: var(--font-family-sans) !important;
+  border-radius: 0.5rem !important;
+  font-size: 0.8125rem !important;
+  font-weight: 600 !important;
+  padding: 0.45rem 1rem !important;
+  border: none !important;
+  text-shadow: none !important;
+  transition: background-color 150ms var(--ease-out), color 150ms var(--ease-out) !important;
+  line-height: 1.4 !important;
+}
+
+.introjs-nextbutton, .introjs-donebutton {
+  background-color: #13356C !important;
+  color: white !important;
+}
+.introjs-nextbutton:hover, .introjs-donebutton:hover {
+  background-color: #0f2a56 !important;
+  color: white !important;
+}
+
+.introjs-prevbutton {
+  background-color: transparent !important;
+  color: #13356C !important;
+  border: 1.5px solid rgba(19,53,108,0.28) !important;
+}
+.introjs-prevbutton:hover {
+  background-color: rgba(19,53,108,0.06) !important;
+  color: #13356C !important;
+}
+.introjs-prevbutton.introjs-disabled {
+  opacity: 0.35 !important;
+  cursor: not-allowed !important;
+}
+
+.introjs-skipbutton {
+  color: #9CA3AF !important;
+  font-size: 0.75rem !important;
+  font-weight: 500 !important;
+}
+.introjs-skipbutton:hover { color: #6B7280 !important; }
+
+.introjs-tooltipbuttons {
+  padding: 0.75rem 0 0 !important;
+  border-top: 1px solid #F3F4F6 !important;
+  margin-top: 0.75rem !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 0.4rem !important;
+}
+
+.introjs-progressbar { background-color: #13356C !important; height: 3px !important; }
+.introjs-progress { background-color: #E5E7EB !important; height: 3px !important; margin-bottom: 0.75rem !important; }
+
+.introjs-helperLayer {
+  border-radius: 0.75rem !important;
+  box-shadow: rgba(19,53,108,0.5) 0 0 0 9999px !important;
+}
+
+.introjs-arrow { border: none !important; }
+.introjs-arrow.top::after  { border-bottom-color: white !important; }
+.introjs-arrow.bottom::after { border-top-color: white !important; }
+.introjs-arrow.left::after  { border-right-color: white !important; }
+.introjs-arrow.right::after { border-left-color: white !important; }
+
+.introjs-bullets ul li a.active { background-color: #13356C !important; }
+.introjs-bullets ul li a { background-color: #D1D5DB !important; }
