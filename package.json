@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "Biotrack - Sistema de minería ilegal",
   "private": true,
+  "packageManager": "npm@10.9.2",
   "scripts": {
     "install:all": "npm install",
     "dev": "turbo run dev",

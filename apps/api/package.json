@@ -1,5 +1,5 @@
 {
-  "name": "biotrack-api",
+  "name": "api",
   "version": "1.0.0",
   "description": "API REST para BIOTRACK - Sistema de Gestión de Minería Ilegal de Extracción de Arena",
   "type": "module",
