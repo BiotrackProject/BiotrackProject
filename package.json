@@ -1,0 +1,20 @@
+{
+  "name": "biotrack-project",
+  "version": "1.0.0",
+  "description": "Biotrack - Sistema de minería ilegal",
+  "private": true,
+  "scripts": {
+    "install:all": "npm install",
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "start:api": "turbo run dev --filter=api",
+    "start:frontend": "turbo run dev --filter=frontend"
+  },
+  "devDependencies": {
+    "turbo": "latest"
+  },
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ]
+}
