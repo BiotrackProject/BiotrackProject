@@ -17,7 +17,7 @@ COPY apps/api/package.json ./apps/api/package.json
 # --ignore-scripts blocks malicious pre/postinstall from transitive deps
 RUN pnpm install --frozen-lockfile --ignore-scripts --filter api
 
-COPY apps/api/tsconfig.json ./apps/api/
+COPY apps/api/tsconfig.json apps/api/prisma.config.ts ./apps/api/
 COPY apps/api/prisma ./apps/api/prisma
 COPY apps/api/src ./apps/api/src
 
@@ -43,10 +43,11 @@ WORKDIR /app
 
 RUN addgroup -g 1001 -S biotrack && adduser -u 1001 -S biotrack -G biotrack
 
-COPY --from=pruner --chown=root:root --chmod=755 /app/apps/api/node_modules ./node_modules
-COPY --from=pruner --chown=root:root --chmod=755 /app/apps/api/dist        ./dist
-COPY --from=pruner --chown=root:root --chmod=755 /app/apps/api/prisma      ./prisma
-COPY --from=pruner --chown=root:root --chmod=644 /app/apps/api/package.json ./package.json
+COPY --from=pruner --chown=root:root --chmod=755 /app/apps/api/node_modules  ./node_modules
+COPY --from=pruner --chown=root:root --chmod=755 /app/apps/api/dist         ./dist
+COPY --from=pruner --chown=root:root --chmod=755 /app/apps/api/prisma       ./prisma
+COPY --from=pruner --chown=root:root --chmod=644 /app/apps/api/package.json  ./package.json
+COPY --from=pruner --chown=root:root --chmod=644 /app/apps/api/prisma.config.ts ./prisma.config.ts
 
 RUN mkdir -p uploads && chown biotrack:biotrack uploads
 

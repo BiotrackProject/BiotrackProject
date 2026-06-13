@@ -144,6 +144,10 @@ jobs:
           docker compose -f docker-compose.prod.yml up -d --remove-orphans
           docker image prune -f
 
+      - name: Show migrate logs on failure
+        if: failure()
+        run: docker logs biotrack-migrate-1 2>&1 || true
+
       - name: Health check
         run: |
           sleep 15
