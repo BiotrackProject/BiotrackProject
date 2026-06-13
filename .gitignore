@@ -69,6 +69,7 @@ web_modules/
 .env
 .env.*
 !.env.example
+!.env.prod.example
 
 # parcel-bundler cache (https://parceljs.org/)
 .cache
@@ -127,6 +128,9 @@ dist
 
 # pnpm
 .pnpm-store
+
+# npm lock (proyecto usa pnpm)
+package-lock.json
 
 # yarn v3
 .pnp.*
