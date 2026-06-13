@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { NavLink, Link } from 'react-router-dom'
+import { useAuth } from '../../context/AuthContext'
 import {
   LayoutDashboard,
   FileWarning,
@@ -38,6 +39,11 @@ function Tooltip({ children }) {
 export default function Sidebar({ mobileOpen = false, setMobileOpen = () => {} }: { mobileOpen?: boolean; setMobileOpen?: React.Dispatch<React.SetStateAction<boolean>> }) {
   const [open, setOpen]             = useState(true)
   const [configOpen, setConfigOpen] = useState(false)
+  const { user } = useAuth()
+
+  const initials = user
+    ? user.nombre_completo.split(' ').slice(0, 2).map(p => p[0]).join('').toUpperCase()
+    : '?'
 
   useEffect(() => {
     if (!mobileOpen) return
@@ -236,17 +242,17 @@ export default function Sidebar({ mobileOpen = false, setMobileOpen = () => {} }
           }`}
         >
           <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white/15">
-            <span className="text-xs font-bold text-white">IV</span>
+            <span className="text-xs font-bold text-white">{initials}</span>
           </div>
           <div
             className={`overflow-hidden whitespace-nowrap min-w-0 transition-[max-width,opacity] duration-200 ease-out ${
               open ? 'max-w-[140px] opacity-100' : 'max-w-0 opacity-0'
             }`}
           >
-            <p className="truncate text-xs font-semibold text-white">Ivis Veloz</p>
-            <p className="truncate text-[10px] text-white/40">Administrador</p>
+            <p className="truncate text-xs font-semibold text-white">{user?.nombre_completo ?? '—'}</p>
+            <p className="truncate text-[10px] text-white/40">{user?.rol ?? '—'}</p>
           </div>
-          {!open && <Tooltip>Ivis Veloz</Tooltip>}
+          {!open && <Tooltip>{user?.nombre_completo ?? '—'}</Tooltip>}
         </div>
       </div>
       </aside>

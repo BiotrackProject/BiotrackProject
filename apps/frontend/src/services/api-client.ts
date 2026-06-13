@@ -26,7 +26,7 @@ async function request<T>(
 ): Promise<ApiResponse<T>> {
   const url = `${API_BASE_URL}${endpoint}`;
   
-  const token = localStorage.getItem('access_token');
+  const token = localStorage.getItem('biotrack_token');
   
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
@@ -46,8 +46,8 @@ async function request<T>(
 
     // Si el status es 401, el token expiró
     if (response.status === 401) {
-      localStorage.removeItem('access_token');
-      localStorage.removeItem('user');
+      localStorage.removeItem('biotrack_token');
+      localStorage.removeItem('biotrack_user');
       window.location.href = '/login';
       throw new Error('Token expirado. Por favor, inicia sesión nuevamente.');
     }
