@@ -19,7 +19,7 @@ RUN pnpm install --frozen-lockfile --ignore-scripts --filter frontend
 # Source files
 COPY apps/frontend/tsconfig.json apps/frontend/tsconfig.node.json apps/frontend/vite.config.ts ./apps/frontend/
 COPY apps/frontend/src ./apps/frontend/src
-COPY apps/frontend/public ./apps/frontend/public 2>/dev/null || true
+COPY apps/frontend/public ./apps/frontend/public
 
 # API URL baked into the SPA bundle at build time.
 # Override with: docker build --build-arg VITE_API_BASE_URL=https://...
