@@ -107,19 +107,29 @@ jobs:
           cp Caddyfile ~/biotrack/
 
       - name: Write .env.prod from GitHub Secrets
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          JWT_EXPIRES_IN: ${{ secrets.JWT_EXPIRES_IN }}
+          ENCRYPTION_KEY: ${{ secrets.ENCRYPTION_KEY }}
+          EMAIL_HOST: ${{ secrets.EMAIL_HOST }}
+          EMAIL_PORT: ${{ secrets.EMAIL_PORT }}
+          EMAIL_USER: ${{ secrets.EMAIL_USER }}
+          EMAIL_PASS: ${{ secrets.EMAIL_PASS }}
+          EMAIL_FROM: ${{ secrets.EMAIL_FROM }}
         run: |
           {
-            echo "DATABASE_URL=${{ secrets.DATABASE_URL }}"
+            echo "DATABASE_URL=$DATABASE_URL"
             echo "PORT=3000"
             echo "NODE_ENV=production"
-            echo "JWT_SECRET=${{ secrets.JWT_SECRET }}"
-            echo "JWT_EXPIRES_IN=${{ secrets.JWT_EXPIRES_IN }}"
-            echo "ENCRYPTION_KEY=${{ secrets.ENCRYPTION_KEY }}"
-            echo "EMAIL_HOST=${{ secrets.EMAIL_HOST }}"
-            echo "EMAIL_PORT=${{ secrets.EMAIL_PORT }}"
-            echo "EMAIL_USER=${{ secrets.EMAIL_USER }}"
-            echo "EMAIL_PASS=${{ secrets.EMAIL_PASS }}"
-            echo "EMAIL_FROM=${{ secrets.EMAIL_FROM }}"
+            echo "JWT_SECRET=$JWT_SECRET"
+            echo "JWT_EXPIRES_IN=$JWT_EXPIRES_IN"
+            echo "ENCRYPTION_KEY=$ENCRYPTION_KEY"
+            echo "EMAIL_HOST=$EMAIL_HOST"
+            echo "EMAIL_PORT=$EMAIL_PORT"
+            echo "EMAIL_USER=$EMAIL_USER"
+            echo "EMAIL_PASS=$EMAIL_PASS"
+            echo "EMAIL_FROM=$EMAIL_FROM"
             echo "EMAIL_FROM_NAME=BIOTRACK"
             echo "FRONTEND_URL=https://biotrack.org.do"
             echo "RATE_LIMIT_WINDOW_MS=60000"
