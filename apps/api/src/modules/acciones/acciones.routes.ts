@@ -1,6 +1,16 @@
-import { Router, type Request, type Response } from 'express';
+import { Router } from 'express';
 import { authenticate } from '../../middleware/authenticate.js';
 import { authorize } from '../../middleware/authorize.js';
+import {
+  listarAcciones,
+  crearAccion,
+  getAccion,
+  actualizarAccion,
+  cambiarEstadoAccion,
+  publicarAccion,
+  despublicarAccion,
+  getAccionPublica,
+} from './acciones.controller.js';
 
 const router: Router = Router();
 
@@ -11,17 +21,16 @@ const router: Router = Router();
  *     description: MOD-05 — Acciones Correctivas (RF-5.1 a RF-5.3)
  */
 
-const todo = (_req: Request, res: Response): void => { res.status(501).json({ error: 'Módulo en desarrollo.' }); };
+// Acceso público (RF-5.2): sin autenticación — debe ir ANTES de /:id para evitar conflicto
+router.get('/publicas/:id', getAccionPublica);
 
-router.get('/', authenticate, authorize('MOD_05_ACCIONES', 'Leer'), todo);
-router.post('/', authenticate, authorize('MOD_05_ACCIONES', 'Crear'), todo);
-router.get('/:id', authenticate, authorize('MOD_05_ACCIONES', 'Leer'), todo);
-router.put('/:id', authenticate, authorize('MOD_05_ACCIONES', 'Editar'), todo);
-router.post('/:id/publicar', authenticate, authorize('MOD_05_ACCIONES', 'Publicar'), todo);
-router.delete('/:id/publicar', authenticate, authorize('MOD_05_ACCIONES', 'Publicar'), todo);
-router.get('/:id/exportar', authenticate, authorize('MOD_05_ACCIONES', 'Exportar'), todo);
-
-// Acceso público (RF-5.2): sin auth
-router.get('/publicas/:id', todo);
+// Rutas protegidas
+router.get('/', authenticate, authorize('MOD_05_ACCIONES', 'Leer'), listarAcciones);
+router.post('/', authenticate, authorize('MOD_05_ACCIONES', 'Crear'), crearAccion);
+router.get('/:id', authenticate, authorize('MOD_05_ACCIONES', 'Leer'), getAccion);
+router.put('/:id', authenticate, authorize('MOD_05_ACCIONES', 'Editar'), actualizarAccion);
+router.post('/:id/estado', authenticate, authorize('MOD_05_ACCIONES', 'Editar'), cambiarEstadoAccion);
+router.post('/:id/publicar', authenticate, authorize('MOD_05_ACCIONES', 'Publicar'), publicarAccion);
+router.delete('/:id/publicar', authenticate, authorize('MOD_05_ACCIONES', 'Publicar'), despublicarAccion);
 
 export default router;

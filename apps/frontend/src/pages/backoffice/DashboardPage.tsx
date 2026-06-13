@@ -240,31 +240,31 @@ export default function DashboardPage() {
               label="Total Denuncias"
               value={stats?.totalDenuncias ?? 0}
               color="bg-primary/10 text-primary"
-              sub={`${stats?.denunciasActivas ?? 0} activas`}
+              sub={`${(stats?.por_estado?.Pendiente ?? 0) + (stats?.por_estado?.En_Investigacion ?? 0)} activas`}
               onClick={() => navigate('/admin/denuncias')}
             />
             <KpiCard
               icon={FileWarning}
-              label="En Revisión"
-              value={stats?.enRevision ?? 0}
+              label="Pendientes"
+              value={stats?.por_estado?.Pendiente ?? 0}
               color="bg-amber-50 text-amber-500"
-              sub="Pendientes de análisis"
+              sub="Sin asignar"
               onClick={() => navigate('/admin/denuncias')}
             />
             <KpiCard
               icon={MapPin}
-              label="Zonas en Monitoreo"
-              value={stats?.zonasMonitoreadas ?? 0}
+              label="En Investigación"
+              value={stats?.por_estado?.En_Investigacion ?? 0}
               color="bg-teal-50 text-teal-600"
-              sub="Activas actualmente"
+              sub={`${stats?.por_estado?.Verificada ?? 0} verificadas`}
               onClick={() => navigate('/admin/monitoreo')}
             />
             <KpiCard
               icon={ClipboardCheck}
-              label="Acciones Corregidas"
-              value={stats?.accionesCorregidas ?? 0}
+              label="Acciones Completadas"
+              value={stats?.por_estado_accion?.Completada ?? 0}
               color="bg-emerald-50 text-emerald-600"
-              sub={`${stats?.accionesEnCorreccion ?? 0} en corrección`}
+              sub={`${stats?.por_estado_accion?.En_Ejecucion ?? 0} en ejecución`}
               onClick={() => navigate('/admin/acciones')}
             />
           </div>

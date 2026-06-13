@@ -1,64 +1,113 @@
-/**
- * Denuncias Service — mock implementation backed by sessionStorage.
- * Replace the body of each method with real fetch/axios calls when backend is ready.
- * Endpoint map: see comments on each method.
- */
-import { MOCK_DENUNCIAS } from '../data/mockDenuncias'
-import { mockStorage } from '../utils/mockStorage'
+import { apiClient } from './api-client'
 
-const KEY = 'denuncias'
-const delay = (ms = 350) => new Promise((r) => setTimeout(r, ms))
+export type EstadoDenuncia = 'Pendiente' | 'En_Investigacion' | 'Verificada' | 'Resuelta' | 'Desestimada'
+export type TipoActividad = 'Extraccion_Rio' | 'Extraccion_Playa' | 'Extraccion_Zona_Protegida' | 'Transporte_Ilegal' | 'Otro'
 
-const getStore = () => mockStorage.getOrInit(KEY, MOCK_DENUNCIAS.map((d) => ({ ...d })))
-const saveStore = (data) => { mockStorage.set(KEY, data); return data }
+export interface Denuncia {
+  IDDenuncia: number
+  codigo_seguimiento: string
+  Descripcion: string
+  tipo_actividad: TipoActividad
+  Estado: EstadoDenuncia
+  Fecha_denuncia: string
+  hora_aproximada: string | null
+  IDUsuario: string | null
+  IDZona: string | null
+  contacto_cifrado: string | null
+  created_at: string
+  historial?: HistorialEstado[]
+  Evidencia_Denuncia?: Evidencia[]
+}
+
+export interface HistorialEstado {
+  id: string
+  estado_anterior: EstadoDenuncia
+  estado_nuevo: EstadoDenuncia
+  comentario: string | null
+  created_at: string
+  Usuario: { nombre_completo: string }
+}
+
+export interface Evidencia {
+  IDEvidencia: string
+  archivo_url: string
+  TipoArchivo: string
+  fecha_carga: string
+}
+
+export interface DenunciasPaginadas {
+  data: Denuncia[]
+  paginacion: { total: number; pagina: number; por_pagina: number; total_paginas: number }
+}
+
+export interface FiltrosDenuncias {
+  estado?: EstadoDenuncia
+  tipo?: TipoActividad
+  q?: string
+  pagina?: number
+  por_pagina?: number
+}
+
+export const ESTADO_LABEL: Record<EstadoDenuncia, string> = {
+  Pendiente:        'Pendiente',
+  En_Investigacion: 'En Investigación',
+  Verificada:       'Verificada',
+  Resuelta:         'Resuelta',
+  Desestimada:      'Desestimada',
+}
+
+export const ESTADO_STYLES: Record<EstadoDenuncia, string> = {
+  Pendiente:        'bg-yellow-100 text-yellow-800',
+  En_Investigacion: 'bg-blue-100 text-blue-800',
+  Verificada:       'bg-purple-100 text-purple-800',
+  Resuelta:         'bg-green-100 text-green-800',
+  Desestimada:      'bg-gray-100 text-gray-500',
+}
+
+export const TIPO_LABEL: Record<TipoActividad, string> = {
+  Extraccion_Rio:            'Extracción de río',
+  Extraccion_Playa:          'Extracción de playa',
+  Extraccion_Zona_Protegida: 'Extracción zona protegida',
+  Transporte_Ilegal:         'Transporte ilegal',
+  Otro:                      'Otro',
+}
+
+export const ESTADOS_DENUNCIA = Object.keys(ESTADO_LABEL) as EstadoDenuncia[]
 
 export const denunciasService = {
-  /** GET /api/denuncias */
-  async getAll() {
-    await delay()
-    return getStore()
+  async getAll(filtros: FiltrosDenuncias = {}): Promise<DenunciasPaginadas> {
+    const params = new URLSearchParams()
+    if (filtros.estado)    params.set('estado', filtros.estado)
+    if (filtros.tipo)      params.set('tipo', filtros.tipo)
+    if (filtros.q)         params.set('q', filtros.q)
+    if (filtros.pagina)    params.set('pagina', String(filtros.pagina))
+    if (filtros.por_pagina) params.set('por_pagina', String(filtros.por_pagina))
+
+    const qs = params.toString()
+    const res = await apiClient.get<DenunciasPaginadas>(`/api/v1/denuncias${qs ? `?${qs}` : ''}`)
+    if (!res.success || !res.data) throw new Error(res.error ?? 'Error al obtener denuncias')
+    return res.data
   },
 
-  /** GET /api/denuncias/:id */
-  async getById(id) {
-    await delay()
-    const found = getStore().find((d) => d.id === id)
-    if (!found) throw new Error(`Denuncia ${id} no encontrada`)
-    return { ...found }
+  async getById(id: number | string): Promise<Denuncia> {
+    const res = await apiClient.get<Denuncia>(`/api/v1/denuncias/${id}`)
+    if (!res.success || !res.data) throw new Error(res.error ?? 'Denuncia no encontrada')
+    return res.data
   },
 
-  /** PATCH /api/denuncias/:id  { estado } */
-  async updateEstado(id, nuevoEstado) {
-    await delay()
-    const store = getStore()
-    const idx = store.findIndex((d) => d.id === id)
-    if (idx === -1) throw new Error(`Denuncia ${id} no encontrada`)
-    store[idx] = { ...store[idx], estado: nuevoEstado }
-    saveStore(store)
-    return { ...store[idx] }
+  async cambiarEstado(id: number | string, estado: EstadoDenuncia, comentario?: string) {
+    const res = await apiClient.patch<Denuncia>(`/api/v1/denuncias/${id}/estado`, { estado, comentario })
+    if (!res.success || !res.data) throw new Error(res.error ?? 'Error al cambiar estado')
+    return res.data
   },
 
-  /** POST /api/denuncias */
-  async create(data) {
-    await delay(600)
-    const store = getStore()
-    const next = {
-      ...data,
-      id: String(store.length + 1).padStart(3, '0'),
-      estado: 'Nueva',
-      fecha: new Date().toLocaleDateString('es-DO', { day: 'numeric', month: 'short', year: 'numeric' }),
-    }
-    saveStore([...store, next])
-    return { ...next }
+  async getSeguimiento(codigo: string) {
+    const res = await apiClient.get<Denuncia>(`/api/v1/denuncias/seguimiento/${codigo}`)
+    if (!res.success || !res.data) throw new Error(res.error ?? 'Código no encontrado')
+    return res.data
   },
 
-  /** GET /api/denuncias?q=&estado= */
-  async filter({ query = '', estado = '' } = {}) {
-    await delay(150)
-    const q = query.toLowerCase()
-    return getStore().filter((d) => {
-      const matchQ = !q || d.id.includes(q) || d.descripcion.toLowerCase().includes(q) || d.provincia.toLowerCase().includes(q)
-      return matchQ && (!estado || d.estado === estado)
-    })
+  async filter(filtros: FiltrosDenuncias = {}) {
+    return this.getAll(filtros)
   },
 }

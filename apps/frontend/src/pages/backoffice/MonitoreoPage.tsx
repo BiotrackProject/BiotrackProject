@@ -4,16 +4,22 @@ import { Search, SlidersHorizontal, Download, ChevronLeft, ChevronRight, ListFil
 import { toast } from '../../utils/toast'
 import BackofficeTopbar from '../../components/backoffice/BackofficeTopbar'
 import LoadingSpinner from '../../components/ui/LoadingSpinner'
-import EmptyState from '../../components/ui/EmptyState'
 import { monitoreoService } from '../../services/monitoreoService'
-import { STATUS_STYLES } from '../../data/mockDenuncias'
+import { ESTADO_LABEL, ESTADO_STYLES } from '../../services/denunciasService'
+import type { Denuncia, EstadoDenuncia } from '../../services/denunciasService'
 
-const MONITOREO_ESTADOS = ['Monitorear', 'En Monitoreo', 'En Corrección', 'Declinada']
+const MONITOREO_ESTADOS: EstadoDenuncia[] = ['Pendiente', 'En_Investigacion', 'Verificada']
 const PAGE_SIZE_OPTIONS = [5, 10, 20]
 
-function exportCSV(data) {
-  const headers = ['ID', 'Descripción', 'Provincia', 'Fecha', 'Estado']
-  const rows = data.map((d) => [d.id, d.descripcionCompleta, d.provincia, d.fecha, d.estado])
+function exportCSV(data: Denuncia[]) {
+  const headers = ['Código', 'Descripción', 'Tipo', 'Fecha', 'Estado']
+  const rows = data.map((d) => [
+    d.codigo_seguimiento,
+    `"${d.Descripcion.replace(/"/g, "'")}"`,
+    d.tipo_actividad,
+    new Date(d.Fecha_denuncia).toLocaleDateString('es-DO'),
+    d.Estado,
+  ])
   const csv = [headers, ...rows].map((r) => r.join(',')).join('\n')
   const blob = new Blob([csv], { type: 'text/csv' })
   const url = URL.createObjectURL(blob)
@@ -26,12 +32,12 @@ function exportCSV(data) {
 
 export default function MonitoreoPage() {
   const navigate = useNavigate()
-  const [denuncias, setDenuncias] = useState([])
-  const [loading, setLoading]     = useState(true)
-  const [query, setQuery]         = useState('')
-  const [filterOpen, setFilterOpen]     = useState(false)
-  const [filterEstado, setFilterEstado] = useState('')
-  const [page, setPage]       = useState(1)
+  const [denuncias, setDenuncias] = useState<Denuncia[]>([])
+  const [loading, setLoading] = useState(true)
+  const [query, setQuery] = useState('')
+  const [filterOpen, setFilterOpen] = useState(false)
+  const [filterEstado, setFilterEstado] = useState<EstadoDenuncia | ''>('')
+  const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(10)
 
   useEffect(() => {
@@ -44,8 +50,8 @@ export default function MonitoreoPage() {
   const filtered = useMemo(() => {
     const q = query.toLowerCase()
     return denuncias.filter((d) => {
-      const matchQ = !q || d.id.includes(q) || d.descripcion.toLowerCase().includes(q) || d.provincia.toLowerCase().includes(q)
-      const matchE = !filterEstado || d.estado === filterEstado
+      const matchQ = !q || d.codigo_seguimiento.toLowerCase().includes(q) || d.Descripcion.toLowerCase().includes(q)
+      const matchE = !filterEstado || d.Estado === filterEstado
       return matchQ && matchE
     })
   }, [denuncias, query, filterEstado])
@@ -105,13 +111,13 @@ export default function MonitoreoPage() {
               {filterOpen && (
                 <div className="absolute top-12 left-0 z-20 w-48 rounded-xl border border-gray-100 bg-white shadow-lg p-2">
                   <p className="px-2 py-1 text-xs font-semibold text-gray-400 uppercase tracking-wide">Estado</p>
-                  {['', ...MONITOREO_ESTADOS].map((e) => (
+                  {(['', ...MONITOREO_ESTADOS] as Array<EstadoDenuncia | ''>).map((e) => (
                     <button
                       key={e}
                       onClick={() => { setFilterEstado(e); setFilterOpen(false); setPage(1) }}
                       className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${filterEstado === e ? 'bg-primary/10 text-primary font-semibold' : 'text-gray-600 hover:bg-gray-50'}`}
                     >
-                      {e || 'Todos'}
+                      {e ? ESTADO_LABEL[e] : 'Todos'}
                     </button>
                   ))}
                 </div>
@@ -125,22 +131,22 @@ export default function MonitoreoPage() {
               <div className="px-5 py-10 text-center text-sm text-gray-400">No se encontraron registros.</div>
             ) : (
               paginated.map((d) => (
-                <article key={d.id} className="space-y-3 px-4 py-4 sm:px-5">
+                <article key={d.IDDenuncia} className="space-y-3 px-4 py-4 sm:px-5">
                   <div className="flex items-start justify-between gap-3">
                     <div>
-                      <p className="text-sm font-bold text-primary">#{d.id}</p>
-                      <p className="mt-1 text-sm text-dark/85">{d.descripcion}</p>
+                      <p className="text-sm font-bold text-primary">{d.codigo_seguimiento}</p>
+                      <p className="mt-1 text-sm text-dark/85">{d.Descripcion}</p>
                     </div>
-                    <span className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold ${STATUS_STYLES[d.estado] ?? STATUS_STYLES['Declinada']}`}>
-                      {d.estado}
+                    <span className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold ${ESTADO_STYLES[d.Estado]}`}>
+                      {ESTADO_LABEL[d.Estado]}
                     </span>
                   </div>
                   <div className="flex items-center justify-between text-xs text-gray-500">
-                    <span>{d.provincia}</span>
-                    <span>{d.fecha}</span>
+                    <span>{d.tipo_actividad.replace(/_/g, ' ')}</span>
+                    <span>{new Date(d.Fecha_denuncia).toLocaleDateString('es-DO')}</span>
                   </div>
                   <button
-                    onClick={() => navigate(`/admin/monitoreo/${d.id}`)}
+                    onClick={() => navigate(`/admin/monitoreo/${d.IDDenuncia}`)}
                     className="inline-flex items-center gap-1 rounded-lg bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary hover:bg-primary/20"
                   >
                     Ver monitoreo <ListFilter className="h-3.5 w-3.5" />
@@ -153,40 +159,40 @@ export default function MonitoreoPage() {
           {/* Desktop table */}
           <div data-tour="backoffice-monitoreo-list" className="hidden overflow-x-auto lg:block">
             <table className="w-full min-w-[860px] text-sm">
-            <thead className="bg-[#F0F2F5]">
-              <tr>
-                {['Número de\nla denuncia', 'Descripción\nde actividad', 'Provincia', 'Fecha de\nincidente', 'Estado de la\nDenuncia', 'Acciones'].map((h) => (
-                  <th key={h} className="px-5 py-3 text-left text-xs font-semibold text-gray-500 whitespace-pre-line">{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-              {paginated.length === 0 ? (
-                <tr><td colSpan={6} className="px-5 py-10 text-center text-sm text-gray-400">No se encontraron registros.</td></tr>
-              ) : paginated.map((d) => (
-                <tr key={d.id} className="hover:bg-blue-50/30 transition-colors">
-                  <td className="px-5 py-4 font-bold text-primary">{d.id}</td>
-                  <td className="px-5 py-4 text-primary/80 max-w-[200px]">
-                    <p className="truncate">{d.descripcion}</p>
-                  </td>
-                  <td className="px-5 py-4 text-gray-600">{d.provincia}</td>
-                  <td className="px-5 py-4 text-gray-600">{d.fecha}</td>
-                  <td className="px-5 py-4">
-                    <span className={`rounded-full px-3 py-1 text-xs font-semibold ${STATUS_STYLES[d.estado] ?? STATUS_STYLES['Declinada']}`}>
-                      {d.estado}
-                    </span>
-                  </td>
-                  <td className="px-5 py-4">
-                    <button
-                      onClick={() => navigate(`/admin/monitoreo/${d.id}`)}
-                      className="flex items-center justify-center h-8 w-8 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
-                    >
-                      <ListFilter className="h-4 w-4" />
-                    </button>
-                  </td>
+              <thead className="bg-[#F0F2F5]">
+                <tr>
+                  {['Código', 'Descripción\nde actividad', 'Tipo', 'Fecha de\nincidente', 'Estado de la\nDenuncia', 'Acciones'].map((h) => (
+                    <th key={h} className="px-5 py-3 text-left text-xs font-semibold text-gray-500 whitespace-pre-line">{h}</th>
+                  ))}
                 </tr>
-              ))}
-            </tbody>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {paginated.length === 0 ? (
+                  <tr><td colSpan={6} className="px-5 py-10 text-center text-sm text-gray-400">No se encontraron registros.</td></tr>
+                ) : paginated.map((d) => (
+                  <tr key={d.IDDenuncia} className="hover:bg-blue-50/30 transition-colors">
+                    <td className="px-5 py-4 font-bold text-primary">{d.codigo_seguimiento}</td>
+                    <td className="px-5 py-4 text-primary/80 max-w-[200px]">
+                      <p className="truncate">{d.Descripcion}</p>
+                    </td>
+                    <td className="px-5 py-4 text-gray-600 text-xs">{d.tipo_actividad.replace(/_/g, ' ')}</td>
+                    <td className="px-5 py-4 text-gray-600">{new Date(d.Fecha_denuncia).toLocaleDateString('es-DO')}</td>
+                    <td className="px-5 py-4">
+                      <span className={`rounded-full px-3 py-1 text-xs font-semibold ${ESTADO_STYLES[d.Estado]}`}>
+                        {ESTADO_LABEL[d.Estado]}
+                      </span>
+                    </td>
+                    <td className="px-5 py-4">
+                      <button
+                        onClick={() => navigate(`/admin/monitoreo/${d.IDDenuncia}`)}
+                        className="flex items-center justify-center h-8 w-8 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
+                      >
+                        <ListFilter className="h-4 w-4" />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
             </table>
           </div>
 

@@ -1,89 +1,91 @@
-/**
- * Acciones Correctivas Service — mock implementation backed by sessionStorage.
- * Replace with fetch/axios when backend is ready.
- */
-import { MOCK_ACCIONES } from '../data/mockAcciones'
-import { mockStorage } from '../utils/mockStorage'
+import { apiClient } from './api-client'
 
-const KEY = 'acciones'
-const delay = (ms = 350) => new Promise((r) => setTimeout(r, ms))
+export type EstadoAccion = 'Planificada' | 'En_Ejecucion' | 'Completada' | 'Cancelada'
 
-const getStore = () => mockStorage.getOrInit(KEY, MOCK_ACCIONES.map((a) => ({ ...a })))
-const saveStore = (data) => { mockStorage.set(KEY, data); return data }
+export interface Accion {
+  IDAccion: string
+  titulo: string
+  descripcion_accion: string | null
+  Estado: EstadoAccion
+  FechaPlanificacion: string | null
+  FechaImplementacion: string | null
+  visibilidad: 'Publico' | 'Restringido'
+  resumen_publico: string | null
+  Resultado: string | null
+  Presupuesto: string | null
+  created_at: string
+  responsable: { nombre_completo: string } | null
+  _count?: { accion_denuncia: number }
+  accion_denuncia?: Array<{
+    Denuncia: { IDDenuncia: number; codigo_seguimiento: string; Estado: string; tipo_actividad: string }
+  }>
+}
+
+export interface AccionesPaginadas {
+  data: Accion[]
+  paginacion: { total: number; pagina: number; por_pagina: number; total_paginas: number }
+}
+
+export const ESTADO_ACCION_LABEL: Record<EstadoAccion, string> = {
+  Planificada:  'Planificada',
+  En_Ejecucion: 'En Ejecución',
+  Completada:   'Completada',
+  Cancelada:    'Cancelada',
+}
+
+export const ESTADO_ACCION_STYLES: Record<EstadoAccion, string> = {
+  Planificada:  'bg-yellow-100 text-yellow-800',
+  En_Ejecucion: 'bg-blue-100 text-blue-800',
+  Completada:   'bg-green-100 text-green-800',
+  Cancelada:    'bg-gray-100 text-gray-500',
+}
+
+export const ESTADOS_ACCION = Object.keys(ESTADO_ACCION_LABEL) as EstadoAccion[]
 
 export const accionesService = {
-  /** GET /api/acciones */
-  async getAll() {
-    await delay()
-    return getStore()
+  async getAll(filtros: { q?: string; estado?: EstadoAccion; pagina?: number; por_pagina?: number } = {}): Promise<AccionesPaginadas> {
+    const params = new URLSearchParams()
+    if (filtros.q)         params.set('q', filtros.q)
+    if (filtros.estado)    params.set('estado', filtros.estado)
+    if (filtros.pagina)    params.set('pagina', String(filtros.pagina))
+    if (filtros.por_pagina) params.set('por_pagina', String(filtros.por_pagina))
+
+    const qs = params.toString()
+    const res = await apiClient.get<AccionesPaginadas>(`/api/v1/acciones${qs ? `?${qs}` : ''}`)
+    if (!res.success || !res.data) throw new Error(res.error ?? 'Error al obtener acciones')
+    return res.data
   },
 
-  /** GET /api/acciones/:id */
-  async getById(id) {
-    await delay()
-    const found = getStore().find((a) => a.id === id)
-    if (!found) throw new Error(`Acción ${id} no encontrada`)
-    return { ...found }
+  async getById(id: string): Promise<Accion> {
+    const res = await apiClient.get<Accion>(`/api/v1/acciones/${id}`)
+    if (!res.success || !res.data) throw new Error(res.error ?? 'Acción no encontrada')
+    return res.data
   },
 
-  /** PATCH /api/acciones/:id  { estado } */
-  async updateEstado(id, nuevoEstado) {
-    await delay()
-    const store = getStore()
-    const idx = store.findIndex((a) => a.id === id)
-    if (idx === -1) throw new Error(`Acción ${id} no encontrada`)
-    store[idx] = {
-      ...store[idx],
-      estado: nuevoEstado,
-      fechaAccion: nuevoEstado === 'Corregido'
-        ? new Date().toLocaleDateString('es-DO', { day: 'numeric', month: 'short', year: 'numeric' })
-        : store[idx].fechaAccion,
-    }
-    saveStore(store)
-    return { ...store[idx] }
+  async cambiarEstado(id: string, estado: EstadoAccion, Resultado?: string) {
+    const res = await apiClient.post<Accion>(`/api/v1/acciones/${id}/estado`, { estado, Resultado })
+    if (!res.success || !res.data) throw new Error(res.error ?? 'Error al cambiar estado')
+    return res.data
   },
 
-  /** PUT /api/acciones/:id */
-  async update(id, changes) {
-    await delay()
-    const store = getStore()
-    const idx = store.findIndex((a) => a.id === id)
-    if (idx === -1) throw new Error(`Acción ${id} no encontrada`)
-    store[idx] = { ...store[idx], ...changes }
-    saveStore(store)
-    return { ...store[idx] }
+  async crear(data: {
+    titulo: string
+    descripcion_accion?: string
+    FechaPlanificacion?: string
+    denunciaIds?: number[]
+  }) {
+    const res = await apiClient.post<Accion>('/api/v1/acciones', data)
+    if (!res.success || !res.data) throw new Error(res.error ?? 'Error al crear acción')
+    return res.data
   },
 
-  /** DELETE /api/acciones/:id */
-  async remove(id) {
-    await delay()
-    const store = getStore().filter((a) => a.id !== id)
-    saveStore(store)
-    return { success: true }
+  async actualizar(id: string, data: Partial<Accion>) {
+    const res = await apiClient.put<Accion>(`/api/v1/acciones/${id}`, data)
+    if (!res.success || !res.data) throw new Error(res.error ?? 'Error al actualizar')
+    return res.data
   },
 
-  /** POST /api/acciones */
-  async create(data) {
-    await delay(600)
-    const store = getStore()
-    const next = {
-      ...data,
-      id: String(store.length + 1).padStart(3, '0'),
-      estado: 'Pendiente',
-      fechaAccion: null,
-      seguimiento: data.seguimiento ?? 'Pendiente de revisión.',
-    }
-    saveStore([...store, next])
-    return { ...next }
-  },
-
-  /** GET /api/acciones?q=&estado= */
-  async filter({ query = '', estado = '' } = {}) {
-    await delay(150)
-    const q = query.toLowerCase()
-    return getStore().filter((a) => {
-      const matchQ = !q || a.id.includes(q) || a.descripcion.toLowerCase().includes(q) || a.provincia.toLowerCase().includes(q)
-      return matchQ && (!estado || a.estado === estado)
-    })
+  async filter(filtros: { query?: string; estado?: string } = {}) {
+    return this.getAll({ q: filtros.query, estado: filtros.estado as EstadoAccion })
   },
 }
