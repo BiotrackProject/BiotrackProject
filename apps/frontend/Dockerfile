@@ -26,9 +26,9 @@ COPY apps/frontend/public ./apps/frontend/public
 ARG VITE_API_BASE_URL=https://api.biotrack.org.do
 ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
 
-# Type-check + build
+# Vite bundle — typecheck already ran in the CI check job
 WORKDIR /app/apps/frontend
-RUN pnpm run build
+RUN pnpm exec vite build
 
 # ─── Stage 2: runner ──────────────────────────────────────────────────────────
 FROM nginx:1.27-alpine AS runner
