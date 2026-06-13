@@ -27,6 +27,9 @@ services:
 
   caddy:
     image: caddy:2-alpine
+    dns:
+      - 8.8.8.8
+      - 1.1.1.1
     ports:
       - "443:443"
     volumes:
