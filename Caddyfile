@@ -48,14 +48,15 @@ biotrack.org.do {
         Permissions-Policy "camera=(), microphone=(), payment=(), usb=(), accelerometer=(), gyroscope=(), geolocation=(self \"https://biotrack.org.do\")"
 
         # ── Content Security Policy ───────────────────────────────────────────
-        # Script origins: Vite bundles everything as same-origin ES modules —
-        #   no eval, no inline scripts needed.
-        # Style origins: 'unsafe-inline' required because Leaflet and intro.js
-        #   inject CSS via JavaScript at runtime (no nonce available in SPA).
-        # Images: data: URIs used by Leaflet markers; OSM tiles via HTTPS.
-        # Connect: API lives on api.biotrack.org.do (same server, diff subdomain).
-        # All other directives lock to 'none' or 'self'.
-        Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://*.tile.openstreetmap.org; connect-src 'self' https://api.biotrack.org.do; font-src 'self'; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests"
+        # script-src: Vite bundles as same-origin ES modules — no eval/inline.
+        # style-src:  'unsafe-inline' required for Leaflet/intro.js runtime CSS
+        #             injection; googleapis needed for Google Fonts stylesheet.
+        # img-src:    data: for Leaflet markers; OSM tiles (*.tile.openstreetmap.org
+        #             covers tile.openstreetmap.org and all subdomains); Unsplash
+        #             for landing page imagery.
+        # font-src:   gstatic.com serves the actual font files for Google Fonts.
+        # connect-src: API on api.biotrack.org.do; OSM nominatim for geocoding.
+        Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: blob: https://*.tile.openstreetmap.org https://tile.openstreetmap.org https://images.unsplash.com; connect-src 'self' https://api.biotrack.org.do https://nominatim.openstreetmap.org; font-src 'self' https://fonts.gstatic.com; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests"
 
         # ── Remove server fingerprinting ──────────────────────────────────────
         -Server
