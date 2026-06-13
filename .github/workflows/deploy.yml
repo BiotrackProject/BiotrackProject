@@ -94,7 +94,7 @@ jobs:
   deploy:
     name: Deploy to Production
     needs: images
-    runs-on: [self-hosted, biotrack]
+    runs-on: self-hosted
     environment: production
     timeout-minutes: 10
     steps:
