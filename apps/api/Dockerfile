@@ -30,7 +30,7 @@ RUN pnpm exec prisma generate && pnpm run build
 # ─── Stage 2: pruner — strip devDeps ─────────────────────────────────────────
 FROM builder AS pruner
 WORKDIR /app/apps/api
-RUN pnpm prune --prod
+RUN CI=true pnpm prune --prod
 
 # ─── Stage 3: runner — minimal production image ───────────────────────────────
 FROM node:24-alpine AS runner
