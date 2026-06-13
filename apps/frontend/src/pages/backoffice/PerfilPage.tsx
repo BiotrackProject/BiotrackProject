@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import { User, Mail, Phone, Building, Shield } from 'lucide-react'
 import BackofficeTopbar from '../../components/backoffice/BackofficeTopbar'
 import LoadingSpinner from '../../components/ui/LoadingSpinner'
@@ -6,7 +6,14 @@ import { toast } from '../../utils/toast'
 import * as authService from '../../services/authService'
 import type { PerfilCompleto } from '../../services/authService'
 
-function Field({ label, icon: Icon, value, onChange, type = 'text', readOnly = false }) {
+function Field({ label, icon: Icon, value, onChange = null, type = 'text', readOnly = false }: {
+  label: string
+  icon?: React.ComponentType<{ className?: string }>
+  value: string
+  onChange?: ((v: string) => void) | null
+  type?: string
+  readOnly?: boolean
+}) {
   return (
     <div className="flex flex-col gap-1.5">
       <label className="text-xs font-semibold text-gray-500 flex items-center gap-1.5">
