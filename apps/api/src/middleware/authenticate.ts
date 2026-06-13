@@ -51,9 +51,9 @@ export async function authenticate(req: Request, _res: Response, next: NextFunct
     id: usuario.IDUsuario,
     rolId: usuario.rol_id,
     rolNombre: usuario.rol?.nombre ?? null,
-    permisos: (usuario.rol?.rol_permiso ?? []).map((rp) => ({
+    permisos: (usuario.rol?.rol_permiso ?? []).map((rp: { permiso: { modulo: string; accion: string } }) => ({
       modulo: rp.permiso.modulo,
-      accion: rp.permiso.accion as string,
+      accion: rp.permiso.accion,
     })),
   };
 
