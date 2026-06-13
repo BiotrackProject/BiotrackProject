@@ -30,7 +30,7 @@ async function request<T>(
   
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
-    ...options.headers,
+    ...(options.headers as Record<string, string> | undefined),
   };
 
   // Agregar token JWT si existe
@@ -116,8 +116,8 @@ export const apiClient = {
 // ==================== AUTENTICACIÓN ====================
 
 export interface LoginPayload {
-  email: string;
-  password: string;
+  correo_electronico: string;
+  contrasena: string;
 }
 
 export interface LoginResponse {

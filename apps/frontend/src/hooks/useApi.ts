@@ -52,7 +52,7 @@ export function useAuth() {
       const response = await apiLogin(credentials);
 
       if (response.success && response.data) {
-        setUser(response.data.user);
+        setUser(response.data.user as Usuario);
         return { success: true, data: response.data };
       } else {
         const errorMsg = response.error || 'Error en el login';
