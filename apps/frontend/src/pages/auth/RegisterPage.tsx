@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import ImagePanel from '../../components/auth/ImagePanel'
-import { validateName, validateEmail, validateRegisterPassword } from '../../utils/validation'
+import { validateName, validateEmail } from '../../utils/validation'
+import * as authService from '../../services/authService'
 
 import registerBg from '../../assets/images/register-bg.jpg'
 
@@ -13,32 +14,36 @@ const INPUT_CLS = (hasError) =>
   }`
 
 export default function RegisterPage() {
-  const [form, setForm] = useState({ nombres: '', apellidos: '', email: '', password: '' })
-  const [errors, setErrors] = useState<Record<string, string | null>>({})
+  const [form, setForm] = useState({
+    nombres: '',
+    apellidos: '',
+    email: '',
+    cargo: '',
+    institucion: '',
+  })
+  const [errors, setErrors]     = useState<Record<string, string | null>>({})
+  const [apiError, setApiError] = useState<string | null>(null)
   const [submitted, setSubmitted] = useState(false)
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading]   = useState(false)
 
-  function handleChange(field) {
-    return (e) => {
+  function handleChange(field: string) {
+    return (e: React.ChangeEvent<HTMLInputElement>) => {
       setForm(prev => ({ ...prev, [field]: e.target.value }))
       if (errors[field]) setErrors(prev => ({ ...prev, [field]: null }))
     }
   }
 
-  function validateField(field, value) {
+  function validateField(field: string, value: string) {
     switch (field) {
       case 'nombres':   return validateName(value, 'Nombres')
       case 'apellidos': return validateName(value, 'Apellidos')
       case 'email':     return validateEmail(value)
-      case 'password':  return validateRegisterPassword(value, form.nombres, form.apellidos, form.email)
       default:          return null
     }
   }
 
-  function handleBlur(field) {
-    return () => {
-      setErrors(prev => ({ ...prev, [field]: validateField(field, form[field]) }))
-    }
+  function handleBlur(field: string) {
+    return () => setErrors(prev => ({ ...prev, [field]: validateField(field, form[field]) }))
   }
 
   function validate() {
@@ -46,21 +51,33 @@ export default function RegisterPage() {
       nombres:   validateName(form.nombres, 'Nombres'),
       apellidos: validateName(form.apellidos, 'Apellidos'),
       email:     validateEmail(form.email),
-      password:  validateRegisterPassword(form.password, form.nombres, form.apellidos, form.email),
     }
     setErrors(next)
     return Object.values(next).every(v => !v)
   }
 
-  async function handleSubmit(e) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!validate()) return
     setLoading(true)
-    // TODO: conectar con el backend — POST /api/auth/register
-    setTimeout(() => {
-      setSubmitted(true)
+    setApiError(null)
+    try {
+      const res = await authService.registro({
+        nombre_completo: `${form.nombres.trim()} ${form.apellidos.trim()}`,
+        correo_electronico: form.email,
+        cargo: form.cargo || undefined,
+        institucion: form.institucion || undefined,
+      })
+      if (res.success) {
+        setSubmitted(true)
+      } else {
+        setApiError(res.error ?? 'Error al enviar la solicitud')
+      }
+    } catch {
+      setApiError('Error de conexión con el servidor')
+    } finally {
       setLoading(false)
-    }, 800)
+    }
   }
 
   if (submitted) {
@@ -92,9 +109,6 @@ export default function RegisterPage() {
               <p className="text-xs leading-6 text-dark/70">
                 Revisa también tu carpeta de correo no deseado si no recibes respuesta en 24 horas.
               </p>
-              <Link to="/login" className="text-xs text-primary/80 hover:text-primary">
-                Volver al inicio de sesión
-              </Link>
             </div>
           </div>
         </div>
@@ -124,6 +138,12 @@ export default function RegisterPage() {
             <p className="mb-8 max-w-[46ch] text-[14px] leading-6 text-dark/80">
               Completa tus datos para solicitar acceso a BIOTRACK. Tu solicitud será validada por el equipo administrador.
             </p>
+
+            {apiError && (
+              <div className="mb-5 rounded-md border border-action/30 bg-action/5 px-4 py-3 text-sm text-action/90">
+                {apiError}
+              </div>
+            )}
 
             <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-5">
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -175,21 +195,32 @@ export default function RegisterPage() {
                 {errors.email && <p className="text-xs text-action/95">{errors.email}</p>}
               </div>
 
-              <div className="flex flex-col gap-1">
-                <label htmlFor="password" className="text-[12px] font-semibold uppercase tracking-[0.08em] text-dark/80">
-                  Contraseña <span className="text-action">*</span>
-                </label>
-                <input
-                  id="password"
-                  type="password"
-                  placeholder="Ingresar contraseña"
-                  value={form.password}
-                  onChange={handleChange('password')}
-                  onBlur={handleBlur('password')}
-                  autoComplete="new-password"
-                  className={INPUT_CLS(errors.password)}
-                />
-                {errors.password && <p className="text-xs text-action/95">{errors.password}</p>}
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <div className="flex flex-col gap-1">
+                  <label htmlFor="cargo" className="text-[12px] font-semibold uppercase tracking-[0.08em] text-dark/80">
+                    Cargo
+                  </label>
+                  <input
+                    id="cargo"
+                    placeholder="Ej: Analista Ambiental"
+                    value={form.cargo}
+                    onChange={handleChange('cargo')}
+                    className={INPUT_CLS(false)}
+                  />
+                </div>
+
+                <div className="flex flex-col gap-1">
+                  <label htmlFor="institucion" className="text-[12px] font-semibold uppercase tracking-[0.08em] text-dark/80">
+                    Institución
+                  </label>
+                  <input
+                    id="institucion"
+                    placeholder="Ej: Ministerio de Medio Ambiente"
+                    value={form.institucion}
+                    onChange={handleChange('institucion')}
+                    className={INPUT_CLS(false)}
+                  />
+                </div>
               </div>
 
               <button
@@ -197,7 +228,7 @@ export default function RegisterPage() {
                 disabled={loading}
                 className="mt-2 w-full rounded-md bg-dark py-3 text-[16px] font-bold text-surface transition-[transform,background-color] duration-200 active:scale-[0.985] hover:bg-primary disabled:cursor-not-allowed disabled:opacity-50"
               >
-                {loading ? 'Enviando solicitud...' : 'Registrarse'}
+                {loading ? 'Enviando solicitud...' : 'Solicitar registro'}
               </button>
 
               <p className="text-center text-[13px] text-dark/85">

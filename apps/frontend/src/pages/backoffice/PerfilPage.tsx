@@ -1,10 +1,10 @@
-// @ts-nocheck
 import { useState, useEffect } from 'react'
 import { User, Mail, Phone, Building, Shield } from 'lucide-react'
 import BackofficeTopbar from '../../components/backoffice/BackofficeTopbar'
 import LoadingSpinner from '../../components/ui/LoadingSpinner'
-import { usuariosService } from '../../services/usuariosService'
 import { toast } from '../../utils/toast'
+import * as authService from '../../services/authService'
+import type { PerfilCompleto } from '../../services/authService'
 
 function Field({ label, icon: Icon, value, onChange, type = 'text', readOnly = false }) {
   return (
@@ -15,7 +15,7 @@ function Field({ label, icon: Icon, value, onChange, type = 'text', readOnly = f
       </label>
       <input
         type={type}
-        value={value}
+        value={value ?? ''}
         onChange={onChange ? (e) => onChange(e.target.value) : undefined}
         readOnly={readOnly}
         className={`rounded-lg border px-3 py-2.5 text-sm outline-none transition-colors ${
@@ -29,37 +29,46 @@ function Field({ label, icon: Icon, value, onChange, type = 'text', readOnly = f
 }
 
 export default function PerfilPage() {
-  const [perfil, setPerfil]   = useState(null)
+  const [perfil, setPerfil]   = useState<PerfilCompleto | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving]   = useState(false)
   const [editing, setEditing] = useState(false)
-  const [form, setForm]       = useState({})
+  const [form, setForm]       = useState<{ nombre_completo: string; telefono: string }>({ nombre_completo: '', telefono: '' })
 
   useEffect(() => {
-    usuariosService.getPerfil().then((data) => {
-      setPerfil(data)
-      setForm(data)
+    authService.getPerfil().then((res) => {
+      if (res.success && res.data) {
+        setPerfil(res.data)
+        setForm({ nombre_completo: res.data.nombre_completo, telefono: res.data.telefono ?? '' })
+      }
       setLoading(false)
     })
   }, [])
 
   function handleEdit() {
-    setForm({ ...perfil })
+    if (!perfil) return
+    setForm({ nombre_completo: perfil.nombre_completo, telefono: perfil.telefono ?? '' })
     setEditing(true)
   }
 
   function handleCancel() {
-    setForm({ ...perfil })
     setEditing(false)
   }
 
   async function handleSave() {
     setSaving(true)
     try {
-      const updated = await usuariosService.updatePerfil(form)
-      setPerfil(updated)
-      setEditing(false)
-      toast.success('Perfil actualizado correctamente')
+      const res = await authService.actualizarPerfil({
+        nombre_completo: form.nombre_completo || undefined,
+        telefono: form.telefono || null,
+      })
+      if (res.success && res.data) {
+        setPerfil(res.data.usuario as PerfilCompleto)
+        setEditing(false)
+        toast.success('Perfil actualizado correctamente')
+      } else {
+        toast.error(res.error ?? 'Error al guardar los cambios')
+      }
     } catch {
       toast.error('Error al guardar los cambios')
     } finally {
@@ -73,6 +82,15 @@ export default function PerfilPage() {
       <LoadingSpinner fullPage />
     </>
   )
+
+  if (!perfil) return (
+    <>
+      <BackofficeTopbar title="Mi Perfil" backTo="/admin/dashboard" />
+      <main className="p-8"><p className="text-sm text-gray-400">No se pudo cargar el perfil.</p></main>
+    </>
+  )
+
+  const iniciales = perfil.nombre_completo.split(' ').slice(0, 2).map(p => p[0]).join('').toUpperCase()
 
   return (
     <>
@@ -98,62 +116,52 @@ export default function PerfilPage() {
       />
 
       <main className="p-8 max-w-2xl flex flex-col gap-5">
-        {/* Avatar card */}
         <div className="bg-white rounded-2xl p-6 shadow-sm flex items-center gap-5">
           <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-primary text-white text-xl font-black">
-            {perfil.nombres?.[0]}{perfil.apellidos?.[0]}
+            {iniciales}
           </div>
           <div>
-            <p className="text-lg font-bold text-gray-800">{perfil.nombres} {perfil.apellidos}</p>
-            <p className="text-sm text-gray-400">{perfil.rol} · {perfil.departamento}</p>
-            <p className="text-xs text-gray-400 mt-0.5">Último acceso: {perfil.ultimoAcceso}</p>
+            <p className="text-lg font-bold text-gray-800">{perfil.nombre_completo}</p>
+            <p className="text-sm text-gray-400">{perfil.rol.nombre} · {perfil.cargo ?? 'Sin cargo'}</p>
+            <p className="text-xs text-gray-400 mt-0.5">{perfil.institucion ?? 'Sin institución'}</p>
           </div>
         </div>
 
-        {/* Info form */}
         <div data-tour="backoffice-perfil-info" className="bg-white rounded-2xl p-6 shadow-sm flex flex-col gap-5">
           <h3 className="text-sm font-bold text-primary">Información personal</h3>
           <div className="grid grid-cols-2 gap-4">
             <Field
-              label="Nombres"
+              label="Nombre completo"
               icon={User}
-              value={form.nombres ?? ''}
-              onChange={editing ? (v) => setForm((p) => ({ ...p, nombres: v })) : null}
-              readOnly={!editing}
-            />
-            <Field
-              label="Apellidos"
-              icon={User}
-              value={form.apellidos ?? ''}
-              onChange={editing ? (v) => setForm((p) => ({ ...p, apellidos: v })) : null}
+              value={editing ? form.nombre_completo : perfil.nombre_completo}
+              onChange={editing ? (v: string) => setForm(p => ({ ...p, nombre_completo: v })) : null}
               readOnly={!editing}
             />
             <Field
               label="Correo electrónico"
               icon={Mail}
               type="email"
-              value={form.email ?? ''}
-              onChange={editing ? (v) => setForm((p) => ({ ...p, email: v })) : null}
-              readOnly={!editing}
+              value={perfil.correo_electronico}
+              readOnly
             />
             <Field
               label="Teléfono"
               icon={Phone}
-              value={form.telefono ?? ''}
-              onChange={editing ? (v) => setForm((p) => ({ ...p, telefono: v })) : null}
+              value={editing ? form.telefono : (perfil.telefono ?? '')}
+              onChange={editing ? (v: string) => setForm(p => ({ ...p, telefono: v })) : null}
               readOnly={!editing}
             />
+            <Field label="Cargo" icon={Building} value={perfil.cargo ?? ''} readOnly />
           </div>
         </div>
 
-        {/* Role info (read-only) */}
         <div data-tour="backoffice-perfil-access" className="bg-white rounded-2xl p-6 shadow-sm flex flex-col gap-4">
           <h3 className="text-sm font-bold text-primary">Acceso y permisos</h3>
           <div className="grid grid-cols-2 gap-4">
-            <Field label="Rol" icon={Shield} value={perfil.rol} readOnly />
-            <Field label="Departamento" icon={Building} value={perfil.departamento} readOnly />
+            <Field label="Rol" icon={Shield} value={perfil.rol.nombre} readOnly />
+            <Field label="Institución" icon={Building} value={perfil.institucion ?? ''} readOnly />
           </div>
-          <p className="text-xs text-gray-400">Para cambios de rol o departamento, contacta a un administrador.</p>
+          <p className="text-xs text-gray-400">Para cambios de rol o institución, contacta a un administrador.</p>
         </div>
       </main>
     </>

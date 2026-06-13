@@ -2,6 +2,8 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import ImagePanel from '../../components/auth/ImagePanel'
 import { validateEmail, validateLoginPassword } from '../../utils/validation'
+import { useAuth } from '../../context/AuthContext'
+import * as authService from '../../services/authService'
 
 import loginBg from '../../assets/images/login-bg.jpg'
 
@@ -14,8 +16,10 @@ const INPUT_CLS = (hasError) =>
 
 export default function LoginPage() {
   const navigate = useNavigate()
+  const { setAuth } = useAuth()
   const [form, setForm] = useState({ email: '', password: '', remember: false })
   const [errors, setErrors] = useState<Record<string, string | null>>({})
+  const [apiError, setApiError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
 
   function handleChange(field) {
@@ -45,10 +49,20 @@ export default function LoginPage() {
     e.preventDefault()
     if (!validate()) return
     setLoading(true)
-    // TODO: POST /api/auth/login — replace timeout with real API call
-    setTimeout(() => {
-      navigate('/admin/dashboard')
-    }, 600)
+    setApiError(null)
+    try {
+      const res = await authService.login(form.email, form.password)
+      if (res.success && res.data) {
+        setAuth(res.data.token, res.data.usuario)
+        navigate('/admin/dashboard')
+      } else {
+        setApiError(res.error ?? 'Error al iniciar sesión')
+      }
+    } catch {
+      setApiError('Error de conexión con el servidor')
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -71,6 +85,12 @@ export default function LoginPage() {
             <p className="mb-8 max-w-[46ch] text-[14px] leading-6 text-dark/80">
               Ingresa con tu correo y contraseña para acceder al seguimiento de denuncias, acciones y monitoreos.
             </p>
+
+            {apiError && (
+              <div className="rounded-md border border-action/30 bg-action/5 px-4 py-3 text-sm text-action/90">
+                {apiError}
+              </div>
+            )}
 
             <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-5">
               <div className="flex flex-col gap-1">

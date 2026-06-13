@@ -1,6 +1,7 @@
 import 'dotenv/config';
 import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
+import bcrypt from 'bcryptjs';
 
 const adapter = new PrismaPg({ connectionString: process.env['DATABASE_URL'] as string });
 const prisma = new PrismaClient({ adapter });
@@ -96,6 +97,28 @@ async function main(): Promise<void> {
     console.log(`✓ Rol "${rol.nombre}" con ${permisoIds.length} permisos`);
   }
 
+  // Crear usuario administrador inicial si no existe
+  const adminEmail = process.env.SEED_ADMIN_EMAIL ?? 'admin@biotrack.org.do';
+  const adminPass  = process.env.SEED_ADMIN_PASS  ?? 'Biotrack2026!';
+
+  const rolAdmin = await prisma.rol.findUniqueOrThrow({ where: { nombre: 'ADMINISTRADOR' } });
+  const hash = await bcrypt.hash(adminPass, 12);
+
+  await prisma.usuario.upsert({
+    where: { correo_electronico: adminEmail },
+    update: {},
+    create: {
+      nombre_completo: 'Administrador BIOTRACK',
+      correo_electronico: adminEmail,
+      contrasena_hash: hash,
+      rol_id: rolAdmin.id,
+      Estado: 'Activo',
+      cargo: 'Administrador del Sistema',
+      institucion: 'BIOTRACK',
+    },
+  });
+
+  console.log(`✓ Usuario admin: ${adminEmail} / ${adminPass}`);
   console.log('\nSeed completado.');
 }
 

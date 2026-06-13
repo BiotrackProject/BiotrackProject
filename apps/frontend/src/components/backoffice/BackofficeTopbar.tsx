@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Bell, User, ChevronLeft, LogOut, UserCircle } from 'lucide-react'
+import { useAuth } from '../../context/AuthContext'
 
 import { ReactNode } from 'react'
 
@@ -12,8 +13,15 @@ interface BackofficeTopbarProps {
 
 export default function BackofficeTopbar({ title, backTo, actions }: BackofficeTopbarProps) {
   const navigate = useNavigate()
+  const { logout } = useAuth()
   const [userMenuOpen, setUserMenuOpen] = useState(false)
   const menuRef = useRef(null)
+
+  function handleLogout() {
+    setUserMenuOpen(false)
+    logout()
+    navigate('/login')
+  }
 
   useEffect(() => {
     function handleClick(e) {
@@ -80,7 +88,7 @@ export default function BackofficeTopbar({ title, backTo, actions }: BackofficeT
               </button>
               <div className="border-t border-gray-100 my-1" />
               <button
-                onClick={() => { setUserMenuOpen(false); navigate('/login') }}
+                onClick={handleLogout}
                 className="flex w-full items-center gap-2.5 px-4 py-2.5 text-sm text-action transition-[transform,background-color,color] duration-150 ease-out hover:bg-red-50 active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-action/35"
               >
                 <LogOut className="h-4 w-4" />
