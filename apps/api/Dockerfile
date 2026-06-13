@@ -1,44 +1,52 @@
-# ─── Stage 1: builder — todas las deps (dev + prod) + compilación ────────────
+# Build context: monorepo root (BiotrackProject/)
+# docker build -f apps/api/Dockerfile .
+
+# ─── Stage 1: builder ─────────────────────────────────────────────────────────
 FROM node:24-alpine AS builder
 WORKDIR /app
 
 RUN corepack enable && corepack prepare pnpm@11.1.2 --activate
 
-# Instalar TODAS las dependencias (dev incluidas, necesarias para tsx en dev y tsc en build)
-# --ignore-scripts bloquea preinstall/postinstall de paquetes maliciosos
-COPY package.json pnpm-lock.yaml ./
-RUN pnpm install --frozen-lockfile --ignore-scripts
+# Monorepo root files needed by pnpm to resolve the workspace lockfile
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./
 
-COPY tsconfig.json ./
-COPY prisma ./prisma
-COPY src ./src
+# App manifest (pnpm needs it to resolve the workspace filter)
+COPY apps/api/package.json ./apps/api/package.json
 
-# Generar cliente Prisma (explícito porque --ignore-scripts lo saltó)
-# Compilar TypeScript → dist/
+# Install only the api workspace
+# --ignore-scripts blocks malicious pre/postinstall from transitive deps
+RUN pnpm install --frozen-lockfile --ignore-scripts --filter api
+
+COPY apps/api/tsconfig.json ./apps/api/
+COPY apps/api/prisma ./apps/api/prisma
+COPY apps/api/src ./apps/api/src
+
+WORKDIR /app/apps/api
+
+# Generate Prisma client (--ignore-scripts skipped the postinstall)
+# Then compile TypeScript → dist/
 RUN pnpm exec prisma generate && pnpm run build
 
-# ─── Stage 2: pruner — elimina devDeps para la imagen de producción ───────────
-# Stage separado para que "builder" siga teniendo tsx disponible (usado en dev)
+# ─── Stage 2: pruner — strip devDeps ─────────────────────────────────────────
 FROM builder AS pruner
+WORKDIR /app/apps/api
 RUN pnpm prune --prod
 
-# ─── Stage 3: runner — imagen mínima de producción ───────────────────────────
+# ─── Stage 3: runner — minimal production image ───────────────────────────────
 FROM node:24-alpine AS runner
 LABEL org.opencontainers.image.title="BIOTRACK API"
 LABEL org.opencontainers.image.description="API REST — Gestión de minería ilegal de arena · INTEC IDS355"
-LABEL org.opencontainers.image.source="https://github.com/Albert2707/biotrack-api"
+LABEL org.opencontainers.image.source="https://github.com/Albert2707/BiotrackProject"
 
 ENV NODE_ENV=production
 WORKDIR /app
 
 RUN addgroup -g 1001 -S biotrack && adduser -u 1001 -S biotrack -G biotrack
 
-# Copiar artefactos ya podados del stage pruner
-# --chown=root:root + --chmod=755 → biotrack puede leer/ejecutar pero no escribir (ASVS V14)
-COPY --from=pruner --chown=root:root --chmod=755 /app/node_modules ./node_modules
-COPY --from=pruner --chown=root:root --chmod=755 /app/dist        ./dist
-COPY --from=pruner --chown=root:root --chmod=755 /app/prisma      ./prisma
-COPY --from=pruner --chown=root:root --chmod=644 /app/package.json ./package.json
+COPY --from=pruner --chown=root:root --chmod=755 /app/apps/api/node_modules ./node_modules
+COPY --from=pruner --chown=root:root --chmod=755 /app/apps/api/dist        ./dist
+COPY --from=pruner --chown=root:root --chmod=755 /app/apps/api/prisma      ./prisma
+COPY --from=pruner --chown=root:root --chmod=644 /app/apps/api/package.json ./package.json
 
 RUN mkdir -p uploads && chown biotrack:biotrack uploads
 
