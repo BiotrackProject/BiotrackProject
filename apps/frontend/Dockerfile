@@ -17,6 +17,7 @@ COPY apps/frontend/package.json ./apps/frontend/package.json
 RUN pnpm install --frozen-lockfile --ignore-scripts --filter frontend
 
 # Source files
+COPY apps/frontend/index.html ./apps/frontend/
 COPY apps/frontend/tsconfig.json apps/frontend/tsconfig.node.json apps/frontend/vite.config.ts ./apps/frontend/
 COPY apps/frontend/src ./apps/frontend/src
 COPY apps/frontend/public ./apps/frontend/public
