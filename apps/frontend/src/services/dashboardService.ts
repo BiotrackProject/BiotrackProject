@@ -1,32 +1,30 @@
-/**
- * Dashboard Service — derives stats from sessionStorage-backed stores.
- * Replace with GET /api/dashboard/stats when backend is ready.
- */
-import { mockStorage } from '../utils/mockStorage'
-import { MOCK_DENUNCIAS } from '../data/mockDenuncias'
-import { MOCK_MONITOREO_DENUNCIAS } from '../data/mockMonitoreos'
-import { MOCK_ACCIONES } from '../data/mockAcciones'
-import { MOCK_USUARIOS } from '../data/mockUsuarios'
+import { apiClient } from './api-client'
 
-const delay = (ms = 250) => new Promise((r) => setTimeout(r, ms))
+export interface DashboardStats {
+  totalDenuncias: number
+  por_estado: {
+    Pendiente: number
+    En_Investigacion: number
+    Verificada: number
+    Resuelta: number
+    Desestimada: number
+  }
+  totalAcciones: number
+  por_estado_accion: {
+    Planificada: number
+    En_Ejecucion: number
+    Completada: number
+    Cancelada: number
+  }
+  totalUsuarios: number
+  usuariosActivos: number
+  solicitudesPendientes: number
+}
 
 export const dashboardService = {
-  /** GET /api/dashboard/stats */
-  async getStats() {
-    await delay()
-    const denuncias   = (mockStorage.get('denuncias')            ?? MOCK_DENUNCIAS)   as typeof MOCK_DENUNCIAS
-    const monitoreos  = (mockStorage.get('monitoreo_denuncias') ?? MOCK_MONITOREO_DENUNCIAS) as typeof MOCK_MONITOREO_DENUNCIAS
-    const acciones    = (mockStorage.get('acciones')            ?? MOCK_ACCIONES)    as typeof MOCK_ACCIONES
-    const usuarios    = (mockStorage.get('usuarios')            ?? MOCK_USUARIOS)    as typeof MOCK_USUARIOS
-
-    return {
-      totalDenuncias:       denuncias.length,
-      denunciasActivas:     denuncias.filter((d) => d.estado !== 'Declinada').length,
-      enRevision:           denuncias.filter((d) => d.estado === 'En revisión').length,
-      zonasMonitoreadas:    monitoreos.filter((d) => d.estado === 'En Monitoreo').length,
-      accionesEnCorreccion: acciones.filter((a) => a.estado === 'En Corrección').length,
-      accionesCorregidas:   acciones.filter((a) => a.estado === 'Corregido').length,
-      usuariosActivos:      usuarios.filter((u) => u.estado === 'Activo').length,
-    }
+  async getStats(): Promise<DashboardStats> {
+    const res = await apiClient.get<DashboardStats>('/api/v1/indicadores/resumen')
+    if (!res.success || !res.data) throw new Error(res.error ?? 'Error al obtener estadísticas')
+    return res.data
   },
 }

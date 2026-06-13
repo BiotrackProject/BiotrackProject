@@ -1,110 +1,123 @@
-/**
- * Usuarios Service — mock implementation backed by sessionStorage.
- * Replace with fetch/axios when backend is ready.
- */
-import { MOCK_USUARIOS } from '../data/mockUsuarios'
-import { mockStorage } from '../utils/mockStorage'
+import { apiClient } from './api-client'
+import * as authService from './authService'
 
-const KEY = 'usuarios'
-const delay = (ms = 350) => new Promise((r) => setTimeout(r, ms))
+export interface Usuario {
+  IDUsuario: string
+  nombre_completo: string
+  correo_electronico: string
+  telefono: string | null
+  cargo: string | null
+  institucion: string | null
+  Estado: 'Activo' | 'Inactivo'
+  Ultimo_acceso: string | null
+  Fecha_creacion: string
+  rol: { id: string; nombre: string }
+}
 
-const getStore = () => mockStorage.getOrInit(KEY, MOCK_USUARIOS.map((u) => ({ ...u })))
-const saveStore = (data) => { mockStorage.set(KEY, data); return data }
+export interface Rol {
+  id: string
+  nombre: string
+  descripcion: string | null
+}
+
+export interface SolicitudRegistro {
+  id: string
+  nombre_completo: string
+  correo_electronico: string
+  cargo: string | null
+  institucion: string | null
+  estado: 'Pendiente_Aprobacion' | 'Aprobada' | 'Rechazada' | 'Pendiente_Info'
+  created_at: string
+}
+
+export interface NuevoUsuarioForm {
+  nombre_completo: string
+  correo_electronico: string
+  contrasena: string
+  rol_id: string
+  cargo?: string
+  institucion?: string
+  telefono?: string
+}
 
 export const usuariosService = {
-  /** GET /api/usuarios */
-  async getAll() {
-    await delay()
-    return getStore()
+  async getAll(): Promise<Usuario[]> {
+    const res = await apiClient.get<Usuario[]>('/api/v1/admin/usuarios')
+    if (!res.success || !res.data) throw new Error(res.error ?? 'Error al obtener usuarios')
+    return res.data
   },
 
-  /** GET /api/usuarios/:id */
-  async getById(id) {
-    await delay()
-    const found = getStore().find((u) => u.id === id)
-    if (!found) throw new Error(`Usuario ${id} no encontrado`)
-    return { ...found }
+  async getById(id: string): Promise<Usuario> {
+    const res = await apiClient.get<Usuario>(`/api/v1/admin/usuarios/${id}`)
+    if (!res.success || !res.data) throw new Error(res.error ?? 'Usuario no encontrado')
+    return res.data
   },
 
-  /** PATCH /api/usuarios/:id  { rol } */
-  async updateRol(id, nuevoRol) {
-    await delay()
-    const store = getStore()
-    const idx = store.findIndex((u) => u.id === id)
-    if (idx === -1) throw new Error(`Usuario ${id} no encontrado`)
-    store[idx] = { ...store[idx], rol: nuevoRol }
-    saveStore(store)
-    return { ...store[idx] }
+  async create(data: NuevoUsuarioForm): Promise<Usuario> {
+    const res = await apiClient.post<Usuario>('/api/v1/admin/usuarios', data)
+    if (!res.success || !res.data) throw new Error(res.error ?? 'Error al crear usuario')
+    return res.data
   },
 
-  /** PATCH /api/usuarios/:id  { estado } */
-  async updateEstado(id, nuevoEstado) {
-    await delay()
-    const store = getStore()
-    const idx = store.findIndex((u) => u.id === id)
-    if (idx === -1) throw new Error(`Usuario ${id} no encontrado`)
-    store[idx] = { ...store[idx], estado: nuevoEstado }
-    saveStore(store)
-    return { ...store[idx] }
+  async update(id: string, data: Partial<NuevoUsuarioForm>): Promise<Usuario> {
+    const res = await apiClient.patch<Usuario>(`/api/v1/admin/usuarios/${id}`, data)
+    if (!res.success || !res.data) throw new Error(res.error ?? 'Error al actualizar')
+    return res.data
   },
 
-  /** PUT /api/usuarios/:id */
-  async update(id, changes) {
-    await delay()
-    const store = getStore()
-    const idx = store.findIndex((u) => u.id === id)
-    if (idx === -1) throw new Error(`Usuario ${id} no encontrado`)
-    store[idx] = { ...store[idx], ...changes }
-    saveStore(store)
-    return { ...store[idx] }
+  async asignarRol(id: string, rol_id: string): Promise<Usuario> {
+    const res = await apiClient.patch<Usuario>(`/api/v1/admin/usuarios/${id}/rol`, { rol_id })
+    if (!res.success || !res.data) throw new Error(res.error ?? 'Error al asignar rol')
+    return res.data
   },
 
-  /** DELETE /api/usuarios/:id */
-  async remove(id) {
-    await delay()
-    saveStore(getStore().filter((u) => u.id !== id))
-    return { success: true }
+  async desactivar(id: string): Promise<void> {
+    const res = await apiClient.patch(`/api/v1/admin/usuarios/${id}/desactivar`, {})
+    if (!res.success) throw new Error(res.error ?? 'Error al desactivar usuario')
   },
 
-  /** POST /api/usuarios */
-  async create(data) {
-    await delay(600)
-    const store = getStore()
-    const next = {
-      ...data,
-      id: `u${String(store.length + 1).padStart(3, '0')}`,
-      estado: 'Activo',
-      ultimoAcceso: 'Nunca',
-    }
-    saveStore([...store, next])
-    return { ...next }
+  async getRoles(): Promise<Rol[]> {
+    const res = await apiClient.get<Rol[]>('/api/v1/admin/roles')
+    if (!res.success || !res.data) throw new Error(res.error ?? 'Error al obtener roles')
+    return res.data
   },
 
-  /** GET /api/perfil  (current user profile) */
+  async getSolicitudes(): Promise<SolicitudRegistro[]> {
+    const res = await apiClient.get<SolicitudRegistro[]>('/api/v1/admin/solicitudes')
+    if (!res.success || !res.data) throw new Error(res.error ?? 'Error al obtener solicitudes')
+    return res.data
+  },
+
+  async revisarSolicitud(id: string, data: {
+    accion: 'Aprobada' | 'Rechazada'
+    comentario?: string
+    contrasena?: string
+    rol_id?: string
+  }) {
+    const res = await apiClient.patch(`/api/v1/admin/solicitudes/${id}`, data)
+    if (!res.success) throw new Error(res.error ?? 'Error al procesar solicitud')
+    return res.data
+  },
+
+  // Perfil del usuario actual — usa el endpoint de auth
   async getPerfil() {
-    await delay(200)
-    const stored = mockStorage.get('perfil')
-    if (stored) return stored
-    const defaultPerfil = {
-      id: 'u001',
-      nombres: 'Ivis',
-      apellidos: 'Veloz',
-      email: 'ivisveloz@gmail.com',
-      telefono: '809-555-0001',
-      departamento: 'Dirección General',
-      rol: 'Administrador',
-      ultimoAcceso: '6 jun 2026',
+    const res = await authService.getPerfil()
+    if (!res.success || !res.data) throw new Error(res.error ?? 'Error al obtener perfil')
+    const p = res.data
+    return {
+      id: p.IDUsuario,
+      nombre_completo: p.nombre_completo,
+      correo_electronico: p.correo_electronico,
+      telefono: p.telefono,
+      cargo: p.cargo,
+      institucion: p.institucion,
+      rol: p.rol.nombre,
     }
-    mockStorage.set('perfil', defaultPerfil)
-    return defaultPerfil
   },
 
-  /** PUT /api/perfil */
-  async updatePerfil(changes) {
-    await delay(400)
-    const current = await this.getPerfil()
-    const updated = { ...current, ...changes }
-    mockStorage.set('perfil', updated)
-    return updated
+  async updatePerfil(data: { nombre_completo?: string; telefono?: string | null }) {
+    const res = await authService.actualizarPerfil(data)
+    if (!res.success) throw new Error(res.error ?? 'Error al actualizar perfil')
+    return res.data
   },
 }

@@ -7,83 +7,111 @@ import Modal from '../../../components/ui/Modal'
 import EmptyState from '../../../components/ui/EmptyState'
 import LoadingSpinner from '../../../components/ui/LoadingSpinner'
 import { usuariosService } from '../../../services/usuariosService'
-import { ROLES_LIST } from '../../../constants/roles'
+import type { Usuario, Rol } from '../../../services/usuariosService'
 import { toast } from '../../../utils/toast'
 
 const COLUMNS = ['Usuario', 'Correo', 'Rol', 'Estado', 'Último acceso', 'Acciones']
 
-function getRolColor(rol) {
-  const map = {
-    'Administrador': 'bg-primary/10 text-primary border border-primary/20',
-    'Analista':      'bg-secondary/40 text-primary border border-secondary/80',
-    'Inspector':     'bg-emerald-50 text-emerald-700 border border-emerald-200',
-    'Solo lectura':  'bg-gray-100 text-gray-500 border border-gray-200',
+function getRolColor(rolNombre: string) {
+  const map: Record<string, string> = {
+    ADMINISTRADOR:      'bg-primary/10 text-primary border border-primary/20',
+    TECNICO_AMBIENTAL:  'bg-secondary/40 text-primary border border-secondary/80',
+    INSPECTOR:          'bg-emerald-50 text-emerald-700 border border-emerald-200',
+    CONSULTOR:          'bg-gray-100 text-gray-500 border border-gray-200',
   }
-  return map[rol] ?? 'bg-gray-100 text-gray-500 border border-gray-200'
+  return map[rolNombre] ?? 'bg-gray-100 text-gray-500 border border-gray-200'
 }
 
-const EMPTY_FORM = { nombres: '', apellidos: '', email: '', telefono: '', departamento: '', rol: 'Analista' }
+function getInitials(nombre_completo: string) {
+  return nombre_completo.split(' ').slice(0, 2).map((p) => p[0]).join('').toUpperCase()
+}
+
+function formatFecha(iso: string | null) {
+  if (!iso) return '—'
+  return new Date(iso).toLocaleDateString('es-DO', { day: '2-digit', month: 'short', year: 'numeric' })
+}
+
+const EMPTY_FORM = {
+  nombre_completo: '',
+  correo_electronico: '',
+  contrasena: '',
+  cargo: '',
+  institucion: '',
+  telefono: '',
+  rol_id: '',
+}
 
 export default function UsuariosPage() {
-  const [usuarios, setUsuarios] = useState([])
-  const [loading, setLoading]   = useState(true)
-  const [query, setQuery]       = useState('')
-  const [saving, setSaving]     = useState(false)
+  const [usuarios, setUsuarios] = useState<Usuario[]>([])
+  const [roles, setRoles] = useState<Rol[]>([])
+  const [loading, setLoading] = useState(true)
+  const [query, setQuery] = useState('')
+  const [saving, setSaving] = useState(false)
 
   // Edit role modal
-  const [editModal, setEditModal] = useState({ open: false, usuario: null, nuevoRol: '' })
+  const [editModal, setEditModal] = useState<{ open: boolean; usuario: Usuario | null; nuevoRolId: string }>({ open: false, usuario: null, nuevoRolId: '' })
 
   // Toggle estado modal
-  const [estadoModal, setEstadoModal] = useState({ open: false, usuario: null })
+  const [estadoModal, setEstadoModal] = useState<{ open: boolean; usuario: Usuario | null }>({ open: false, usuario: null })
 
   // Nuevo usuario modal
   const [nuevoModal, setNuevoModal] = useState(false)
-  const [nuevoForm, setNuevoForm]   = useState(EMPTY_FORM)
-  const [nuevoErrors, setNuevoErrors] = useState<Record<string, string | null>>({})
+  const [nuevoForm, setNuevoForm] = useState(EMPTY_FORM)
+  const [nuevoErrors, setNuevoErrors] = useState<Record<string, string>>({})
 
   useEffect(() => {
-    usuariosService.getAll().then((data) => {
-      setUsuarios(data)
-      setLoading(false)
-    })
+    Promise.all([usuariosService.getAll(), usuariosService.getRoles()])
+      .then(([u, r]) => { setUsuarios(u); setRoles(r); if (r.length > 0) setNuevoForm((p) => ({ ...p, rol_id: r[0].id })) })
+      .catch(() => toast.error('Error al cargar usuarios'))
+      .finally(() => setLoading(false))
   }, [])
 
   const filtered = useMemo(() => {
     const q = query.toLowerCase()
     if (!q) return usuarios
     return usuarios.filter((u) =>
-      u.nombres.toLowerCase().includes(q) ||
-      u.apellidos.toLowerCase().includes(q) ||
-      u.email.toLowerCase().includes(q) ||
-      u.rol.toLowerCase().includes(q)
+      u.nombre_completo.toLowerCase().includes(q) ||
+      u.correo_electronico.toLowerCase().includes(q) ||
+      u.rol.nombre.toLowerCase().includes(q)
     )
   }, [usuarios, query])
 
   async function handleSaveRol() {
     setSaving(true)
-    const updated = await usuariosService.updateRol(editModal.usuario.id, editModal.nuevoRol)
-    setUsuarios((prev) => prev.map((u) => (u.id === updated.id ? updated : u)))
-    setSaving(false)
-    setEditModal({ open: false, usuario: null, nuevoRol: '' })
-    toast.success(`Rol de ${updated.nombres} actualizado a "${updated.rol}"`)
+    try {
+      const updated = await usuariosService.asignarRol(editModal.usuario!.IDUsuario, editModal.nuevoRolId)
+      setUsuarios((prev) => prev.map((u) => (u.IDUsuario === updated.IDUsuario ? updated : u)))
+      toast.success(`Rol de ${updated.nombre_completo} actualizado`)
+      setEditModal({ open: false, usuario: null, nuevoRolId: '' })
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'Error al actualizar rol')
+    } finally {
+      setSaving(false)
+    }
   }
 
-  async function handleToggleEstado() {
+  async function handleDesactivar() {
     const { usuario } = estadoModal
-    const nuevoEstado = usuario.estado === 'Activo' ? 'Inactivo' : 'Activo'
+    if (!usuario) return
     setSaving(true)
-    const updated = await usuariosService.updateEstado(usuario.id, nuevoEstado)
-    setUsuarios((prev) => prev.map((u) => (u.id === updated.id ? updated : u)))
-    setSaving(false)
-    setEstadoModal({ open: false, usuario: null })
-    toast.success(`Usuario ${updated.nombres} ${nuevoEstado === 'Activo' ? 'activado' : 'desactivado'}`)
+    try {
+      await usuariosService.desactivar(usuario.IDUsuario)
+      setUsuarios((prev) => prev.map((u) => u.IDUsuario === usuario.IDUsuario ? { ...u, Estado: 'Inactivo' } : u))
+      toast.success(`Usuario ${usuario.nombre_completo} desactivado`)
+      setEstadoModal({ open: false, usuario: null })
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'Error al desactivar usuario')
+    } finally {
+      setSaving(false)
+    }
   }
 
   function validateNuevo() {
-    const errs = {}
-    if (!nuevoForm.nombres.trim()) errs.nombres = 'Requerido'
-    if (!nuevoForm.apellidos.trim()) errs.apellidos = 'Requerido'
-    if (!nuevoForm.email.trim() || !nuevoForm.email.includes('@')) errs.email = 'Email inválido'
+    const errs: Record<string, string> = {}
+    if (!nuevoForm.nombre_completo.trim()) errs.nombre_completo = 'Requerido'
+    if (!nuevoForm.correo_electronico.trim() || !nuevoForm.correo_electronico.includes('@')) errs.correo_electronico = 'Email inválido'
+    if (!nuevoForm.contrasena.trim() || nuevoForm.contrasena.length < 8) errs.contrasena = 'Mínimo 8 caracteres'
+    if (!nuevoForm.rol_id) errs.rol_id = 'Selecciona un rol'
     setNuevoErrors(errs)
     return Object.keys(errs).length === 0
   }
@@ -91,16 +119,29 @@ export default function UsuariosPage() {
   async function handleCrearUsuario() {
     if (!validateNuevo()) return
     setSaving(true)
-    const created = await usuariosService.create(nuevoForm)
-    setUsuarios((prev) => [...prev, created])
-    setSaving(false)
-    setNuevoModal(false)
-    setNuevoForm(EMPTY_FORM)
-    setNuevoErrors({})
-    toast.success(`Usuario ${created.nombres} ${created.apellidos} creado correctamente`)
+    try {
+      const created = await usuariosService.create({
+        nombre_completo: nuevoForm.nombre_completo,
+        correo_electronico: nuevoForm.correo_electronico,
+        contrasena: nuevoForm.contrasena,
+        rol_id: nuevoForm.rol_id,
+        cargo: nuevoForm.cargo || undefined,
+        institucion: nuevoForm.institucion || undefined,
+        telefono: nuevoForm.telefono || undefined,
+      })
+      setUsuarios((prev) => [...prev, created])
+      toast.success(`Usuario ${created.nombre_completo} creado correctamente`)
+      setNuevoModal(false)
+      setNuevoForm({ ...EMPTY_FORM, rol_id: roles[0]?.id ?? '' })
+      setNuevoErrors({})
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'Error al crear usuario')
+    } finally {
+      setSaving(false)
+    }
   }
 
-  function fieldCls(err) {
+  function fieldCls(err?: string) {
     return `w-full rounded-lg border px-3 py-2.5 text-sm outline-none transition-colors ${err ? 'border-action focus:border-action' : 'border-gray-200 focus:border-primary focus:ring-1 focus:ring-primary/20'}`
   }
 
@@ -131,107 +172,105 @@ export default function UsuariosPage() {
             </button>
           </div>
 
-          {/* Mobile list */}
           {loading ? (
             <LoadingSpinner fullPage />
           ) : (
             <>
-            <div data-tour="backoffice-usuarios-list" className="divide-y divide-gray-100 lg:hidden">
-              {filtered.length === 0 ? (
-                <EmptyState title="Sin usuarios" description="No se encontraron usuarios con ese criterio." />
-              ) : filtered.map((u) => (
-                <article key={u.id} className="space-y-3 px-4 py-4 sm:px-5">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <p className="text-sm font-bold text-gray-800">{u.nombres} {u.apellidos}</p>
-                      <p className="truncate text-xs text-gray-400">{u.email}</p>
-                    </div>
-                    <StatusBadge status={u.estado} className="shrink-0" />
-                  </div>
-
-                  <div className="flex flex-wrap items-center gap-2 text-xs">
-                    <span className={`inline-flex items-center rounded-full px-2.5 py-1 font-semibold ${getRolColor(u.rol)}`}>{u.rol}</span>
-                    <span className="text-gray-400">{u.departamento}</span>
-                  </div>
-
-                  <div className="flex flex-wrap items-center gap-2">
-                    <button
-                      onClick={() => setEditModal({ open: true, usuario: u, nuevoRol: u.rol })}
-                      className="inline-flex items-center gap-1.5 rounded-lg bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary hover:bg-primary/20"
-                    >
-                      <Shield className="h-3.5 w-3.5" />
-                      Cambiar rol
-                    </button>
-                    <button
-                      onClick={() => setEstadoModal({ open: true, usuario: u })}
-                      className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${
-                        u.estado === 'Activo' ? 'bg-red-50 text-action hover:bg-red-100' : 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100'
-                      }`}
-                    >
-                      {u.estado === 'Activo' ? 'Desactivar' : 'Activar'}
-                    </button>
-                  </div>
-                </article>
-              ))}
-            </div>
-
-            {/* Desktop table */}
-            <div className="hidden overflow-x-auto lg:block">
-            <table data-tour="backoffice-usuarios-list" className="w-full min-w-[900px] text-sm">
-              <thead className="bg-[#F0F2F5]">
-                <tr>
-                  {COLUMNS.map((h) => (
-                    <th key={h} className="px-5 py-3 text-left text-xs font-semibold text-gray-500">{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
+              {/* Mobile list */}
+              <div data-tour="backoffice-usuarios-list" className="divide-y divide-gray-100 lg:hidden">
                 {filtered.length === 0 ? (
-                  <tr><td colSpan={6}><EmptyState title="Sin usuarios" description="No se encontraron usuarios con ese criterio." /></td></tr>
+                  <EmptyState title="Sin usuarios" description="No se encontraron usuarios con ese criterio." />
                 ) : filtered.map((u) => (
-                  <tr key={u.id} className="hover:bg-blue-50/30 transition-colors">
-                    <td className="px-5 py-4">
-                      <div className="flex items-center gap-3">
-                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-xs font-bold text-primary">
-                          {u.nombres[0]}{u.apellidos[0]}
-                        </div>
-                        <div>
-                          <p className="font-semibold text-gray-800">{u.nombres} {u.apellidos}</p>
-                          <p className="text-xs text-gray-400">{u.departamento}</p>
-                        </div>
+                  <article key={u.IDUsuario} className="space-y-3 px-4 py-4 sm:px-5">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="text-sm font-bold text-gray-800">{u.nombre_completo}</p>
+                        <p className="truncate text-xs text-gray-400">{u.correo_electronico}</p>
                       </div>
-                    </td>
-                    <td className="px-5 py-4 text-gray-600">{u.email}</td>
-                    <td className="px-5 py-4">
-                      <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${getRolColor(u.rol)}`}>{u.rol}</span>
-                    </td>
-                    <td className="px-5 py-4"><StatusBadge status={u.estado} /></td>
-                    <td className="px-5 py-4 text-xs text-gray-400">{u.ultimoAcceso}</td>
-                    <td className="px-5 py-4">
-                      <div className="flex items-center gap-2">
+                      <StatusBadge status={u.Estado} className="shrink-0" />
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2 text-xs">
+                      <span className={`inline-flex items-center rounded-full px-2.5 py-1 font-semibold ${getRolColor(u.rol.nombre)}`}>{u.rol.nombre}</span>
+                      {u.cargo && <span className="text-gray-400">{u.cargo}</span>}
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <button
+                        onClick={() => setEditModal({ open: true, usuario: u, nuevoRolId: u.rol.id })}
+                        className="inline-flex items-center gap-1.5 rounded-lg bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary hover:bg-primary/20"
+                      >
+                        <Shield className="h-3.5 w-3.5" />
+                        Cambiar rol
+                      </button>
+                      {u.Estado === 'Activo' && (
                         <button
-                          title="Editar rol"
-                          onClick={() => setEditModal({ open: true, usuario: u, nuevoRol: u.rol })}
-                          className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
-                        >
-                          <Shield className="h-4 w-4" />
-                        </button>
-                        <button
-                          title={u.estado === 'Activo' ? 'Desactivar' : 'Activar'}
                           onClick={() => setEstadoModal({ open: true, usuario: u })}
-                          className={`flex h-8 items-center justify-center rounded-lg px-3 text-xs font-semibold transition-colors ${
-                            u.estado === 'Activo' ? 'bg-red-50 text-action hover:bg-red-100' : 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100'
-                          }`}
+                          className="rounded-lg bg-red-50 px-3 py-1.5 text-xs font-semibold text-action hover:bg-red-100"
                         >
-                          {u.estado === 'Activo' ? 'Desactivar' : 'Activar'}
+                          Desactivar
                         </button>
-                      </div>
-                    </td>
-                  </tr>
+                      )}
+                    </div>
+                  </article>
                 ))}
-              </tbody>
-            </table>
-            </div>
+              </div>
+
+              {/* Desktop table */}
+              <div className="hidden overflow-x-auto lg:block">
+                <table data-tour="backoffice-usuarios-list" className="w-full min-w-[900px] text-sm">
+                  <thead className="bg-[#F0F2F5]">
+                    <tr>
+                      {COLUMNS.map((h) => (
+                        <th key={h} className="px-5 py-3 text-left text-xs font-semibold text-gray-500">{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {filtered.length === 0 ? (
+                      <tr><td colSpan={6}><EmptyState title="Sin usuarios" description="No se encontraron usuarios con ese criterio." /></td></tr>
+                    ) : filtered.map((u) => (
+                      <tr key={u.IDUsuario} className="hover:bg-blue-50/30 transition-colors">
+                        <td className="px-5 py-4">
+                          <div className="flex items-center gap-3">
+                            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-xs font-bold text-primary">
+                              {getInitials(u.nombre_completo)}
+                            </div>
+                            <div>
+                              <p className="font-semibold text-gray-800">{u.nombre_completo}</p>
+                              {u.cargo && <p className="text-xs text-gray-400">{u.cargo}</p>}
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-5 py-4 text-gray-600">{u.correo_electronico}</td>
+                        <td className="px-5 py-4">
+                          <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${getRolColor(u.rol.nombre)}`}>{u.rol.nombre}</span>
+                        </td>
+                        <td className="px-5 py-4"><StatusBadge status={u.Estado} /></td>
+                        <td className="px-5 py-4 text-xs text-gray-400">{formatFecha(u.Ultimo_acceso)}</td>
+                        <td className="px-5 py-4">
+                          <div className="flex items-center gap-2">
+                            <button
+                              title="Editar rol"
+                              onClick={() => setEditModal({ open: true, usuario: u, nuevoRolId: u.rol.id })}
+                              className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
+                            >
+                              <Shield className="h-4 w-4" />
+                            </button>
+                            {u.Estado === 'Activo' && (
+                              <button
+                                title="Desactivar"
+                                onClick={() => setEstadoModal({ open: true, usuario: u })}
+                                className="flex h-8 items-center justify-center rounded-lg bg-red-50 px-3 text-xs font-semibold text-action hover:bg-red-100 transition-colors"
+                              >
+                                Desactivar
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </>
           )}
         </div>
@@ -240,45 +279,50 @@ export default function UsuariosPage() {
       {/* Nuevo usuario modal */}
       <Modal
         open={nuevoModal}
-        onClose={() => { setNuevoModal(false); setNuevoForm(EMPTY_FORM); setNuevoErrors({}) }}
+        onClose={() => { setNuevoModal(false); setNuevoForm({ ...EMPTY_FORM, rol_id: roles[0]?.id ?? '' }); setNuevoErrors({}) }}
         title="Nuevo Usuario"
         confirmLabel="Crear usuario"
         onConfirm={handleCrearUsuario}
         loading={saving}
       >
         <div className="flex flex-col gap-3">
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <div className="flex flex-col gap-1">
-              <label className="text-xs font-semibold text-gray-600">Nombres *</label>
-              <input value={nuevoForm.nombres} onChange={(e) => setNuevoForm((p) => ({ ...p, nombres: e.target.value }))} className={fieldCls(nuevoErrors.nombres)} placeholder="Juan" />
-              {nuevoErrors.nombres && <p className="text-xs text-action">{nuevoErrors.nombres}</p>}
-            </div>
-            <div className="flex flex-col gap-1">
-              <label className="text-xs font-semibold text-gray-600">Apellidos *</label>
-              <input value={nuevoForm.apellidos} onChange={(e) => setNuevoForm((p) => ({ ...p, apellidos: e.target.value }))} className={fieldCls(nuevoErrors.apellidos)} placeholder="Pérez" />
-              {nuevoErrors.apellidos && <p className="text-xs text-action">{nuevoErrors.apellidos}</p>}
-            </div>
+          <div className="flex flex-col gap-1">
+            <label className="text-xs font-semibold text-gray-600">Nombre completo *</label>
+            <input value={nuevoForm.nombre_completo} onChange={(e) => setNuevoForm((p) => ({ ...p, nombre_completo: e.target.value }))} className={fieldCls(nuevoErrors.nombre_completo)} placeholder="Juan Pérez" />
+            {nuevoErrors.nombre_completo && <p className="text-xs text-action">{nuevoErrors.nombre_completo}</p>}
           </div>
           <div className="flex flex-col gap-1">
             <label className="text-xs font-semibold text-gray-600">Correo electrónico *</label>
-            <input type="email" value={nuevoForm.email} onChange={(e) => setNuevoForm((p) => ({ ...p, email: e.target.value }))} className={fieldCls(nuevoErrors.email)} placeholder="usuario@medioambiente.gob.do" />
-            {nuevoErrors.email && <p className="text-xs text-action">{nuevoErrors.email}</p>}
+            <input type="email" value={nuevoForm.correo_electronico} onChange={(e) => setNuevoForm((p) => ({ ...p, correo_electronico: e.target.value }))} className={fieldCls(nuevoErrors.correo_electronico)} placeholder="usuario@ejemplo.com" />
+            {nuevoErrors.correo_electronico && <p className="text-xs text-action">{nuevoErrors.correo_electronico}</p>}
+          </div>
+          <div className="flex flex-col gap-1">
+            <label className="text-xs font-semibold text-gray-600">Contraseña *</label>
+            <input type="password" value={nuevoForm.contrasena} onChange={(e) => setNuevoForm((p) => ({ ...p, contrasena: e.target.value }))} className={fieldCls(nuevoErrors.contrasena)} placeholder="Mínimo 8 caracteres" />
+            {nuevoErrors.contrasena && <p className="text-xs text-action">{nuevoErrors.contrasena}</p>}
+          </div>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div className="flex flex-col gap-1">
+              <label className="text-xs font-semibold text-gray-600">Cargo</label>
+              <input value={nuevoForm.cargo} onChange={(e) => setNuevoForm((p) => ({ ...p, cargo: e.target.value }))} className={fieldCls()} placeholder="Inspector Ambiental" />
+            </div>
+            <div className="flex flex-col gap-1">
+              <label className="text-xs font-semibold text-gray-600">Institución</label>
+              <input value={nuevoForm.institucion} onChange={(e) => setNuevoForm((p) => ({ ...p, institucion: e.target.value }))} className={fieldCls()} placeholder="MARN" />
+            </div>
           </div>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div className="flex flex-col gap-1">
               <label className="text-xs font-semibold text-gray-600">Teléfono</label>
-              <input value={nuevoForm.telefono} onChange={(e) => setNuevoForm((p) => ({ ...p, telefono: e.target.value }))} className={fieldCls(false)} placeholder="809-000-0000" />
+              <input value={nuevoForm.telefono} onChange={(e) => setNuevoForm((p) => ({ ...p, telefono: e.target.value }))} className={fieldCls()} placeholder="809-000-0000" />
             </div>
             <div className="flex flex-col gap-1">
-              <label className="text-xs font-semibold text-gray-600">Departamento</label>
-              <input value={nuevoForm.departamento} onChange={(e) => setNuevoForm((p) => ({ ...p, departamento: e.target.value }))} className={fieldCls(false)} placeholder="Análisis Ambiental" />
+              <label className="text-xs font-semibold text-gray-600">Rol *</label>
+              <select value={nuevoForm.rol_id} onChange={(e) => setNuevoForm((p) => ({ ...p, rol_id: e.target.value }))} className={`rounded-lg border px-3 py-2.5 text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 ${nuevoErrors.rol_id ? 'border-action' : 'border-gray-200'}`}>
+                {roles.map((r) => <option key={r.id} value={r.id}>{r.nombre}</option>)}
+              </select>
+              {nuevoErrors.rol_id && <p className="text-xs text-action">{nuevoErrors.rol_id}</p>}
             </div>
-          </div>
-          <div className="flex flex-col gap-1">
-            <label className="text-xs font-semibold text-gray-600">Rol</label>
-            <select value={nuevoForm.rol} onChange={(e) => setNuevoForm((p) => ({ ...p, rol: e.target.value }))} className="rounded-lg border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary/20">
-              {ROLES_LIST.map((r) => <option key={r} value={r}>{r}</option>)}
-            </select>
           </div>
         </div>
       </Modal>
@@ -286,7 +330,7 @@ export default function UsuariosPage() {
       {/* Edit Role Modal */}
       <Modal
         open={editModal.open}
-        onClose={() => setEditModal({ open: false, usuario: null, nuevoRol: '' })}
+        onClose={() => setEditModal({ open: false, usuario: null, nuevoRolId: '' })}
         title="Cambiar Rol de Usuario"
         confirmLabel="Guardar cambios"
         onConfirm={handleSaveRol}
@@ -294,32 +338,32 @@ export default function UsuariosPage() {
       >
         {editModal.usuario && (
           <div className="flex flex-col gap-4">
-            <p>Cambiando rol de <span className="font-semibold text-gray-800">{editModal.usuario.nombres} {editModal.usuario.apellidos}</span></p>
+            <p>Cambiando rol de <span className="font-semibold text-gray-800">{editModal.usuario.nombre_completo}</span></p>
             <div className="flex flex-col gap-1.5">
               <label className="text-xs font-semibold text-gray-600">Nuevo rol</label>
-              <select value={editModal.nuevoRol} onChange={(e) => setEditModal((prev) => ({ ...prev, nuevoRol: e.target.value }))} className="rounded-lg border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary/20">
-                {ROLES_LIST.map((r) => <option key={r} value={r}>{r}</option>)}
+              <select value={editModal.nuevoRolId} onChange={(e) => setEditModal((prev) => ({ ...prev, nuevoRolId: e.target.value }))} className="rounded-lg border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary/20">
+                {roles.map((r) => <option key={r.id} value={r.id}>{r.nombre}</option>)}
               </select>
             </div>
           </div>
         )}
       </Modal>
 
-      {/* Toggle Estado Modal */}
+      {/* Desactivar usuario Modal */}
       <Modal
         open={estadoModal.open}
         onClose={() => setEstadoModal({ open: false, usuario: null })}
-        title={estadoModal.usuario?.estado === 'Activo' ? 'Desactivar usuario' : 'Activar usuario'}
-        variant={estadoModal.usuario?.estado === 'Activo' ? 'danger' : 'default'}
-        confirmLabel={estadoModal.usuario?.estado === 'Activo' ? 'Sí, desactivar' : 'Sí, activar'}
-        onConfirm={handleToggleEstado}
+        title="Desactivar usuario"
+        variant="danger"
+        confirmLabel="Sí, desactivar"
+        onConfirm={handleDesactivar}
         loading={saving}
       >
         {estadoModal.usuario && (
           <p>
-            ¿Confirmas {estadoModal.usuario.estado === 'Activo' ? 'desactivar' : 'activar'} al usuario{' '}
-            <span className="font-semibold text-gray-800">{estadoModal.usuario.nombres} {estadoModal.usuario.apellidos}</span>?
-            {estadoModal.usuario.estado === 'Activo' && ' No podrá iniciar sesión hasta ser reactivado.'}
+            ¿Confirmas desactivar al usuario{' '}
+            <span className="font-semibold text-gray-800">{estadoModal.usuario.nombre_completo}</span>?
+            No podrá iniciar sesión hasta ser reactivado.
           </p>
         )}
       </Modal>

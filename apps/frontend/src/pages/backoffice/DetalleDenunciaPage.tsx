@@ -1,13 +1,15 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { Download, FileText } from 'lucide-react'
 import BackofficeTopbar from '../../components/backoffice/BackofficeTopbar'
 import StatusBadge from '../../components/ui/StatusBadge'
+import LoadingSpinner from '../../components/ui/LoadingSpinner'
 import Modal from '../../components/ui/Modal'
-import { MOCK_DENUNCIAS, ESTADOS } from '../../data/mockDenuncias'
+import { denunciasService, ESTADOS_DENUNCIA, ESTADO_LABEL, ESTADO_STYLES, TIPO_LABEL } from '../../services/denunciasService'
+import type { Denuncia, EstadoDenuncia } from '../../services/denunciasService'
 import { toast } from '../../utils/toast'
 
-const FILE_COLORS = {
+const FILE_COLORS: Record<string, string> = {
   JPG: 'bg-blue-100 text-blue-600',
   MP3: 'bg-orange-100 text-orange-600',
   MP4: 'bg-purple-100 text-purple-600',
@@ -15,16 +17,16 @@ const FILE_COLORS = {
   PNG: 'bg-green-100 text-green-600',
 }
 
-function InfoRow({ label, value }) {
+function InfoRow({ label, value }: { label: string; value?: string | null }) {
   return (
     <p className="text-sm text-gray-600">
       <span className="font-semibold text-gray-700">{label}: </span>
-      {value ?? 'N/A'}
+      {value ?? '—'}
     </p>
   )
 }
 
-function InfoCard({ title, children }) {
+function InfoCard({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div className="bg-white rounded-2xl p-6 shadow-sm">
       <h3 className="text-sm font-bold text-primary mb-4">{title}</h3>
@@ -36,14 +38,71 @@ function InfoCard({ title, children }) {
 export default function DetalleDenunciaPage() {
   const { id } = useParams()
   const navigate = useNavigate()
-  const denuncia = MOCK_DENUNCIAS.find((d) => d.id === id)
 
-  const [estado, setEstado]           = useState(denuncia?.estado ?? 'Nueva')
+  const [denuncia, setDenuncia] = useState<Denuncia | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [notFound, setNotFound] = useState(false)
+  const [estado, setEstado] = useState<EstadoDenuncia>('Pendiente')
   const [statusModal, setStatusModal] = useState(false)
-  const [pendingEstado, setPendingEstado] = useState('')
-  const [saving, setSaving]           = useState(false)
+  const [pendingEstado, setPendingEstado] = useState<EstadoDenuncia>('Pendiente')
+  const [comentario, setComentario] = useState('')
+  const [saving, setSaving] = useState(false)
 
-  if (!denuncia) {
+  useEffect(() => {
+    denunciasService.getById(id!)
+      .then((d) => { setDenuncia(d); setEstado(d.Estado) })
+      .catch(() => setNotFound(true))
+      .finally(() => setLoading(false))
+  }, [id])
+
+  function openStatusModal(nuevoEstado: EstadoDenuncia) {
+    setPendingEstado(nuevoEstado)
+    setComentario('')
+    setStatusModal(true)
+  }
+
+  async function confirmEstado() {
+    setSaving(true)
+    try {
+      const updated = await denunciasService.cambiarEstado(id!, pendingEstado, comentario || undefined)
+      setDenuncia(updated)
+      setEstado(updated.Estado)
+      toast.success(`Estado actualizado a "${ESTADO_LABEL[pendingEstado]}"`)
+      setStatusModal(false)
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'Error al cambiar estado')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  function exportDenuncia() {
+    if (!denuncia) return
+    const lines = [
+      `Código: ${denuncia.codigo_seguimiento}`,
+      `Estado: ${ESTADO_LABEL[estado]}`,
+      `Fecha: ${new Date(denuncia.Fecha_denuncia).toLocaleDateString('es-DO')}`,
+      `Tipo: ${TIPO_LABEL[denuncia.tipo_actividad]}`,
+      `Descripción: ${denuncia.Descripcion}`,
+    ]
+    const blob = new Blob([lines.join('\n')], { type: 'text/plain' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url; a.download = `denuncia_${denuncia.codigo_seguimiento}.txt`; a.click()
+    URL.revokeObjectURL(url)
+    toast.info('Exportación iniciada')
+  }
+
+  if (loading) {
+    return (
+      <>
+        <BackofficeTopbar title="Detalle de Denuncia" backTo="/admin/denuncias" />
+        <LoadingSpinner fullPage />
+      </>
+    )
+  }
+
+  if (notFound || !denuncia) {
     return (
       <>
         <BackofficeTopbar title="Detalle de Denuncia" backTo="/admin/denuncias" />
@@ -54,44 +113,6 @@ export default function DetalleDenunciaPage() {
     )
   }
 
-  function openStatusModal(nuevoEstado) {
-    setPendingEstado(nuevoEstado)
-    setStatusModal(true)
-  }
-
-  async function confirmEstado() {
-    setSaving(true)
-    // TODO: await denunciasService.updateEstado(id, pendingEstado)
-    await new Promise((r) => setTimeout(r, 400))
-    setEstado(pendingEstado)
-    setSaving(false)
-    setStatusModal(false)
-    toast.success(`Estado actualizado a "${pendingEstado}"`)
-
-  }
-
-  function exportDenuncia() {
-    const lines = [
-      `Denuncia: ${denuncia.id}`,
-      `Estado: ${estado}`,
-      `Fecha: ${denuncia.fecha}`,
-      `Provincia: ${denuncia.provincia}`,
-      `Municipio: ${denuncia.municipio}`,
-      `Sector: ${denuncia.sector}`,
-      `GPS: ${denuncia.gps}`,
-      `Tipo extracción: ${denuncia.tipoExtraccion}`,
-      `Personas: ${denuncia.numPersonas}`,
-      `Cantidad arena: ${denuncia.cantidadArena}`,
-      `Detalle: ${denuncia.detalleActividad}`,
-    ]
-    const blob = new Blob([lines.join('\n')], { type: 'text/plain' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url; a.download = `denuncia_${denuncia.id}.txt`; a.click()
-    URL.revokeObjectURL(url)
-    toast.info('Exportación iniciada')
-  }
-
   return (
     <>
       <BackofficeTopbar
@@ -99,16 +120,15 @@ export default function DetalleDenunciaPage() {
         backTo="/admin/denuncias"
         actions={
           <div data-tour="backoffice-denuncia-status" className="flex items-center gap-2">
-            {/* Status picker */}
             <div className="flex items-center gap-1.5 rounded-lg border border-gray-200 px-2 py-1">
               <span className="text-xs font-semibold text-gray-500">Estado:</span>
               <select
                 value={estado}
-                onChange={(e) => openStatusModal(e.target.value)}
+                onChange={(e) => openStatusModal(e.target.value as EstadoDenuncia)}
                 className="text-sm font-semibold text-primary bg-transparent outline-none cursor-pointer"
               >
-                {ESTADOS.map((e) => (
-                  <option key={e} value={e}>{e}</option>
+                {ESTADOS_DENUNCIA.map((e) => (
+                  <option key={e} value={e}>{ESTADO_LABEL[e]}</option>
                 ))}
               </select>
             </div>
@@ -129,103 +149,91 @@ export default function DetalleDenunciaPage() {
         <div data-tour="backoffice-denuncia-summary" className="bg-white rounded-2xl px-6 py-4 shadow-sm flex items-center gap-6 flex-wrap">
           <div className="flex items-center gap-2">
             <FileText className="h-5 w-5 text-primary" />
-            <span className="text-base font-bold text-primary">Denuncia: {denuncia.id}</span>
+            <span className="text-base font-bold text-primary">Denuncia: {denuncia.codigo_seguimiento}</span>
           </div>
           <div className="flex items-center gap-2">
             <span className="text-sm font-semibold text-gray-500">Estado:</span>
-            <StatusBadge status={estado} />
+            <span className={`rounded-full px-3 py-1 text-xs font-semibold ${ESTADO_STYLES[estado]}`}>
+              {ESTADO_LABEL[estado]}
+            </span>
           </div>
         </div>
 
-        {/* Info + Description */}
+        {/* Info cards */}
         <div data-tour="backoffice-denuncia-details" className="grid grid-cols-2 gap-5">
-          <InfoCard title="Información del Denunciante">
+          <InfoCard title="Información del Incidente">
             <div className="flex flex-col gap-2">
-              <InfoRow label="Desea permanecer anónimo" value={denuncia.anonimo ? 'Sí' : 'No'} />
-              <div className="grid grid-cols-2 gap-x-4 gap-y-2">
-                <InfoRow label="Nombres" value={denuncia.nombres} />
-                <InfoRow label="Apellidos" value={denuncia.apellidos} />
-                <InfoRow label="Correo Electrónico" value={denuncia.correo} />
-                <InfoRow label="Teléfono de contacto" value={denuncia.telefono} />
-              </div>
+              <InfoRow label="Tipo de actividad" value={TIPO_LABEL[denuncia.tipo_actividad]} />
+              <InfoRow label="Fecha de incidente" value={new Date(denuncia.Fecha_denuncia).toLocaleDateString('es-DO')} />
+              <InfoRow label="Hora aproximada" value={denuncia.hora_aproximada} />
+              <InfoRow label="Código de seguimiento" value={denuncia.codigo_seguimiento} />
             </div>
           </InfoCard>
 
           <InfoCard title="Descripción de la Actividad">
-            <div className="flex flex-col gap-2">
-              <InfoRow label="Tipo de extracción observada" value={denuncia.tipoExtraccion} />
-              <InfoRow label="Número de personas involucradas" value={denuncia.numPersonas} />
-              <div>
-                <p className="text-sm font-semibold text-gray-700">Cantidad estimada de arena extraída:</p>
-                <p className="text-sm text-gray-600">{denuncia.cantidadArena}</p>
-              </div>
-              <div>
-                <p className="text-sm font-semibold text-gray-700">Detalle de la actividad realizada:</p>
-                <p className="text-sm text-gray-600 leading-relaxed mt-1">{denuncia.detalleActividad}</p>
-              </div>
-            </div>
+            <p className="text-sm text-gray-600 leading-relaxed">{denuncia.Descripcion}</p>
           </InfoCard>
         </div>
 
-        {/* Ubicación */}
-        <InfoCard title="Ubicación del Incidente">
-          <div className="grid grid-cols-2 gap-x-12 gap-y-2">
-            <div className="flex flex-col gap-2">
-              <InfoRow label="Fecha de Incidencia" value={denuncia.fecha} />
-              <InfoRow label="Coordenadas GPS" value={denuncia.gps} />
-              <InfoRow label="Municipio" value={denuncia.municipio} />
+        {/* Historial de estados */}
+        {denuncia.historial && denuncia.historial.length > 0 && (
+          <InfoCard title="Historial de Estados">
+            <div className="flex flex-col gap-3">
+              {denuncia.historial.map((h) => (
+                <div key={h.id} className="flex items-start gap-3 text-sm">
+                  <div className="flex flex-col gap-1 flex-1">
+                    <div className="flex items-center gap-2">
+                      <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${ESTADO_STYLES[h.estado_anterior]}`}>
+                        {ESTADO_LABEL[h.estado_anterior]}
+                      </span>
+                      <span className="text-gray-400">→</span>
+                      <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${ESTADO_STYLES[h.estado_nuevo]}`}>
+                        {ESTADO_LABEL[h.estado_nuevo]}
+                      </span>
+                    </div>
+                    {h.comentario && <p className="text-xs text-gray-500 mt-1">{h.comentario}</p>}
+                    <p className="text-xs text-gray-400">
+                      {h.Usuario.nombre_completo} · {new Date(h.created_at).toLocaleString('es-DO')}
+                    </p>
+                  </div>
+                </div>
+              ))}
             </div>
-            <div className="flex flex-col gap-2">
-              <InfoRow label="Hora Aproximada" value={denuncia.hora} />
-              <InfoRow label="Provincia" value={denuncia.provincia} />
-              <InfoRow label="Sector" value={denuncia.sector} />
-            </div>
-          </div>
-        </InfoCard>
+          </InfoCard>
+        )}
 
         {/* Evidencias */}
         <InfoCard title="Evidencias Adjuntas">
-          {denuncia.evidencias.length === 0 ? (
+          {!denuncia.Evidencia_Denuncia || denuncia.Evidencia_Denuncia.length === 0 ? (
             <p className="text-sm text-gray-400">Sin evidencias adjuntas.</p>
           ) : (
             <div className="flex flex-wrap gap-6">
-              {denuncia.evidencias.map((ev, i) => (
-                <div key={i} className="flex flex-col items-center gap-2">
-                  <div className={`flex h-14 w-12 items-center justify-center rounded-xl text-xs font-bold ${FILE_COLORS[ev.type] ?? 'bg-gray-100 text-gray-500'}`}>
-                    {ev.type}
-                  </div>
-                  <span className="text-xs text-gray-500 max-w-[80px] text-center truncate">{ev.name}</span>
-                </div>
-              ))}
+              {denuncia.Evidencia_Denuncia.map((ev) => {
+                const ext = ev.TipoArchivo.toUpperCase()
+                return (
+                  <a key={ev.IDEvidencia} href={ev.archivo_url} target="_blank" rel="noopener noreferrer" className="flex flex-col items-center gap-2">
+                    <div className={`flex h-14 w-12 items-center justify-center rounded-xl text-xs font-bold ${FILE_COLORS[ext] ?? 'bg-gray-100 text-gray-500'}`}>
+                      {ext}
+                    </div>
+                    <span className="text-xs text-gray-500 max-w-[80px] text-center truncate">{ev.archivo_url.split('/').pop()}</span>
+                  </a>
+                )
+              })}
             </div>
           )}
         </InfoCard>
 
-        {/* Navigate to monitoring if applicable */}
-        {(estado === 'En Monitoreo' || estado === 'Monitorear') && (
-          <div className="bg-teal-50 border border-teal-200 rounded-2xl px-6 py-4 flex items-center justify-between">
-            <p className="text-sm text-teal-700 font-medium">
-              Esta denuncia tiene un plan de monitoreo activo.
-            </p>
-            <button
-              onClick={() => navigate(`/admin/monitoreo/${denuncia.id}`)}
-              className="rounded-lg bg-teal-600 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-700 transition-colors"
-            >
-              Ver monitoreo
-            </button>
-          </div>
-        )}
-
-        {estado === 'En Corrección' && (
+        {/* Acción correctiva link */}
+        {(estado === 'Verificada' || estado === 'En_Investigacion') && (
           <div className="bg-cyan-50 border border-cyan-200 rounded-2xl px-6 py-4 flex items-center justify-between">
             <p className="text-sm text-cyan-700 font-medium">
-              Esta denuncia tiene una acción correctiva en curso.
+              Esta denuncia tiene acciones correctivas asociadas.
             </p>
             <button
               onClick={() => navigate('/admin/acciones')}
               className="rounded-lg bg-cyan-600 px-4 py-2 text-sm font-semibold text-white hover:bg-cyan-700 transition-colors"
             >
-              Ver acción correctiva
+              Ver acciones
             </button>
           </div>
         )}
@@ -240,11 +248,23 @@ export default function DetalleDenunciaPage() {
         onConfirm={confirmEstado}
         loading={saving}
       >
-        <p>
-          ¿Confirmas cambiar el estado de la denuncia{' '}
-          <span className="font-semibold text-gray-800">#{denuncia.id}</span> a{' '}
-          <span className="font-semibold text-primary">{pendingEstado}</span>?
-        </p>
+        <div className="flex flex-col gap-4">
+          <p>
+            ¿Confirmas cambiar el estado de la denuncia{' '}
+            <span className="font-semibold text-gray-800">{denuncia.codigo_seguimiento}</span> a{' '}
+            <span className="font-semibold text-primary">{ESTADO_LABEL[pendingEstado]}</span>?
+          </p>
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs font-semibold text-gray-600">Comentario (opcional)</label>
+            <textarea
+              value={comentario}
+              onChange={(e) => setComentario(e.target.value)}
+              rows={3}
+              placeholder="Motivo del cambio de estado..."
+              className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 resize-none"
+            />
+          </div>
+        </div>
       </Modal>
     </>
   )
