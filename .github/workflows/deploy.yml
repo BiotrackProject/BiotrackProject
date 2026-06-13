@@ -14,7 +14,7 @@ jobs:
   # ── 1. Type Check & Build ───────────────────────────────────────────────────
   check:
     name: Type Check & Build
-    runs-on: [self-hosted, biotrack]
+    runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
@@ -91,7 +91,7 @@ jobs:
   deploy:
     name: Deploy to Production
     needs: images
-    runs-on: self-hosted
+    runs-on: [self-hosted, biotrack]
     environment: production
     timeout-minutes: 10
     steps:
