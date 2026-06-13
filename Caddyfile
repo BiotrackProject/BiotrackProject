@@ -56,7 +56,7 @@ biotrack.org.do {
         #             for landing page imagery.
         # font-src:   gstatic.com serves the actual font files for Google Fonts.
         # connect-src: API on api.biotrack.org.do; OSM nominatim for geocoding.
-        Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: blob: https:; connect-src 'self' https://api.biotrack.org.do https://nominatim.openstreetmap.org; font-src 'self' https://fonts.gstatic.com; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests"
+        Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: blob: https:; connect-src 'self' https://api.biotrack.org.do https://nominatim.openstreetmap.org; font-src 'self' https://fonts.gstatic.com; frame-src https://www.openstreetmap.org; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests"
 
         # ── Remove server fingerprinting ──────────────────────────────────────
         -Server
