@@ -27,12 +27,11 @@ WORKDIR /app/apps/api
 # Then compile TypeScript → dist/
 RUN pnpm exec prisma generate && pnpm run build
 
-# ─── Stage 2: pruner — strip devDeps ─────────────────────────────────────────
-FROM builder AS pruner
-WORKDIR /app/apps/api
-RUN CI=true pnpm prune --prod
-
-# ─── Stage 3: runner — minimal production image ───────────────────────────────
+# ─── Stage 2: runner — production image ───────────────────────────────────────
+# NOTE: pnpm stores real packages in /app/node_modules/.pnpm/ and creates
+# symlinks in apps/api/node_modules/ pointing to ../../node_modules/.pnpm/.
+# Both halves must be copied at the same relative paths or Node can't resolve
+# the symlinks (which was causing "Cannot find module prisma/build/index.js").
 FROM node:24-alpine AS runner
 LABEL org.opencontainers.image.title="BIOTRACK API"
 LABEL org.opencontainers.image.description="API REST — Gestión de minería ilegal de arena · INTEC IDS355"
@@ -43,15 +42,21 @@ WORKDIR /app
 
 RUN addgroup -g 1001 -S biotrack && adduser -u 1001 -S biotrack -G biotrack
 
-COPY --from=pruner --chown=root:root --chmod=755 /app/apps/api/node_modules  ./node_modules
-COPY --from=pruner --chown=root:root --chmod=755 /app/apps/api/dist         ./dist
-COPY --from=pruner --chown=root:root --chmod=755 /app/apps/api/prisma       ./prisma
-COPY --from=pruner --chown=root:root --chmod=644 /app/apps/api/package.json  ./package.json
-COPY --from=pruner --chown=root:root --chmod=644 /app/apps/api/prisma.config.ts ./prisma.config.ts
+# Root-level .pnpm store — the actual package files symlinks point into
+COPY --from=builder --chown=root:root /app/node_modules ./node_modules
+# App-level node_modules — mostly symlinks into the .pnpm store above
+COPY --from=builder --chown=root:root /app/apps/api/node_modules ./apps/api/node_modules
+# Compiled output, schema, migrations, prisma config
+COPY --from=builder --chown=root:root /app/apps/api/dist            ./apps/api/dist
+COPY --from=builder --chown=root:root /app/apps/api/prisma          ./apps/api/prisma
+COPY --from=builder --chown=root:root /app/apps/api/prisma.config.ts ./apps/api/prisma.config.ts
+COPY --from=builder --chown=root:root /app/apps/api/package.json    ./apps/api/package.json
 
-RUN mkdir -p uploads && chown biotrack:biotrack uploads
+RUN mkdir -p apps/api/uploads && chown biotrack:biotrack apps/api/uploads
 
 USER biotrack
+
+WORKDIR /app/apps/api
 
 EXPOSE 3000
 
