@@ -117,6 +117,9 @@ jobs:
           EMAIL_USER: ${{ secrets.EMAIL_USER }}
           EMAIL_PASS: ${{ secrets.EMAIL_PASS }}
           EMAIL_FROM: ${{ secrets.EMAIL_FROM }}
+          DOZZLE_USERNAME: ${{ secrets.DOZZLE_USERNAME }}
+          DOZZLE_PASSWORD: ${{ secrets.DOZZLE_PASSWORD }}
+          DOZZLE_KEY: ${{ secrets.DOZZLE_KEY }}
         run: |
           {
             echo "DATABASE_URL=$DATABASE_URL"
@@ -134,6 +137,9 @@ jobs:
             echo "FRONTEND_URL=https://biotrack.org.do"
             echo "RATE_LIMIT_WINDOW_MS=60000"
             echo "RATE_LIMIT_MAX_REQUESTS=100"
+            echo "DOZZLE_USERNAME=$DOZZLE_USERNAME"
+            echo "DOZZLE_PASSWORD=$DOZZLE_PASSWORD"
+            echo "DOZZLE_KEY=$DOZZLE_KEY"
           } > ~/biotrack/.env.prod
           chmod 600 ~/biotrack/.env.prod
 

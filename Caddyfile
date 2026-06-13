@@ -72,6 +72,35 @@ biotrack.org.do {
     }
 }
 
+# ── Metrics (Dozzle) ────────────────────────────────────────────────────────────
+# Dozzle handles its own auth (DOZZLE_USERNAME / DOZZLE_PASSWORD / DOZZLE_KEY).
+# Caddy adds TLS termination and security headers on top.
+metrics.biotrack.org.do {
+
+    reverse_proxy dozzle:8080 {
+        header_up X-Real-IP       {remote_host}
+        header_up X-Forwarded-Proto https
+    }
+
+    header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains"
+        X-Content-Type-Options    "nosniff"
+        X-Frame-Options           "DENY"
+        Referrer-Policy           "no-referrer"
+        Content-Security-Policy   "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' wss://metrics.biotrack.org.do; font-src 'self'"
+        -Server
+        -X-Powered-By
+    }
+
+    log {
+        output file /var/log/caddy/metrics-access.log {
+            roll_size     20mb
+            roll_keep     3
+            roll_keep_for 720h
+        }
+    }
+}
+
 # ── API ─────────────────────────────────────────────────────────────────────────
 api.biotrack.org.do {
 
