@@ -23,6 +23,17 @@ export const authLimiter = rateLimit({
   handler: jsonHandler,
 });
 
+// RF-2.1: 10 creaciones de denuncia por minuto por IP (endpoint público, sin autenticación)
+export const denunciaPublicaLimiter = rateLimit({
+  windowMs: 60_000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  handler: (_req: Request, res: Response): void => {
+    res.status(429).json({ error: 'Límite de 10 denuncias por minuto excedido. Intente nuevamente más tarde.' });
+  },
+});
+
 // RF-2.6: 10 consultas por minuto por IP para seguimiento público
 export const seguimientoLimiter = rateLimit({
   windowMs: 60_000,

@@ -1,72 +1,83 @@
-import type { EstadoDenunciaEnum } from '@prisma/client';
+import type { estado_denuncia } from '@prisma/client';
 
+// Valores de enums del esquema de producción (case-sensitive, deben coincidir con BD)
 export const ESTADO_USUARIO = {
-  PENDIENTE_APROBACION: 'PENDIENTE_APROBACION',
-  ACTIVO: 'ACTIVO',
-  INACTIVO: 'INACTIVO',
+  Activo: 'Activo',
+  Inactivo: 'Inactivo',
 } as const;
 
+export const ESTADO_SOLICITUD = {
+  Pendiente_Aprobacion: 'Pendiente_Aprobacion',
+  Aprobada: 'Aprobada',
+  Rechazada: 'Rechazada',
+  Pendiente_Info: 'Pendiente_Info',
+} as const;
+
+// Módulos del sistema (strings libres en BD — campo VarChar en log_auditoria y permiso)
 export const MODULO_SISTEMA = {
-  MOD_01_AUTH: 'MOD_01_AUTH',
-  MOD_02_DENUNCIAS: 'MOD_02_DENUNCIAS',
-  MOD_03_ZONAS: 'MOD_03_ZONAS',
-  MOD_04_INDICADORES: 'MOD_04_INDICADORES',
-  MOD_05_ACCIONES: 'MOD_05_ACCIONES',
-  MOD_06_ADMIN: 'MOD_06_ADMIN',
+  AUTH: 'MOD_01_AUTH',
+  DENUNCIAS: 'MOD_02_DENUNCIAS',
+  ZONAS: 'MOD_03_ZONAS',
+  INDICADORES: 'MOD_04_INDICADORES',
+  ACCIONES: 'MOD_05_ACCIONES',
+  ADMIN: 'MOD_06_ADMIN',
 } as const;
 
+// Valores del enum accion_permiso (definidos en schema.prisma)
 export const ACCION_PERMISO = {
-  LEER: 'LEER',
-  CREAR: 'CREAR',
-  EDITAR: 'EDITAR',
-  ELIMINAR_LOGICO: 'ELIMINAR_LOGICO',
-  EXPORTAR: 'EXPORTAR',
-  PUBLICAR: 'PUBLICAR',
-  CONFIGURAR: 'CONFIGURAR',
+  Leer: 'Leer',
+  Crear: 'Crear',
+  Editar: 'Editar',
+  Eliminar_Logico: 'Eliminar_Logico',
+  Exportar: 'Exportar',
+  Publicar: 'Publicar',
+  Configurar: 'Configurar',
 } as const;
 
+// Valores del enum tipo_actividad_ilegal
 export const TIPO_ACTIVIDAD = {
-  EXTRACCION_RIO: 'EXTRACCION_RIO',
-  EXTRACCION_PLAYA: 'EXTRACCION_PLAYA',
-  EXTRACCION_ZONA_PROTEGIDA: 'EXTRACCION_ZONA_PROTEGIDA',
-  TRANSPORTE_ILEGAL: 'TRANSPORTE_ILEGAL',
-  OTRO: 'OTRO',
+  Extraccion_Rio: 'Extraccion_Rio',
+  Extraccion_Playa: 'Extraccion_Playa',
+  Extraccion_Zona_Protegida: 'Extraccion_Zona_Protegida',
+  Transporte_Ilegal: 'Transporte_Ilegal',
+  Otro: 'Otro',
 } as const;
 
+// Valores del enum estado_denuncia
 export const ESTADO_DENUNCIA = {
-  PENDIENTE: 'PENDIENTE',
-  EN_INVESTIGACION: 'EN_INVESTIGACION',
-  VERIFICADA: 'VERIFICADA',
-  RESUELTA: 'RESUELTA',
-  DESESTIMADA: 'DESESTIMADA',
+  Pendiente: 'Pendiente',
+  En_Investigacion: 'En_Investigacion',
+  Verificada: 'Verificada',
+  Resuelta: 'Resuelta',
+  Desestimada: 'Desestimada',
 } as const;
 
-// Máquina de estados de denuncias (RF-2.3)
-export const TRANSICIONES_DENUNCIA: Record<EstadoDenunciaEnum, EstadoDenunciaEnum[]> = {
-  PENDIENTE: ['EN_INVESTIGACION'],
-  EN_INVESTIGACION: ['VERIFICADA', 'DESESTIMADA'],
-  VERIFICADA: ['RESUELTA', 'DESESTIMADA'],
-  RESUELTA: [],
-  DESESTIMADA: [],
+// Máquina de estados (RF-2.3)
+export const TRANSICIONES_DENUNCIA: Record<estado_denuncia, estado_denuncia[]> = {
+  Pendiente: ['En_Investigacion'],
+  En_Investigacion: ['Verificada', 'Desestimada'],
+  Verificada: ['Resuelta', 'Desestimada'],
+  Resuelta: [],
+  Desestimada: [],
 };
 
-export const ESTADOS_REQUIEREN_COMENTARIO: EstadoDenunciaEnum[] = ['RESUELTA', 'DESESTIMADA'];
+export const ESTADOS_REQUIEREN_COMENTARIO: estado_denuncia[] = ['Resuelta', 'Desestimada'];
 
 export const NIVEL_RIESGO = {
-  BAJO: 'BAJO',
-  MEDIO: 'MEDIO',
-  ALTO: 'ALTO',
-  CRITICO: 'CRITICO',
+  Bajo: 'Bajo',
+  Medio: 'Medio',
+  Alto: 'Alto',
+  Critico: 'Critico',
 } as const;
 
 export const TIPO_SENSOR = {
-  TURBIDEZ: 'TURBIDEZ',
-  TEMPERATURA: 'TEMPERATURA',
-  MOVIMIENTO: 'MOVIMIENTO',
-  NIVEL_AGUA: 'NIVEL_AGUA',
-  AUDIO: 'AUDIO',
-  GPS_TRACKER: 'GPS_TRACKER',
-  OTRO: 'OTRO',
+  Turbidez: 'Turbidez',
+  Temperatura: 'Temperatura',
+  Movimiento: 'Movimiento',
+  Nivel_Agua: 'Nivel_Agua',
+  Audio: 'Audio',
+  GPS_Tracker: 'GPS_Tracker',
+  Otro: 'Otro',
 } as const;
 
 export const MIME_PERMITIDOS_DENUNCIA = ['image/jpeg', 'image/png', 'application/pdf'] as const;

@@ -6,13 +6,9 @@ const envSchema = z.object({
   PORT: z.coerce.number().default(3000),
   DATABASE_URL: z.string().url(),
 
-  // Auth0 — API validation
-  AUTH0_DOMAIN: z.string().min(1),
-  AUTH0_AUDIENCE: z.string().url(),
-
-  // Auth0 — Management API (machine-to-machine)
-  AUTH0_MGMT_CLIENT_ID: z.string().min(1),
-  AUTH0_MGMT_CLIENT_SECRET: z.string().min(1),
+  // JWT — autenticación propia (contrasena_hash en BD)
+  JWT_SECRET: z.string().min(32, 'JWT_SECRET debe tener al menos 32 caracteres'),
+  JWT_EXPIRES_IN: z.string().default('8h'),
 
   // Cifrado AES-256-GCM para PII (contacto_denunciante, etc.)
   ENCRYPTION_KEY: z.string().length(64),

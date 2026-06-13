@@ -1,51 +1,41 @@
-import { auth } from 'express-oauth2-jwt-bearer';
+import jwt from 'jsonwebtoken';
 import type { Request, Response, NextFunction } from 'express';
 import prisma from '../config/database.js';
 import { env } from '../config/env.js';
 import { UnauthorizedError } from '../shared/errors/AppError.js';
 
-// Valida el JWT de Auth0 (firma RS256 via JWKS) — coloca req.auth con el payload
-export const validateAuth0Token = auth({
-  audience: env.AUTH0_AUDIENCE,
-  issuerBaseURL: `https://${env.AUTH0_DOMAIN}`,
-  tokenSigningAlg: 'RS256',
-});
+interface JwtPayload {
+  sub: string;
+  rolId: string;
+  iat: number;
+  exp: number;
+}
 
-/**
- * Carga el usuario desde nuestra BD usando el `sub` del token de Auth0.
- * Verifica que no esté revocado (blacklist para logout explícito, RF-1.3).
- * Adjunta req.user con id, rolId y permisos.
- */
-export async function loadUser(req: Request, res: Response, next: NextFunction): Promise<void> {
-  const auth0Id = req.auth?.payload.sub as string | undefined;
-  const jti = req.auth?.payload.jti as string | undefined;
-
-  if (!auth0Id) {
+export async function authenticate(req: Request, _res: Response, next: NextFunction): Promise<void> {
+  const header = req.headers['authorization'];
+  if (!header?.startsWith('Bearer ')) {
     return next(new UnauthorizedError());
   }
 
-  // Blacklist: verifica que el token no haya sido revocado explícitamente (RF-1.3)
-  if (jti) {
-    const revocado = await prisma.tokenRevocado.findUnique({
-      where: { jti },
-      select: { id: true },
-    });
-    if (revocado) {
-      return next(new UnauthorizedError('Sesión cerrada. Inicie sesión nuevamente.'));
-    }
+  const token = header.slice(7);
+  let payload: JwtPayload;
+  try {
+    payload = jwt.verify(token, env.JWT_SECRET) as JwtPayload;
+  } catch {
+    return next(new UnauthorizedError('Token inválido o expirado.'));
   }
 
   const usuario = await prisma.usuario.findUnique({
-    where: { auth0_id: auth0Id },
+    where: { IDUsuario: payload.sub },
     select: {
-      id: true,
-      estado: true,
+      IDUsuario: true,
+      Estado: true,
       rol_id: true,
       rol: {
         select: {
           id: true,
           nombre: true,
-          permisos: {
+          rol_permiso: {
             select: { permiso: { select: { modulo: true, accion: true } } },
           },
         },
@@ -53,26 +43,19 @@ export async function loadUser(req: Request, res: Response, next: NextFunction):
     },
   });
 
-  if (!usuario || usuario.estado !== 'ACTIVO') {
+  if (!usuario || usuario.Estado !== 'Activo') {
     return next(new UnauthorizedError('Cuenta inactiva o sin acceso al sistema.'));
   }
 
   req.user = {
-    id: usuario.id,
-    auth0Id,
+    id: usuario.IDUsuario,
     rolId: usuario.rol_id,
     rolNombre: usuario.rol?.nombre ?? null,
-    permisos: (usuario.rol?.permisos ?? []).map((p) => ({
-      modulo: p.permiso.modulo,
-      accion: p.permiso.accion,
+    permisos: (usuario.rol?.rol_permiso ?? []).map((rp) => ({
+      modulo: rp.permiso.modulo,
+      accion: rp.permiso.accion as string,
     })),
   };
 
   next();
 }
-
-/**
- * Middleware combinado: valida token Auth0 + carga usuario desde BD.
- * Usar en rutas protegidas: `router.get('/ruta', authenticate, handler)`
- */
-export const authenticate = [validateAuth0Token, loadUser];

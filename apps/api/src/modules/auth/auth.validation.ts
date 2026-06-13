@@ -9,30 +9,34 @@ export const registroSchema = z.object({
   correo_electronico: z
     .string()
     .email('Formato de correo electrónico inválido.')
-    .max(255)
+    .max(100)
     .transform((v) => v.toLowerCase()),
-  cargo: z.string().min(1).max(80),
-  institucion: z.string().min(1).max(100),
+  cargo: z.string().min(1).max(80).optional(),
+  institucion: z.string().min(1).max(100).optional(),
 });
 
-export const logoutSchema = z.object({
-  // El token viene del header Authorization, pero lo podemos recibir en el body para logout explícito
+export const loginSchema = z.object({
+  correo_electronico: z
+    .string()
+    .email('Formato de correo electrónico inválido.')
+    .transform((v) => v.toLowerCase()),
+  contrasena: z.string().min(1, 'La contraseña es requerida.'),
 });
 
-export const updatePerfilSchema = z
-  .object({
-    nombre_completo: z
-      .string()
-      .min(3)
-      .max(100)
-      .regex(/^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ'\- ]+$/)
-      .optional(),
-    telefono: z
-      .string()
-      .regex(/^\+[1-9]\d{7,14}$/, 'Formato inválido. Use E.164: +1809XXXXXXX')
-      .optional()
-      .nullable(),
-  });
+export const updatePerfilSchema = z.object({
+  nombre_completo: z
+    .string()
+    .min(3)
+    .max(100)
+    .regex(/^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ'\- ]+$/)
+    .optional(),
+  telefono: z
+    .string()
+    .regex(/^\+[1-9]\d{7,14}$/, 'Formato inválido. Use E.164: +1809XXXXXXX')
+    .optional()
+    .nullable(),
+});
 
 export type RegistroInput = z.infer<typeof registroSchema>;
+export type LoginInput = z.infer<typeof loginSchema>;
 export type UpdatePerfilInput = z.infer<typeof updatePerfilSchema>;
