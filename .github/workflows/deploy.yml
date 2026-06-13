@@ -106,6 +106,27 @@ jobs:
           cp docker-compose.prod.yml ~/biotrack/
           cp Caddyfile ~/biotrack/
 
+      - name: Write .env.prod from GitHub Secrets
+        run: |
+          {
+            echo "DATABASE_URL=${{ secrets.DATABASE_URL }}"
+            echo "PORT=3000"
+            echo "NODE_ENV=production"
+            echo "JWT_SECRET=${{ secrets.JWT_SECRET }}"
+            echo "JWT_EXPIRES_IN=${{ secrets.JWT_EXPIRES_IN }}"
+            echo "ENCRYPTION_KEY=${{ secrets.ENCRYPTION_KEY }}"
+            echo "EMAIL_HOST=${{ secrets.EMAIL_HOST }}"
+            echo "EMAIL_PORT=${{ secrets.EMAIL_PORT }}"
+            echo "EMAIL_USER=${{ secrets.EMAIL_USER }}"
+            echo "EMAIL_PASS=${{ secrets.EMAIL_PASS }}"
+            echo "EMAIL_FROM=${{ secrets.EMAIL_FROM }}"
+            echo "EMAIL_FROM_NAME=BIOTRACK"
+            echo "FRONTEND_URL=https://biotrack.org.do"
+            echo "RATE_LIMIT_WINDOW_MS=60000"
+            echo "RATE_LIMIT_MAX_REQUESTS=100"
+          } > ~/biotrack/.env.prod
+          chmod 600 ~/biotrack/.env.prod
+
       - name: Pull latest images & restart
         run: |
           cd ~/biotrack
