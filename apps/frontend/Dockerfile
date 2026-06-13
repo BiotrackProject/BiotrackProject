@@ -17,6 +17,7 @@ COPY apps/frontend/package.json ./apps/frontend/package.json
 RUN pnpm install --frozen-lockfile --ignore-scripts --filter frontend
 
 # Source files
+COPY apps/frontend/index.html ./apps/frontend/
 COPY apps/frontend/tsconfig.json apps/frontend/tsconfig.node.json apps/frontend/vite.config.ts ./apps/frontend/
 COPY apps/frontend/src ./apps/frontend/src
 COPY apps/frontend/public ./apps/frontend/public
@@ -26,9 +27,9 @@ COPY apps/frontend/public ./apps/frontend/public
 ARG VITE_API_BASE_URL=https://api.biotrack.org.do
 ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
 
-# Type-check + build
+# Vite bundle — typecheck already ran in the CI check job
 WORKDIR /app/apps/frontend
-RUN pnpm run build
+RUN pnpm exec vite build
 
 # ─── Stage 2: runner ──────────────────────────────────────────────────────────
 FROM nginx:1.27-alpine AS runner
