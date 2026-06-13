@@ -14,7 +14,7 @@ export async function generateUniqueTrackingCode(): Promise<string> {
     const code = generateCode();
     const existing = await prisma.denuncia.findUnique({
       where: { codigo_seguimiento: code },
-      select: { id: true },
+      select: { IDDenuncia: true },
     });
     if (!existing) return code;
   }

@@ -2,7 +2,6 @@ import 'express-async-errors';
 import express, { type Express } from 'express';
 import helmet from 'helmet';
 import cors from 'cors';
-import cookieParser from 'cookie-parser';
 import { pinoHttp } from 'pino-http';
 import swaggerUi from 'swagger-ui-express';
 
@@ -48,7 +47,6 @@ app.use(
 // ─── Parsers ─────────────────────────────────────────────────────────────────
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
-app.use(cookieParser());
 
 // ─── Logging HTTP ────────────────────────────────────────────────────────────
 app.use(pinoHttp({ logger }));

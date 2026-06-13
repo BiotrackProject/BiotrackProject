@@ -16,6 +16,10 @@
     "db:seed": {
       "cache": false,
       "dependsOn": ["db:migrate"]
+    },
+    "typecheck": {
+      "cache": true,
+      "outputs": []
     }
   }
 }

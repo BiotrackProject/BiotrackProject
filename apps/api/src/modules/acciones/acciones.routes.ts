@@ -13,13 +13,13 @@ const router: Router = Router();
 
 const todo = (_req: Request, res: Response): void => { res.status(501).json({ error: 'Módulo en desarrollo.' }); };
 
-router.get('/', ...authenticate, authorize('MOD_05_ACCIONES', 'LEER'), todo);
-router.post('/', ...authenticate, authorize('MOD_05_ACCIONES', 'CREAR'), todo);
-router.get('/:id', ...authenticate, authorize('MOD_05_ACCIONES', 'LEER'), todo);
-router.put('/:id', ...authenticate, authorize('MOD_05_ACCIONES', 'EDITAR'), todo);
-router.post('/:id/publicar', ...authenticate, authorize('MOD_05_ACCIONES', 'PUBLICAR'), todo);
-router.delete('/:id/publicar', ...authenticate, authorize('MOD_05_ACCIONES', 'PUBLICAR'), todo);
-router.get('/:id/exportar', ...authenticate, authorize('MOD_05_ACCIONES', 'EXPORTAR'), todo);
+router.get('/', authenticate, authorize('MOD_05_ACCIONES', 'Leer'), todo);
+router.post('/', authenticate, authorize('MOD_05_ACCIONES', 'Crear'), todo);
+router.get('/:id', authenticate, authorize('MOD_05_ACCIONES', 'Leer'), todo);
+router.put('/:id', authenticate, authorize('MOD_05_ACCIONES', 'Editar'), todo);
+router.post('/:id/publicar', authenticate, authorize('MOD_05_ACCIONES', 'Publicar'), todo);
+router.delete('/:id/publicar', authenticate, authorize('MOD_05_ACCIONES', 'Publicar'), todo);
+router.get('/:id/exportar', authenticate, authorize('MOD_05_ACCIONES', 'Exportar'), todo);
 
 // Acceso público (RF-5.2): sin auth
 router.get('/publicas/:id', todo);

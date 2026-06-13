@@ -3,11 +3,12 @@
   "version": "1.0.0",
   "description": "Biotrack - Sistema de minería ilegal",
   "private": true,
-  "packageManager": "npm@10.9.2",
+  "packageManager": "pnpm@11.1.2",
   "scripts": {
-    "install:all": "npm install",
+    "install:all": "pnpm install",
     "dev": "turbo run dev",
     "build": "turbo run build",
+    "typecheck": "turbo run typecheck",
     "start:api": "turbo run dev --filter=api",
     "start:frontend": "turbo run dev --filter=frontend"
   },
@@ -17,5 +18,8 @@
   "workspaces": [
     "apps/*",
     "packages/*"
-  ]
+  ],
+  "pnpm": {
+    "onlyBuiltDependencies": ["@prisma/engines", "esbuild", "prisma"]
+  }
 }

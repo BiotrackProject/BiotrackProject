@@ -1,0 +1,27 @@
+version: "3.9"
+
+# Development: builds locally from source. Railway Postgres is external.
+# Run: docker compose up --build
+
+services:
+  api:
+    build:
+      context: ./apps/api
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    env_file:
+      - ./apps/api/.env
+    environment:
+      NODE_ENV: development
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: .
+      dockerfile: apps/frontend/Dockerfile
+    ports:
+      - "5173:80"
+    restart: unless-stopped
+    depends_on:
+      - api

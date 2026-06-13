@@ -1,0 +1,46 @@
+version: "3.9"
+services:
+  migrate:
+    image: ghcr.io/albert2707/biotrack-api:latest
+    command: ["node_modules/.bin/prisma", "migrate", "deploy"]
+    env_file:
+      - .env.prod
+    restart: "no"
+
+  api:
+    image: ghcr.io/albert2707/biotrack-api:latest
+    expose:
+      - "3000"
+    env_file:
+      - .env.prod
+    environment:
+      NODE_ENV: production
+    restart: unless-stopped
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+
+  frontend:
+    image: ghcr.io/albert2707/biotrack-frontend:latest
+    expose:
+      - "80"
+    restart: unless-stopped
+
+  caddy:
+    image: caddy:2-alpine
+    ports:
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+      - caddy_logs:/var/log/caddy
+    restart: unless-stopped
+    depends_on:
+      - api
+      - frontend
+
+volumes:
+  caddy_data:
+  caddy_config:
+  caddy_logs:

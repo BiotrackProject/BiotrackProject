@@ -1,57 +1,61 @@
-import { PrismaClient, ModuloSistema, AccionPermiso } from '@prisma/client';
+import 'dotenv/config';
+import { PrismaClient } from '@prisma/client';
+import { PrismaPg } from '@prisma/adapter-pg';
 
-const prisma = new PrismaClient();
+const adapter = new PrismaPg({ connectionString: process.env['DATABASE_URL'] as string });
+const prisma = new PrismaClient({ adapter });
 
-const PERMISOS: Array<{ modulo: ModuloSistema; accion: AccionPermiso }> = [
-  { modulo: 'MOD_01_AUTH', accion: 'LEER' },
-  { modulo: 'MOD_01_AUTH', accion: 'EDITAR' },
-  { modulo: 'MOD_02_DENUNCIAS', accion: 'LEER' },
-  { modulo: 'MOD_02_DENUNCIAS', accion: 'CREAR' },
-  { modulo: 'MOD_02_DENUNCIAS', accion: 'EDITAR' },
-  { modulo: 'MOD_02_DENUNCIAS', accion: 'ELIMINAR_LOGICO' },
-  { modulo: 'MOD_02_DENUNCIAS', accion: 'EXPORTAR' },
-  { modulo: 'MOD_03_ZONAS', accion: 'LEER' },
-  { modulo: 'MOD_03_ZONAS', accion: 'CREAR' },
-  { modulo: 'MOD_03_ZONAS', accion: 'EDITAR' },
-  { modulo: 'MOD_03_ZONAS', accion: 'ELIMINAR_LOGICO' },
-  { modulo: 'MOD_04_INDICADORES', accion: 'LEER' },
-  { modulo: 'MOD_04_INDICADORES', accion: 'EXPORTAR' },
-  { modulo: 'MOD_05_ACCIONES', accion: 'LEER' },
-  { modulo: 'MOD_05_ACCIONES', accion: 'CREAR' },
-  { modulo: 'MOD_05_ACCIONES', accion: 'EDITAR' },
-  { modulo: 'MOD_05_ACCIONES', accion: 'PUBLICAR' },
-  { modulo: 'MOD_05_ACCIONES', accion: 'EXPORTAR' },
-  { modulo: 'MOD_06_ADMIN', accion: 'LEER' },
-  { modulo: 'MOD_06_ADMIN', accion: 'CREAR' },
-  { modulo: 'MOD_06_ADMIN', accion: 'EDITAR' },
-  { modulo: 'MOD_06_ADMIN', accion: 'ELIMINAR_LOGICO' },
-  { modulo: 'MOD_06_ADMIN', accion: 'CONFIGURAR' },
+// Valores de enum según schema de producción (accion_permiso)
+const PERMISOS: Array<{ modulo: string; accion: string }> = [
+  { modulo: 'MOD_01_AUTH', accion: 'Leer' },
+  { modulo: 'MOD_01_AUTH', accion: 'Editar' },
+  { modulo: 'MOD_02_DENUNCIAS', accion: 'Leer' },
+  { modulo: 'MOD_02_DENUNCIAS', accion: 'Crear' },
+  { modulo: 'MOD_02_DENUNCIAS', accion: 'Editar' },
+  { modulo: 'MOD_02_DENUNCIAS', accion: 'Eliminar_Logico' },
+  { modulo: 'MOD_02_DENUNCIAS', accion: 'Exportar' },
+  { modulo: 'MOD_03_ZONAS', accion: 'Leer' },
+  { modulo: 'MOD_03_ZONAS', accion: 'Crear' },
+  { modulo: 'MOD_03_ZONAS', accion: 'Editar' },
+  { modulo: 'MOD_03_ZONAS', accion: 'Eliminar_Logico' },
+  { modulo: 'MOD_04_INDICADORES', accion: 'Leer' },
+  { modulo: 'MOD_04_INDICADORES', accion: 'Exportar' },
+  { modulo: 'MOD_05_ACCIONES', accion: 'Leer' },
+  { modulo: 'MOD_05_ACCIONES', accion: 'Crear' },
+  { modulo: 'MOD_05_ACCIONES', accion: 'Editar' },
+  { modulo: 'MOD_05_ACCIONES', accion: 'Publicar' },
+  { modulo: 'MOD_05_ACCIONES', accion: 'Exportar' },
+  { modulo: 'MOD_06_ADMIN', accion: 'Leer' },
+  { modulo: 'MOD_06_ADMIN', accion: 'Crear' },
+  { modulo: 'MOD_06_ADMIN', accion: 'Editar' },
+  { modulo: 'MOD_06_ADMIN', accion: 'Eliminar_Logico' },
+  { modulo: 'MOD_06_ADMIN', accion: 'Configurar' },
 ];
 
 const ROLES = [
   {
     nombre: 'ADMINISTRADOR',
     descripcion: 'Control total del sistema.',
-    modulos: ['MOD_01_AUTH', 'MOD_02_DENUNCIAS', 'MOD_03_ZONAS', 'MOD_04_INDICADORES', 'MOD_05_ACCIONES', 'MOD_06_ADMIN'] as ModuloSistema[],
-    acciones: ['LEER', 'CREAR', 'EDITAR', 'ELIMINAR_LOGICO', 'EXPORTAR', 'PUBLICAR', 'CONFIGURAR'] as AccionPermiso[],
+    modulos: ['MOD_01_AUTH', 'MOD_02_DENUNCIAS', 'MOD_03_ZONAS', 'MOD_04_INDICADORES', 'MOD_05_ACCIONES', 'MOD_06_ADMIN'],
+    acciones: ['Leer', 'Crear', 'Editar', 'Eliminar_Logico', 'Exportar', 'Publicar', 'Configurar'],
   },
   {
     nombre: 'TECNICO_AMBIENTAL',
     descripcion: 'Gestión de denuncias, zonas y acciones correctivas.',
-    modulos: ['MOD_01_AUTH', 'MOD_02_DENUNCIAS', 'MOD_03_ZONAS', 'MOD_04_INDICADORES', 'MOD_05_ACCIONES'] as ModuloSistema[],
-    acciones: ['LEER', 'CREAR', 'EDITAR', 'EXPORTAR', 'PUBLICAR'] as AccionPermiso[],
+    modulos: ['MOD_01_AUTH', 'MOD_02_DENUNCIAS', 'MOD_03_ZONAS', 'MOD_04_INDICADORES', 'MOD_05_ACCIONES'],
+    acciones: ['Leer', 'Crear', 'Editar', 'Exportar', 'Publicar'],
   },
   {
     nombre: 'INSPECTOR',
     descripcion: 'Registro de denuncias e inspección en campo.',
-    modulos: ['MOD_01_AUTH', 'MOD_02_DENUNCIAS', 'MOD_03_ZONAS'] as ModuloSistema[],
-    acciones: ['LEER', 'CREAR', 'EDITAR'] as AccionPermiso[],
+    modulos: ['MOD_01_AUTH', 'MOD_02_DENUNCIAS', 'MOD_03_ZONAS'],
+    acciones: ['Leer', 'Crear', 'Editar'],
   },
   {
     nombre: 'CONSULTOR',
     descripcion: 'Solo lectura y exportación de reportes.',
-    modulos: ['MOD_01_AUTH', 'MOD_02_DENUNCIAS', 'MOD_03_ZONAS', 'MOD_04_INDICADORES', 'MOD_05_ACCIONES'] as ModuloSistema[],
-    acciones: ['LEER', 'EXPORTAR'] as AccionPermiso[],
+    modulos: ['MOD_01_AUTH', 'MOD_02_DENUNCIAS', 'MOD_03_ZONAS', 'MOD_04_INDICADORES', 'MOD_05_ACCIONES'],
+    acciones: ['Leer', 'Exportar'],
   },
 ];
 
@@ -60,9 +64,9 @@ async function main(): Promise<void> {
 
   for (const { modulo, accion } of PERMISOS) {
     await prisma.permiso.upsert({
-      where: { modulo_accion: { modulo, accion } },
+      where: { modulo_accion: { modulo, accion: accion as never } },
       update: {},
-      create: { modulo, accion },
+      create: { modulo, accion: accion as never },
     });
   }
   console.log(`✓ ${PERMISOS.length} permisos creados/actualizados`);
@@ -74,18 +78,19 @@ async function main(): Promise<void> {
     const permisoIds = await Promise.all(
       permisosRol.map((p) =>
         prisma.permiso.findUniqueOrThrow({
-          where: { modulo_accion: { modulo: p.modulo, accion: p.accion } },
+          where: { modulo_accion: { modulo: p.modulo, accion: p.accion as never } },
           select: { id: true },
         })
       )
     );
+
     const rol = await prisma.rol.upsert({
       where: { nombre: rolDef.nombre },
       update: { descripcion: rolDef.descripcion },
       create: {
         nombre: rolDef.nombre,
         descripcion: rolDef.descripcion,
-        permisos: { create: permisoIds.map(({ id }) => ({ permisoId: id })) },
+        rol_permiso: { create: permisoIds.map(({ id }) => ({ permiso_id: id })) },
       },
     });
     console.log(`✓ Rol "${rol.nombre}" con ${permisoIds.length} permisos`);
