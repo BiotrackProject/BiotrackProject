@@ -44,15 +44,16 @@ async function request<T>(
       headers,
     });
 
-    // Si el status es 401, el token expiró
-    if (response.status === 401) {
+    const data = await response.json();
+
+    // 401 en endpoint protegido = token expirado → limpiar sesión y redirigir.
+    // 401 en el login mismo = credenciales incorrectas → devolver error normal.
+    if (response.status === 401 && token) {
       localStorage.removeItem('biotrack_token');
       localStorage.removeItem('biotrack_user');
       window.location.href = '/login';
-      throw new Error('Token expirado. Por favor, inicia sesión nuevamente.');
+      return { success: false, error: 'Sesión expirada.' };
     }
-
-    const data = await response.json();
 
     if (!response.ok) {
       return {

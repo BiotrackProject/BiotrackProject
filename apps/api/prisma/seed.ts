@@ -106,7 +106,7 @@ async function main(): Promise<void> {
 
   await prisma.usuario.upsert({
     where: { correo_electronico: adminEmail },
-    update: {},
+    update: { contrasena_hash: hash, Estado: 'Activo', rol_id: rolAdmin.id },
     create: {
       nombre_completo: 'Administrador BIOTRACK',
       correo_electronico: adminEmail,
