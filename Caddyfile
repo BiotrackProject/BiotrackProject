@@ -1,0 +1,118 @@
+# Caddyfile — BIOTRACK Production Reverse Proxy
+# Caddy obtains and renews TLS certificates automatically (Let's Encrypt).
+#
+# TLS strategy: TLS-ALPN-01 challenge only (port 443).
+# Port 80 is intentionally NOT exposed in docker-compose.prod.yml — all traffic
+# is HTTPS-only. No redirect listener is created.
+
+{
+    # Disable the automatic HTTP→HTTPS redirect so Caddy does not bind port 80.
+    # Certificates are renewed via TLS-ALPN-01 (port 443 only).
+    auto_https disable_redirects
+
+    # Centralised admin API — disable or restrict in production
+    admin off
+}
+
+# ── Frontend ────────────────────────────────────────────────────────────────────
+biotrack.org.do {
+
+    reverse_proxy frontend:80 {
+        header_up X-Real-IP       {remote_host}
+        header_up X-Forwarded-For {remote_host}
+        header_up X-Forwarded-Proto https
+    }
+
+    header {
+        # ── Transport Security ────────────────────────────────────────────────
+        # 1 year, all subdomains, eligible for browser preload list.
+        # IMPORTANT: preload is a long-term commitment — the domain and all
+        # subdomains must stay HTTPS-only permanently once submitted.
+        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+
+        # ── Framing & type sniffing ───────────────────────────────────────────
+        X-Frame-Options         "DENY"
+        X-Content-Type-Options  "nosniff"
+
+        # ── Referrer ──────────────────────────────────────────────────────────
+        # Sends origin on same-site requests; nothing on cross-site.
+        Referrer-Policy "strict-origin-when-cross-origin"
+
+        # ── Cross-Origin isolation ────────────────────────────────────────────
+        # Isolates the window from cross-origin openers (prevents tab-napping).
+        Cross-Origin-Opener-Policy "same-origin"
+
+        # ── Permissions Policy ────────────────────────────────────────────────
+        # Disable features the app does not need. geolocation=(self) is
+        # kept in case the report form adds browser-based location in the future.
+        Permissions-Policy "camera=(), microphone=(), payment=(), usb=(), accelerometer=(), gyroscope=(), geolocation=(self \"https://biotrack.org.do\")"
+
+        # ── Content Security Policy ───────────────────────────────────────────
+        # Script origins: Vite bundles everything as same-origin ES modules —
+        #   no eval, no inline scripts needed.
+        # Style origins: 'unsafe-inline' required because Leaflet and intro.js
+        #   inject CSS via JavaScript at runtime (no nonce available in SPA).
+        # Images: data: URIs used by Leaflet markers; OSM tiles via HTTPS.
+        # Connect: API lives on api.biotrack.org.do (same server, diff subdomain).
+        # All other directives lock to 'none' or 'self'.
+        Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://*.tile.openstreetmap.org; connect-src 'self' https://api.biotrack.org.do; font-src 'self'; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests"
+
+        # ── Remove server fingerprinting ──────────────────────────────────────
+        -Server
+        -X-Powered-By
+    }
+
+    log {
+        output file /var/log/caddy/access.log {
+            roll_size     50mb
+            roll_keep     5
+            roll_keep_for 720h
+        }
+    }
+}
+
+# ── API ─────────────────────────────────────────────────────────────────────────
+api.biotrack.org.do {
+
+    reverse_proxy api:3000 {
+        header_up X-Real-IP       {remote_host}
+        header_up X-Forwarded-For {remote_host}
+        header_up X-Forwarded-Proto https
+    }
+
+    header {
+        # ── Transport Security ────────────────────────────────────────────────
+        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+
+        # ── Sniffing & framing ────────────────────────────────────────────────
+        X-Content-Type-Options "nosniff"
+        X-Frame-Options        "DENY"
+
+        # ── Referrer ──────────────────────────────────────────────────────────
+        # API responses never need to leak origin info to third parties.
+        Referrer-Policy "no-referrer"
+
+        # ── Cross-Origin isolation ────────────────────────────────────────────
+        Cross-Origin-Opener-Policy "same-origin"
+
+        # ── CSP — strict for a pure JSON API ─────────────────────────────────
+        # This origin serves no HTML, fonts, images, or scripts.
+        # frame-ancestors 'none' blocks embedding the API in any frame.
+        Content-Security-Policy "default-src 'none'; frame-ancestors 'none'"
+
+        # ── Permissions Policy ────────────────────────────────────────────────
+        Permissions-Policy "camera=(), microphone=(), payment=(), usb=(), geolocation=()"
+
+        # ── Remove server fingerprinting ──────────────────────────────────────
+        -Server
+        -X-Powered-By
+    }
+
+    log {
+        output file /var/log/caddy/api-access.log {
+            roll_size     50mb
+            roll_keep     5
+            roll_keep_for 720h
+        }
+    }
+}
