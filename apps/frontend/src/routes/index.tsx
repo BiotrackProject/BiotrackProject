@@ -7,6 +7,12 @@ function PrivateRoute({ children }: { children: ReactElement }) {
   return isAuthenticated ? children : <Navigate to="/login" replace />
 }
 
+// Rutas solo para no autenticados: si ya hay sesión redirige al dashboard
+function PublicOnlyRoute({ children }: { children: ReactElement }) {
+  const { isAuthenticated } = useAuth()
+  return isAuthenticated ? <Navigate to="/admin/dashboard" replace /> : children
+}
+
 const LoginPage            = lazy(() => import('../pages/auth/LoginPage'))
 const RegisterPage         = lazy(() => import('../pages/auth/RegisterPage'))
 const ForgotPasswordPage   = lazy(() => import('../pages/auth/ForgotPasswordPage'))
@@ -41,10 +47,10 @@ function withSuspense(Component: ComponentType): ReactElement {
 
 const router = createBrowserRouter([
   { path: '/',                           element: withSuspense(LandingPage) },
-  { path: '/login',                      element: withSuspense(LoginPage) },
-  { path: '/registro',                   element: withSuspense(RegisterPage) },
-  { path: '/recuperar-cuenta',           element: withSuspense(ForgotPasswordPage) },
-  { path: '/recuperar-cuenta/verificar', element: withSuspense(VerifyCodePage) },
+  { path: '/login',                      element: <PublicOnlyRoute>{withSuspense(LoginPage)}</PublicOnlyRoute> },
+  { path: '/registro',                   element: <PublicOnlyRoute>{withSuspense(RegisterPage)}</PublicOnlyRoute> },
+  { path: '/recuperar-cuenta',           element: <PublicOnlyRoute>{withSuspense(ForgotPasswordPage)}</PublicOnlyRoute> },
+  { path: '/recuperar-cuenta/verificar', element: <PublicOnlyRoute>{withSuspense(VerifyCodePage)}</PublicOnlyRoute> },
   { path: '/reporte/nuevo',              element: withSuspense(ReportPage) },
   { path: '/reportes',                   element: withSuspense(SearchReportsPage) },
   { path: '/reportes/:id',               element: withSuspense(ReportDetailPage) },
