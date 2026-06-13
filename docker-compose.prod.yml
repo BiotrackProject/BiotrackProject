@@ -25,6 +25,19 @@ services:
       - "80"
     restart: unless-stopped
 
+  dozzle:
+    image: amir20/dozzle:latest
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    expose:
+      - "8080"
+    environment:
+      DOZZLE_USERNAME: ${DOZZLE_USERNAME}
+      DOZZLE_PASSWORD: ${DOZZLE_PASSWORD}
+      DOZZLE_KEY: ${DOZZLE_KEY}
+      DOZZLE_BASE: /
+    restart: unless-stopped
+
   caddy:
     image: caddy:2-alpine
     dns:
@@ -41,6 +54,7 @@ services:
     depends_on:
       - api
       - frontend
+      - dozzle
 
 volumes:
   caddy_data:

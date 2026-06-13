@@ -48,14 +48,15 @@ biotrack.org.do {
         Permissions-Policy "camera=(), microphone=(), payment=(), usb=(), accelerometer=(), gyroscope=(), geolocation=(self \"https://biotrack.org.do\")"
 
         # ── Content Security Policy ───────────────────────────────────────────
-        # Script origins: Vite bundles everything as same-origin ES modules —
-        #   no eval, no inline scripts needed.
-        # Style origins: 'unsafe-inline' required because Leaflet and intro.js
-        #   inject CSS via JavaScript at runtime (no nonce available in SPA).
-        # Images: data: URIs used by Leaflet markers; OSM tiles via HTTPS.
-        # Connect: API lives on api.biotrack.org.do (same server, diff subdomain).
-        # All other directives lock to 'none' or 'self'.
-        Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://*.tile.openstreetmap.org; connect-src 'self' https://api.biotrack.org.do; font-src 'self'; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests"
+        # script-src: Vite bundles as same-origin ES modules — no eval/inline.
+        # style-src:  'unsafe-inline' required for Leaflet/intro.js runtime CSS
+        #             injection; googleapis needed for Google Fonts stylesheet.
+        # img-src:    data: for Leaflet markers; OSM tiles (*.tile.openstreetmap.org
+        #             covers tile.openstreetmap.org and all subdomains); Unsplash
+        #             for landing page imagery.
+        # font-src:   gstatic.com serves the actual font files for Google Fonts.
+        # connect-src: API on api.biotrack.org.do; OSM nominatim for geocoding.
+        Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: blob: https://*.tile.openstreetmap.org https://tile.openstreetmap.org https://images.unsplash.com; connect-src 'self' https://api.biotrack.org.do https://nominatim.openstreetmap.org; font-src 'self' https://fonts.gstatic.com; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests"
 
         # ── Remove server fingerprinting ──────────────────────────────────────
         -Server
@@ -66,6 +67,35 @@ biotrack.org.do {
         output file /var/log/caddy/access.log {
             roll_size     50mb
             roll_keep     5
+            roll_keep_for 720h
+        }
+    }
+}
+
+# ── Metrics (Dozzle) ────────────────────────────────────────────────────────────
+# Dozzle handles its own auth (DOZZLE_USERNAME / DOZZLE_PASSWORD / DOZZLE_KEY).
+# Caddy adds TLS termination and security headers on top.
+metrics.biotrack.org.do {
+
+    reverse_proxy dozzle:8080 {
+        header_up X-Real-IP       {remote_host}
+        header_up X-Forwarded-Proto https
+    }
+
+    header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains"
+        X-Content-Type-Options    "nosniff"
+        X-Frame-Options           "DENY"
+        Referrer-Policy           "no-referrer"
+        Content-Security-Policy   "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' wss://metrics.biotrack.org.do; font-src 'self'"
+        -Server
+        -X-Powered-By
+    }
+
+    log {
+        output file /var/log/caddy/metrics-access.log {
+            roll_size     20mb
+            roll_keep     3
             roll_keep_for 720h
         }
     }
