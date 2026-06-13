@@ -1,14 +1,14 @@
 version: "3.9"
 services:
   migrate:
-    image: ghcr.io/albert2707/biotrack-api:latest
+    image: ghcr.io/biotrackproject/biotrack-api:latest
     command: ["node_modules/.bin/prisma", "migrate", "deploy"]
     env_file:
       - .env.prod
     restart: "no"
 
   api:
-    image: ghcr.io/albert2707/biotrack-api:latest
+    image: ghcr.io/biotrackproject/biotrack-api:latest
     expose:
       - "3000"
     env_file:
@@ -21,7 +21,7 @@ services:
         condition: service_completed_successfully
 
   frontend:
-    image: ghcr.io/albert2707/biotrack-frontend:latest
+    image: ghcr.io/biotrackproject/biotrack-frontend:latest
     expose:
       - "80"
     restart: unless-stopped
