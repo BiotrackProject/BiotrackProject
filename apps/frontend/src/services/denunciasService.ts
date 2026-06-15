@@ -73,8 +73,29 @@ export const TIPO_LABEL: Record<TipoActividad, string> = {
 }
 
 export const ESTADOS_DENUNCIA = Object.keys(ESTADO_LABEL) as EstadoDenuncia[]
+export const TIPOS_ACTIVIDAD = Object.keys(TIPO_LABEL) as TipoActividad[]
+
+export interface CrearDenunciaInput {
+  Descripcion: string
+  tipo_actividad: TipoActividad
+  hora_aproximada?: string
+  contacto?: string
+  IDZona?: string
+}
+
+export interface CrearDenunciaResult {
+  IDDenuncia: number
+  codigo_seguimiento: string
+  mensaje: string
+}
 
 export const denunciasService = {
+  async crear(datos: CrearDenunciaInput): Promise<CrearDenunciaResult> {
+    const res = await apiClient.post<CrearDenunciaResult>('/api/v1/denuncias', datos)
+    if (!res.success || !res.data) throw new Error(res.error ?? 'Error al crear la denuncia')
+    return res.data
+  },
+
   async getAll(filtros: FiltrosDenuncias = {}): Promise<DenunciasPaginadas> {
     const params = new URLSearchParams()
     if (filtros.estado)    params.set('estado', filtros.estado)

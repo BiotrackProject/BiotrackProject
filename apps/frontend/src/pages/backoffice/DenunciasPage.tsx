@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Search, SlidersHorizontal, Plus, Download, ChevronLeft, ChevronRight, Map } from 'lucide-react'
 import BackofficeTopbar from '../../components/backoffice/BackofficeTopbar'
@@ -6,6 +6,7 @@ import LoadingSpinner from '../../components/ui/LoadingSpinner'
 import { denunciasService, ESTADOS_DENUNCIA, ESTADO_LABEL, ESTADO_STYLES } from '../../services/denunciasService'
 import type { Denuncia, EstadoDenuncia } from '../../services/denunciasService'
 import { toast } from '../../utils/toast'
+import { useQuery } from '@tanstack/react-query'
 
 const PAGE_SIZE_OPTIONS = [5, 10, 20]
 
@@ -30,35 +31,30 @@ function exportCSV(data: Denuncia[]) {
 
 export default function DenunciasPage() {
   const navigate = useNavigate()
-  const [denuncias, setDenuncias] = useState<Denuncia[]>([])
-  const [total, setTotal] = useState(0)
-  const [loading, setLoading] = useState(true)
   const [query, setQuery] = useState('')
   const [filterOpen, setFilterOpen] = useState(false)
   const [filterEstado, setFilterEstado] = useState<EstadoDenuncia | ''>('')
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(10)
 
-  const load = useCallback(async () => {
-    setLoading(true)
-    try {
-      const res = await denunciasService.getAll({
+  const { isPending, isError, data } = useQuery({
+    queryKey: ['denuncias', { q: query, estado: filterEstado, page, pageSize }],
+    queryFn: () =>
+      denunciasService.getAll({
         q: query || undefined,
         estado: filterEstado || undefined,
         pagina: page,
         por_pagina: pageSize,
-      })
-      setDenuncias(res.data)
-      setTotal(res.paginacion.total)
-    } catch {
-      toast.error('Error al cargar las denuncias')
-    } finally {
-      setLoading(false)
-    }
-  }, [query, filterEstado, page, pageSize])
+      }),
+  })
 
-  useEffect(() => { load() }, [load])
+  useEffect(() => {
+    if (isError) toast.error('Error al cargar las denuncias')
+  }, [isError])
 
+  const denuncias: Denuncia[] = data?.data ?? []
+  const total = data?.paginacion?.total ?? 0
+  const loading = isPending
   const totalPages = Math.max(1, Math.ceil(total / pageSize))
 
   return (

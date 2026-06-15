@@ -62,9 +62,12 @@ async function request<T>(
       };
     }
 
+    // El backend devuelve el cuerpo de la respuesta sin envoltorio global,
+    // así que lo pasamos tal cual. (Desempaquetar `data.data` rompía las
+    // respuestas paginadas `{ data, paginacion }`, descartando `paginacion`.)
     return {
       success: true,
-      data: data.data || data,
+      data,
     };
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Error desconocido';

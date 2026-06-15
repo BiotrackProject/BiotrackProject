@@ -13,6 +13,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@tanstack/react-form": "^1.33.0",
+    "@tanstack/react-query": "^5.101.0",
     "intro.js": "^8.3.2",
     "leaflet": "^1.9.4",
     "lucide-react": "^1.16.0",
