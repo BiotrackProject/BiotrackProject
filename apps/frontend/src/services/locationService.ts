@@ -62,7 +62,7 @@ export const locationService = {
    * Wraps browser geolocation API with proper error handling.
    * Returns { lat, lng } or throws with a human-readable message.
    */
-  async getCurrentUserLocation() {
+  async getCurrentUserLocation(): Promise<{ lat: number; lng: number }> {
     return new Promise((resolve, reject) => {
       if (!navigator.geolocation) {
         reject(new Error('Tu navegador no soporta geolocalización'))

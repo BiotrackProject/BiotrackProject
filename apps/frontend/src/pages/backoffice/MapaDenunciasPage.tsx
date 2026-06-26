@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { useState, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { SlidersHorizontal, Layers, Search, Navigation } from 'lucide-react'
@@ -130,6 +129,7 @@ export default function MapaDenunciasPage() {
             <div className="relative">
               <input
                 type="text"
+                aria-label="Buscar marcadores"
                 placeholder="Buscar código, ubicación, descripción..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -153,7 +153,7 @@ export default function MapaDenunciasPage() {
 
             {/* View type */}
             <div>
-              <label className="text-xs font-semibold text-gray-600 mb-1.5 block">Tipo</label>
+              <p className="text-xs font-semibold text-gray-600 mb-1.5">Tipo</p>
               <div className="flex flex-col gap-1">
                 {VIEW_TYPES.map((v) => (
                   <button
@@ -169,8 +169,9 @@ export default function MapaDenunciasPage() {
 
             {/* Estado */}
             <div>
-              <label className="text-xs font-semibold text-gray-600 mb-1.5 block">Estado</label>
+              <label htmlFor="filter-estado" className="text-xs font-semibold text-gray-600 mb-1.5 block">Estado</label>
               <select
+                id="filter-estado"
                 value={filterEstado}
                 onChange={(e) => setFilterEstado(e.target.value)}
                 className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:border-primary text-gray-700"
@@ -182,8 +183,9 @@ export default function MapaDenunciasPage() {
 
             {/* Urgencia */}
             <div>
-              <label className="text-xs font-semibold text-gray-600 mb-1.5 block">Nivel de urgencia</label>
+              <label htmlFor="filter-urgencia" className="text-xs font-semibold text-gray-600 mb-1.5 block">Nivel de urgencia</label>
               <select
+                id="filter-urgencia"
                 value={filterRiesgo}
                 onChange={(e) => setFilterRiesgo(e.target.value)}
                 className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:border-primary text-gray-700"
@@ -195,10 +197,10 @@ export default function MapaDenunciasPage() {
 
             {/* Color mode */}
             <div>
-              <label className="text-xs font-semibold text-gray-600 mb-1.5 flex items-center gap-1.5 block">
+              <p className="text-xs font-semibold text-gray-600 mb-1.5 flex items-center gap-1.5">
                 <Layers className="h-3.5 w-3.5" />
                 Colorear por
-              </label>
+              </p>
               <div className="flex gap-2">
                 {COLOR_MODES.map((m) => (
                   <button
