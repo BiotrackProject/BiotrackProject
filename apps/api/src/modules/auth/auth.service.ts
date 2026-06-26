@@ -251,7 +251,7 @@ export async function solicitarCodigoRecuperacion(
   });
 
   // No revelamos la existencia del correo ni el estado de la cuenta.
-  if (!usuario || usuario.Estado !== 'Activo') {
+  if (usuario?.Estado !== 'Activo') {
     return { mensaje: MENSAJE_GENERICO };
   }
 
@@ -409,8 +409,7 @@ export async function restablecerContrasena(
   });
 
   if (
-    !registro ||
-    registro.usuario_id !== payload.sub ||
+    registro?.usuario_id !== payload.sub ||
     !registro.verificado ||
     registro.usado ||
     registro.expira_en.getTime() < Date.now()

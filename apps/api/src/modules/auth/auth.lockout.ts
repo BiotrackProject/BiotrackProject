@@ -42,7 +42,7 @@ function vigente(k: string): Registro | null {
 /** Segundos restantes de bloqueo para el correo, o 0 si no está bloqueado. */
 export function segundosBloqueo(correo: string): number {
   const r = vigente(clave(correo));
-  if (!r || !r.bloqueado) return 0;
+  if (!r?.bloqueado) return 0;
   return Math.ceil((r.expira - Date.now()) / 1000);
 }
 
