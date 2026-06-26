@@ -15,6 +15,11 @@ mkdirSync(UPLOAD_DIR, { recursive: true });
 
 const MAX_FILE_SIZE = 25 * 1024 * 1024; // 25 MB por archivo
 const MAX_FILES = 10;
+const MAX_FIELD_SIZE = 100 * 1024; // 100 KB por campo de texto
+const MAX_FIELDS = 20; // nº máximo de campos de texto (no-archivo)
+// Cota dura de partes del multipart: archivos + campos. Evita peticiones
+// con un nº ilimitado de "parts" que no quedaría acotado por los demás límites.
+const MAX_PARTS = MAX_FILES + MAX_FIELDS;
 
 /** mimetype → enum tipo_archivo de Prisma. null si no está permitido. */
 function mapTipoArchivo(mimetype: string): tipo_archivo | null {
@@ -36,7 +41,13 @@ const storage = multer.diskStorage({
 /** Middleware multer: acepta hasta MAX_FILES archivos en el campo "evidencias". */
 export const uploadEvidencias: RequestHandler = multer({
   storage,
-  limits: { fileSize: MAX_FILE_SIZE, files: MAX_FILES },
+  limits: {
+    fileSize: MAX_FILE_SIZE,
+    files: MAX_FILES,
+    fields: MAX_FIELDS,
+    fieldSize: MAX_FIELD_SIZE,
+    parts: MAX_PARTS,
+  },
   fileFilter: (_req, file, cb) => {
     if (mapTipoArchivo(file.mimetype)) {
       cb(null, true);
