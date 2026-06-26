@@ -29,6 +29,33 @@ export async function registro(data: {
   return apiClient.post<{ mensaje: string }>('/api/v1/auth/registro', data)
 }
 
+export async function forgotPassword(correo_electronico: string) {
+  return apiClient.post<{ mensaje: string }>('/api/v1/auth/forgot-password', {
+    correo_electronico,
+  })
+}
+
+export async function verifyCode(correo_electronico: string, codigo: string) {
+  return apiClient.post<{ token: string }>('/api/v1/auth/verify-code', {
+    correo_electronico,
+    codigo,
+  })
+}
+
+export async function resetPassword(token: string, contrasena: string) {
+  return apiClient.post<{ mensaje: string }>('/api/v1/auth/reset-password', {
+    token,
+    contrasena,
+  })
+}
+
+export async function cambiarContrasena(contrasena_actual: string, contrasena_nueva: string) {
+  return apiClient.post<{ mensaje: string }>('/api/v1/auth/cambiar-contrasena', {
+    contrasena_actual,
+    contrasena_nueva,
+  })
+}
+
 export async function getPerfil() {
   return apiClient.get<PerfilCompleto>('/api/v1/auth/perfil')
 }

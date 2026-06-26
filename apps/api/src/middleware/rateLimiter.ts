@@ -23,6 +23,16 @@ export const authLimiter = rateLimit({
   handler: jsonHandler,
 });
 
+// RF-1.4: capa defensiva por IP para recuperación de contraseña.
+// El límite real de "1 correo cada 3 minutos" se aplica por cuenta en auth.service.
+export const passwordResetLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  handler: jsonHandler,
+});
+
 // RF-2.1: 10 creaciones de denuncia por minuto por IP (endpoint público, sin autenticación)
 export const denunciaPublicaLimiter = rateLimit({
   windowMs: 60_000,

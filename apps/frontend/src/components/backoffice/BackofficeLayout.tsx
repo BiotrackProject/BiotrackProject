@@ -18,6 +18,7 @@ function getTourSection(pathname) {
   if (/\/acciones\/[^/]+$/.test(pathname)) return 'acciones-detalle'
   if (pathname.endsWith('/acciones')) return 'acciones'
   if (pathname.endsWith('/configuracion/usuarios')) return 'usuarios'
+  if (pathname.endsWith('/configuracion/solicitudes')) return 'solicitudes'
   if (pathname.endsWith('/configuracion/sistema')) return 'sistema'
   if (pathname.endsWith('/perfil')) return 'perfil'
   if (pathname.endsWith('/notificaciones')) return 'notificaciones'

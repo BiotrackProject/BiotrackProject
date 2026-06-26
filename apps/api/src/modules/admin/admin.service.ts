@@ -398,6 +398,9 @@ export async function revisarSolicitud(
           nombre_completo: solicitud.nombre_completo,
           correo_electronico: solicitud.correo_electronico,
           contrasena_hash,
+          // El admin define una contraseña inicial; el usuario debe cambiarla
+          // obligatoriamente en su primer inicio de sesión.
+          debe_cambiar_contrasena: true,
           rol_id: datos.rol_id,
           cargo: datos.cargo ?? solicitud.cargo ?? null,
           institucion: datos.institucion ?? solicitud.institucion ?? null,
@@ -432,7 +435,7 @@ export async function revisarSolicitud(
       await sendRegistroAprobado({
         nombre: solicitud.nombre_completo,
         correo: solicitud.correo_electronico,
-        passwordResetLink: '#',
+        contrasena: datos.contrasena,
       });
     } catch {
       // Do not fail the request if email cannot be sent

@@ -24,8 +24,9 @@ const NAV = [
 ]
 
 const CONFIG_LINKS = [
-  { to: '/admin/configuracion/usuarios', label: 'Usuarios' },
-  { to: '/admin/configuracion/sistema',  label: 'Sistema' },
+  { to: '/admin/configuracion/usuarios',    label: 'Usuarios' },
+  { to: '/admin/configuracion/solicitudes', label: 'Solicitudes de registro' },
+  { to: '/admin/configuracion/sistema',     label: 'Sistema' },
 ]
 
 function Tooltip({ children }) {

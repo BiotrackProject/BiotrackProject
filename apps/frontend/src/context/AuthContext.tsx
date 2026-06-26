@@ -8,6 +8,7 @@ export interface AuthUser {
   id: string
   nombre_completo: string
   rol: string
+  debe_cambiar_contrasena?: boolean
 }
 
 interface AuthContextValue {
@@ -15,6 +16,7 @@ interface AuthContextValue {
   token: string | null
   isAuthenticated: boolean
   setAuth: (token: string, user: AuthUser) => void
+  updateUser: (partial: Partial<AuthUser>) => void
   logout: () => void
 }
 
@@ -40,6 +42,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(newUser)
   }
 
+  function updateUser(partial: Partial<AuthUser>) {
+    setUser(prev => {
+      if (!prev) return prev
+      const next = { ...prev, ...partial }
+      localStorage.setItem(USER_KEY, JSON.stringify(next))
+      return next
+    })
+  }
+
   function logout() {
     localStorage.removeItem(TOKEN_KEY)
     localStorage.removeItem(USER_KEY)
@@ -48,7 +59,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, token, isAuthenticated: !!token, setAuth, logout }}>
+    <AuthContext.Provider value={{ user, token, isAuthenticated: !!token, setAuth, updateUser, logout }}>
       {children}
     </AuthContext.Provider>
   )
