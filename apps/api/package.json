@@ -12,6 +12,7 @@
     "db:migrate": "prisma migrate dev",
     "db:migrate:prod": "prisma migrate deploy",
     "db:seed": "tsx prisma/seed.ts",
+    "db:seed:denuncias": "tsx prisma/seed-denuncias.ts",
     "db:studio": "prisma studio",
     "generate:openapi": "tsx scripts/generate-openapi.ts",
     "test": "jest --runInBand",
@@ -24,7 +25,6 @@
   "dependencies": {
     "@prisma/adapter-pg": "^7.0.0",
     "@prisma/client": "^7.0.0",
-    "prisma": "^7.0.0",
     "bcryptjs": "^3.0.3",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
@@ -38,6 +38,7 @@
     "pg": "^8.13.0",
     "pino": "^9.5.0",
     "pino-http": "^10.3.0",
+    "prisma": "^7.0.0",
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^5.0.1",
     "uuid": "^11.0.3",
@@ -49,6 +50,7 @@
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
     "@types/jsonwebtoken": "^9.0.10",
+    "@types/multer": "^2.1.0",
     "@types/node": "^25.8.0",
     "@types/nodemailer": "^8.0.0",
     "@types/pg": "^8.11.0",
@@ -73,13 +75,22 @@
   "jest": {
     "testEnvironment": "node",
     "transform": {
-      "^.+\\.tsx?$": ["ts-jest", { "tsconfig": "tsconfig.jest.json" }]
+      "^.+\\.tsx?$": [
+        "ts-jest",
+        {
+          "tsconfig": "tsconfig.jest.json"
+        }
+      ]
     },
-    "setupFiles": ["<rootDir>/tests/setup.ts"],
+    "setupFiles": [
+      "<rootDir>/tests/setup.ts"
+    ],
     "moduleNameMapper": {
       "^(\\.{1,2}/.*)\\.js$": "$1"
     },
-    "testMatch": ["**/tests/**/*.test.ts"],
+    "testMatch": [
+      "**/tests/**/*.test.ts"
+    ],
     "collectCoverageFrom": [
       "src/**/*.ts",
       "!src/**/*.d.ts",
@@ -95,9 +106,15 @@
       "!src/modules/auth/auth.service.ts",
       "!src/modules/auth/auth.controller.ts"
     ],
-    "coverageReporters": ["lcov", "text", "json-summary"],
+    "coverageReporters": [
+      "lcov",
+      "text",
+      "json-summary"
+    ],
     "coverageThreshold": {
-      "global": { "lines": 50 }
+      "global": {
+        "lines": 50
+      }
     }
   }
 }

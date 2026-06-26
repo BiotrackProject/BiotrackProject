@@ -1,4 +1,5 @@
 import 'express-async-errors';
+import path from 'node:path';
 import express, { type Express } from 'express';
 import helmet from 'helmet';
 import cors from 'cors';
@@ -53,6 +54,15 @@ app.use(pinoHttp({ logger }));
 
 // ─── Rate limiting global ────────────────────────────────────────────────────
 app.use(globalLimiter);
+
+// ─── Archivos subidos (evidencias de denuncias, etc.) ────────────────────────
+// CORP cross-origin para que el frontend (otro origen) pueda embeber las imágenes.
+app.use(
+  '/uploads',
+  express.static(path.resolve(env.STORAGE_LOCAL_PATH), {
+    setHeaders: (res) => res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin'),
+  })
+);
 
 // ─── Health check ────────────────────────────────────────────────────────────
 app.get('/health', (_req, res) => {

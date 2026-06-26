@@ -22,6 +22,7 @@ import {
   TILE_URL, TILE_ATTRIBUTION,
   STATUS_MARKER_COLORS, RISK_MARKER_COLORS, DEFAULT_MARKER_COLOR,
 } from '../../constants/mapConfig'
+import { ESTADO_LABEL } from '../../services/denunciasService'
 
 // ── Marker colour helpers ──────────────────────────────────────────────────────
 
@@ -42,33 +43,36 @@ function MapController({ center, zoom }) {
 
 // ── Legend ─────────────────────────────────────────────────────────────────────
 
-const STATUS_LEGEND = [
-  { label: 'Nueva',         color: STATUS_MARKER_COLORS['Nueva'] },
-  { label: 'En revisión',   color: STATUS_MARKER_COLORS['En revisión'] },
-  { label: 'Monitorear',    color: STATUS_MARKER_COLORS['Monitorear'] },
-  { label: 'En Monitoreo',  color: STATUS_MARKER_COLORS['En Monitoreo'] },
-  { label: 'En Corrección', color: STATUS_MARKER_COLORS['En Corrección'] },
-  { label: 'Corregido',     color: STATUS_MARKER_COLORS['Corregido'] },
-  { label: 'Declinada',     color: STATUS_MARKER_COLORS['Declinada'] },
-]
+/** Construye la leyenda dinámicamente a partir de los valores presentes. */
+function buildLegend(locations, colorBy) {
+  const field = colorBy === 'risk' ? 'nivelRiesgo' : 'estado'
+  const colors = colorBy === 'risk' ? RISK_MARKER_COLORS : STATUS_MARKER_COLORS
+  const seen = new Set()
+  const items = []
+  for (const loc of locations) {
+    const value = loc[field]
+    if (!value || seen.has(value)) continue
+    seen.add(value)
+    items.push({
+      value,
+      label: colorBy === 'risk' ? value : (ESTADO_LABEL[value] ?? value),
+      color: colors[value] ?? DEFAULT_MARKER_COLOR,
+    })
+  }
+  return items
+}
 
-const RISK_LEGEND = [
-  { label: 'Bajo',    color: RISK_MARKER_COLORS['Bajo'] },
-  { label: 'Medio',   color: RISK_MARKER_COLORS['Medio'] },
-  { label: 'Alto',    color: RISK_MARKER_COLORS['Alto'] },
-  { label: 'Crítico', color: RISK_MARKER_COLORS['Crítico'] },
-]
-
-function Legend({ colorBy }) {
-  const items = colorBy === 'risk' ? RISK_LEGEND : STATUS_LEGEND
+function Legend({ locations, colorBy }) {
+  const items = buildLegend(locations, colorBy)
+  if (items.length === 0) return null
   return (
     <div className="absolute bottom-6 left-3 z-[1000] rounded-xl bg-white/95 shadow-lg px-3 py-2.5 text-xs pointer-events-none">
       <p className="font-bold text-gray-700 mb-2 text-[11px] uppercase tracking-wide">
-        {colorBy === 'risk' ? 'Nivel de riesgo' : 'Estado'}
+        {colorBy === 'risk' ? 'Nivel de urgencia' : 'Estado'}
       </p>
       <div className="flex flex-col gap-1.5">
-        {items.map(({ label, color }) => (
-          <div key={label} className="flex items-center gap-2">
+        {items.map(({ value, label, color }) => (
+          <div key={value} className="flex items-center gap-2">
             <span className="h-3 w-3 shrink-0 rounded-full border border-white shadow-sm" style={{ background: color }} />
             <span className="text-gray-600">{label}</span>
           </div>
@@ -129,12 +133,12 @@ export default function BioTrackMap({
             >
               <Popup>
                 <div className="min-w-[200px] text-sm">
-                  <p className="font-bold text-gray-800 mb-1">{loc.provincia}</p>
-                  <p className="text-gray-500 text-xs mb-2">{loc.municipio}{loc.sector ? ` · ${loc.sector}` : ''}</p>
+                  <p className="font-bold text-gray-800 mb-1">{loc.titulo ?? loc.provincia}</p>
+                  <p className="text-gray-500 text-xs mb-2">{loc.subtitulo ?? loc.municipio}</p>
                   <p className="text-gray-700 text-xs leading-snug mb-3 line-clamp-2">{loc.descripcion}</p>
                   <div className="flex items-center gap-2 flex-wrap mb-3">
                     <span className="rounded-full px-2 py-0.5 text-[10px] font-semibold text-white" style={{ background: STATUS_MARKER_COLORS[loc.estado] ?? DEFAULT_MARKER_COLOR }}>
-                      {loc.estado}
+                      {ESTADO_LABEL[loc.estado] ?? loc.estado}
                     </span>
                     {loc.nivelRiesgo && (
                       <span className="rounded-full px-2 py-0.5 text-[10px] font-semibold text-white" style={{ background: RISK_MARKER_COLORS[loc.nivelRiesgo] ?? DEFAULT_MARKER_COLOR }}>
@@ -158,7 +162,7 @@ export default function BioTrackMap({
       </MapContainer>
 
       {showLegend && interactive && (
-        <Legend colorBy={colorBy} />
+        <Legend locations={locations} colorBy={colorBy} />
       )}
 
       {locations.length === 0 && (

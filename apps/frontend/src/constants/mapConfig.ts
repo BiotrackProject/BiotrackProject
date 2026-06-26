@@ -11,6 +11,13 @@ export const TILE_ATTRIBUTION = '&copy; <a href="https://www.openstreetmap.org/c
 
 /** Marker colours by denuncia status */
 export const STATUS_MARKER_COLORS = {
+  // Estados reales del backend (estado_denuncia)
+  'Pendiente':        '#F59E0B',
+  'En_Investigacion': '#3B82F6',
+  'Verificada':       '#8B5CF6',
+  'Resuelta':         '#22C55E',
+  'Desestimada':      '#9CA3AF',
+  // Estados legacy usados por la capa de zonas (mock)
   'Nueva':         '#22C55E',
   'En revisión':   '#F59E0B',
   'Monitorear':    '#F97316',
@@ -18,11 +25,16 @@ export const STATUS_MARKER_COLORS = {
   'En Corrección': '#06B6D4',
   'Declinada':     '#9CA3AF',
   'Corregido':     '#10B981',
-  'Pendiente':     '#F59E0B',
 }
 
-/** Marker colours by risk level */
+/** Marker colours by risk / urgency level */
 export const RISK_MARKER_COLORS = {
+  // Niveles de urgencia reales (nivel_urgencia)
+  'Baja':             '#22C55E',
+  'Media':            '#F59E0B',
+  'Alta':             '#F97316',
+  'Riesgo inmediato': '#EF4444',
+  // Niveles legacy usados por la capa de zonas (mock)
   'Bajo':    '#22C55E',
   'Medio':   '#F59E0B',
   'Alto':    '#F97316',

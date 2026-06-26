@@ -64,9 +64,12 @@ export default function DetalleDenunciaPage() {
   async function confirmEstado() {
     setSaving(true)
     try {
-      const updated = await denunciasService.cambiarEstado(id!, pendingEstado, comentario || undefined)
-      setDenuncia(updated)
-      setEstado(updated.Estado)
+      const { Estado } = await denunciasService.cambiarEstado(id!, pendingEstado, comentario || undefined)
+      setEstado(Estado)
+      // Refrescamos para reflejar la nueva entrada del historial junto al estado.
+      const refreshed = await denunciasService.getById(id!)
+      setDenuncia(refreshed)
+      setEstado(refreshed.Estado)
       toast.success(`Estado actualizado a "${ESTADO_LABEL[pendingEstado]}"`)
       setStatusModal(false)
     } catch (err: unknown) {
@@ -164,16 +167,31 @@ export default function DetalleDenunciaPage() {
           <InfoCard title="Información del Incidente">
             <div className="flex flex-col gap-2">
               <InfoRow label="Tipo de actividad" value={TIPO_LABEL[denuncia.tipo_actividad]} />
-              <InfoRow label="Fecha de incidente" value={new Date(denuncia.Fecha_denuncia).toLocaleDateString('es-DO')} />
+              <InfoRow
+                label="Fecha de incidente"
+                value={denuncia.fecha_incidente ? new Date(denuncia.fecha_incidente).toLocaleDateString('es-DO') : null}
+              />
               <InfoRow label="Hora aproximada" value={denuncia.hora_aproximada} />
+              <InfoRow label="Tipo de extracción" value={denuncia.tipo_extraccion} />
+              <InfoRow label="Personas involucradas" value={denuncia.numero_personas} />
+              <InfoRow label="Cantidad estimada de arena" value={denuncia.cantidad_arena} />
+              <InfoRow label="Nivel de urgencia" value={denuncia.nivel_urgencia} />
               <InfoRow label="Código de seguimiento" value={denuncia.codigo_seguimiento} />
+              <InfoRow label="Fecha de registro" value={new Date(denuncia.Fecha_denuncia).toLocaleDateString('es-DO')} />
             </div>
           </InfoCard>
 
-          <InfoCard title="Descripción de la Actividad">
-            <p className="text-sm text-gray-600 leading-relaxed">{denuncia.Descripcion}</p>
+          <InfoCard title="Ubicación del Incidente">
+            <div className="flex flex-col gap-2">
+              <InfoRow label="Coordenadas GPS" value={denuncia.gps} />
+              <InfoRow label="Detalle de la ubicación" value={denuncia.detalle_ubicacion} />
+            </div>
           </InfoCard>
         </div>
+
+        <InfoCard title="Descripción de la Actividad">
+          <p className="text-sm text-gray-600 leading-relaxed whitespace-pre-line">{denuncia.Descripcion}</p>
+        </InfoCard>
 
         {/* Historial de estados */}
         {denuncia.historial && denuncia.historial.length > 0 && (

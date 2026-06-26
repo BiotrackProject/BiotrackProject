@@ -34,7 +34,14 @@ model Denuncia {
   Descripcion               String
   tipo_actividad            tipo_actividad_ilegal
   Fecha_denuncia            DateTime                    @default(now()) @db.Timestamp(6)
+  fecha_incidente           DateTime?                   @db.Date
   hora_aproximada           DateTime?                   @db.Time(6)
+  detalle_ubicacion         String?
+  ubicacion_gps             Unsupported("point")?
+  tipo_extraccion           String?                     @db.VarChar(50)
+  numero_personas           String?                     @db.VarChar(50)
+  cantidad_arena            String?                     @db.VarChar(150)
+  nivel_urgencia            String?                     @db.VarChar(30)
   Estado                    estado_denuncia             @default(Pendiente)
   contacto_cifrado          String?
   created_at                DateTime                    @default(now()) @db.Timestamp(6)

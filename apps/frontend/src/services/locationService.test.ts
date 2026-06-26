@@ -1,16 +1,34 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { locationService } from './locationService'
+import { denunciasService } from './denunciasService'
+
+vi.mock('./denunciasService', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('./denunciasService')>()
+  return { ...actual, denunciasService: { getMapa: vi.fn() } }
+})
+
+const mockDenuncia = {
+  IDDenuncia: 42,
+  codigo_seguimiento: 'ABCD1234',
+  Estado: 'Pendiente' as const,
+  tipo_actividad: 'Extraccion_Playa' as const,
+  nivel_urgencia: 'Alta',
+  detalle_ubicacion: 'Playa de Bayahibe, cerca del muelle',
+  Descripcion: 'Extracción de arena en la playa',
+  Fecha_denuncia: '2026-06-20T00:00:00.000Z',
+  lat: 18.4274,
+  lng: -68.9724,
+}
 
 describe('locationService', () => {
   const originalGeo = navigator.geolocation
 
   beforeEach(() => {
-    sessionStorage.clear()
-    vi.useFakeTimers()
+    vi.mocked(denunciasService.getMapa).mockResolvedValue([mockDenuncia])
   })
 
   afterEach(() => {
-    vi.useRealTimers()
+    vi.restoreAllMocks()
     Object.defineProperty(navigator, 'geolocation', {
       configurable: true,
       value: originalGeo,
@@ -18,23 +36,36 @@ describe('locationService', () => {
   })
 
   it('combines report and zone markers with markerType', async () => {
-    const pending = locationService.getAllLocations()
-    await vi.runAllTimersAsync()
-    const all = await pending
+    const all = await locationService.getAllLocations()
 
     expect(all.length).toBeGreaterThan(0)
     expect(all.some((i) => i.markerType === 'report')).toBe(true)
     expect(all.some((i) => i.markerType === 'zone')).toBe(true)
   })
 
-  it('filters by type and risk level', async () => {
-    const pending = locationService.filterLocations({ type: 'zone', nivelRiesgo: 'Crítico' })
-    await vi.runAllTimersAsync()
-    const filtered = await pending
+  it('maps a backend denuncia to a unified report marker', async () => {
+    const reports = await locationService.getReportLocations()
 
-    expect(filtered.length).toBeGreaterThan(0)
-    expect(filtered.every((i) => i.markerType === 'zone')).toBe(true)
-    expect(filtered.every((i) => i.nivelRiesgo === 'Crítico')).toBe(true)
+    expect(reports).toHaveLength(1)
+    expect(reports[0]).toMatchObject({
+      denunciaId: '42',
+      markerType: 'report',
+      lat: 18.4274,
+      lng: -68.9724,
+      estado: 'Pendiente',
+      nivelRiesgo: 'Alta',
+      titulo: 'Playa de Bayahibe, cerca del muelle',
+      subtitulo: 'ABCD1234',
+      codigo: 'ABCD1234',
+    })
+  })
+
+  it('normalizes zone markers with titulo and subtitulo', async () => {
+    const zones = await locationService.getZoneLocations()
+
+    expect(zones.length).toBeGreaterThan(0)
+    expect(zones.every((z) => z.markerType === 'zone')).toBe(true)
+    expect(zones.every((z) => typeof z.titulo === 'string' && typeof z.subtitulo === 'string')).toBe(true)
   })
 
   it('parses GPS strings to coordinate objects', () => {

@@ -5,11 +5,8 @@ import { useForm, useStore } from '@tanstack/react-form'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { UploadCloud, X, CheckCircle } from 'lucide-react'
 import BackofficeTopbar from '../../components/backoffice/BackofficeTopbar'
-import { denunciasService, TIPOS_ACTIVIDAD, TIPO_LABEL } from '../../services/denunciasService'
+import { denunciasService, filtrarEvidencias, EVIDENCIA_MAX_FILES, EVIDENCIA_MAX_SIZE_MB, TIPOS_ACTIVIDAD, TIPO_LABEL } from '../../services/denunciasService'
 import { toast } from '../../utils/toast'
-import { PROVINCIAS_MUNICIPIOS } from '../../data/mockDenuncias'
-
-const PROVINCIAS = Object.keys(PROVINCIAS_MUNICIPIOS).sort()
 
 function Label({ children, required }) {
   return (
@@ -93,9 +90,6 @@ const DEFAULT_VALUES = {
   tipoActividad: '',
   fechaIncidente: '',
   hora: '',
-  provincia: '',
-  municipio: '',
-  sector: '',
   gps: '',
   detalleUbicacion: '',
   tipoExtraccion: '',
@@ -104,25 +98,6 @@ const DEFAULT_VALUES = {
   detalleActividad: '',
   consentimiento: false,
 }
-// TODO: Revisar este tema de los campos
-/** El backend solo guarda Descripcion/tipo_actividad/hora/contacto, así que
- * condensamos el resto del formulario en una descripción estructurada. */
-function buildDescripcion(v) {
-  return [
-    v.detalleActividad.trim(),
-    '',
-    `Ubicación: ${v.sector}, ${v.municipio}, ${v.provincia}.`,
-    v.gps ? `Coordenadas GPS: ${v.gps}.` : '',
-    `Zona afectada: ${v.detalleUbicacion.trim()}`,
-    `Fecha del incidente: ${v.fechaIncidente}${v.hora ? ` a las ${v.hora}` : ''}.`,
-    `Tipo de extracción: ${v.tipoExtraccion}.`,
-    `Personas involucradas: ${v.numPersonas}.`,
-    `Cantidad estimada de arena: ${v.cantidadArena}.`,
-  ]
-    .filter(Boolean)
-    .join('\n')
-}
-
 /** Datos de contacto (cifrados en el backend). Vacío si la denuncia es anónima. */
 function buildContacto(v) {
   if (v.anonimo === 'Sí') return undefined
@@ -167,9 +142,6 @@ export default function RealizarDenunciaPage() {
         if (!anon && !value.apellidos.trim()) fields.apellidos = 'Requerido'
         if (!value.tipoActividad) fields.tipoActividad = 'Requerido'
         if (!value.fechaIncidente) fields.fechaIncidente = 'Requerido'
-        if (!value.provincia) fields.provincia = 'Requerido'
-        if (!value.municipio) fields.municipio = 'Requerido'
-        if (!value.sector.trim()) fields.sector = 'Requerido'
         if (!value.detalleUbicacion.trim()) fields.detalleUbicacion = 'Requerido'
         if (!value.tipoExtraccion) fields.tipoExtraccion = 'Requerido'
         if (!value.numPersonas) fields.numPersonas = 'Requerido'
@@ -181,22 +153,27 @@ export default function RealizarDenunciaPage() {
     },
     onSubmit: async ({ value }) => {
       await mutation.mutateAsync({
-        Descripcion: buildDescripcion(value),
+        Descripcion: value.detalleActividad.trim(),
         tipo_actividad: value.tipoActividad,
+        fecha_incidente: value.fechaIncidente || undefined,
         hora_aproximada: value.hora || undefined,
+        detalle_ubicacion: value.detalleUbicacion.trim() || undefined,
+        gps: value.gps.trim() || undefined,
+        tipo_extraccion: value.tipoExtraccion || undefined,
+        numero_personas: value.numPersonas || undefined,
+        cantidad_arena: value.cantidadArena.trim() || undefined,
         contacto: buildContacto(value),
+        evidencias: files,
       })
     },
   })
 
   const isAnon = useStore(form.store, (s) => s.values.anonimo === 'Sí')
-  const provincia = useStore(form.store, (s) => s.values.provincia)
 
   function addFiles(newFiles) {
-    const valid = Array.from(newFiles).filter((f) =>
-      ALLOWED_EXT.some((ext) => f.name.toLowerCase().endsWith(ext))
-    )
-    setFiles((prev) => [...prev, ...valid])
+    const { aceptados, errores } = filtrarEvidencias(files, Array.from(newFiles))
+    if (errores.length) toast.error(errores.join(' '))
+    if (aceptados.length) setFiles((prev) => [...prev, ...aceptados])
   }
 
   if (submitted) {
@@ -342,55 +319,6 @@ export default function RealizarDenunciaPage() {
                     type="time"
                     value={field.state.value}
                     onChange={(e) => field.handleChange(e.target.value)}
-                  />
-                )}
-              </form.Field>
-            </div>
-            <div>
-              <Label required>Provincia</Label>
-              <form.Field name="provincia">
-                {(field) => (
-                  <Select
-                    value={field.state.value}
-                    onChange={(e) => {
-                      field.handleChange(e.target.value)
-                      form.setFieldValue('municipio', '')
-                    }}
-                    error={field.state.meta.errors[0]}
-                  >
-                    <option value="">Seleccione una Provincia</option>
-                    {PROVINCIAS.map((p) => <option key={p} value={p}>{p}</option>)}
-                  </Select>
-                )}
-              </form.Field>
-            </div>
-            <div>
-              <Label required>Municipio</Label>
-              <form.Field name="municipio">
-                {(field) => (
-                  <Select
-                    value={field.state.value}
-                    onChange={(e) => field.handleChange(e.target.value)}
-                    disabled={!provincia}
-                    error={field.state.meta.errors[0]}
-                  >
-                    <option value="">Seleccione un Municipio</option>
-                    {(PROVINCIAS_MUNICIPIOS[provincia] ?? []).map((m) => (
-                      <option key={m} value={m}>{m}</option>
-                    ))}
-                  </Select>
-                )}
-              </form.Field>
-            </div>
-            <div>
-              <Label required>Sector</Label>
-              <form.Field name="sector">
-                {(field) => (
-                  <Input
-                    placeholder="Ingrese el sector"
-                    value={field.state.value}
-                    onChange={(e) => field.handleChange(e.target.value)}
-                    error={field.state.meta.errors[0]}
                   />
                 )}
               </form.Field>
