@@ -1,4 +1,5 @@
 import 'dotenv/config';
+import { randomInt } from 'node:crypto';
 import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import type { estado_denuncia, tipo_actividad_ilegal } from '@prisma/client';
@@ -54,25 +55,26 @@ const DESCRIPCIONES = [
 ];
 
 function rand<T>(arr: T[]): T {
-  return arr[Math.floor(Math.random() * arr.length)]!;
+  return arr[randomInt(arr.length)]!;
 }
 
 /** Jitter de ±0.015° (~1.6 km) para dispersar puntos sobre la misma zona. */
 function jitter(): number {
-  return (Math.random() - 0.5) * 0.03;
+  // randomInt(0, 1e6) / 1e6 da un float uniforme en [0, 1).
+  return (randomInt(0, 1_000_000) / 1_000_000 - 0.5) * 0.03;
 }
 
 function randomCodigo(): string {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
   let out = '';
-  for (let i = 0; i < 8; i++) out += chars[Math.floor(Math.random() * chars.length)];
+  for (let i = 0; i < 8; i++) out += chars[randomInt(chars.length)];
   return out;
 }
 
 /** Fecha aleatoria dentro de los últimos `dias` días. */
 function fechaReciente(dias = 90): Date {
   const ahora = Date.now();
-  return new Date(ahora - Math.floor(Math.random() * dias) * 24 * 60 * 60 * 1000);
+  return new Date(ahora - randomInt(dias) * 24 * 60 * 60 * 1000);
 }
 
 /**
@@ -145,7 +147,7 @@ async function main(): Promise<void> {
         let estadoAnterior: estado_denuncia = 'Pendiente';
         let cuando = fechaBase.getTime();
         for (const estadoNuevo of transiciones) {
-          cuando += (1 + Math.floor(Math.random() * 4)) * 24 * 60 * 60 * 1000;
+          cuando += (1 + randomInt(4)) * 24 * 60 * 60 * 1000;
           await tx.historial_estado_denuncia.create({
             data: {
               IDDenuncia: denuncia.IDDenuncia,
