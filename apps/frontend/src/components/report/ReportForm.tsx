@@ -70,6 +70,9 @@ export default function ReportForm() {
   const set = (field) => (e) =>
     setForm((f) => ({ ...f, [field]: e.target.value }))
 
+  const removeEvidence = (index) =>
+    setForm((f) => ({ ...f, evidence: f.evidence.filter((_, j) => j !== index) }))
+
   const handleSubmit = async (e) => {
     e.preventDefault()
     const errs = validate(form)
@@ -290,7 +293,7 @@ export default function ReportForm() {
                     {file.name}
                     <button
                       type="button"
-                      onClick={() => setForm((f) => ({ ...f, evidence: f.evidence.filter((_, j) => j !== i) }))}
+                      onClick={() => removeEvidence(i)}
                       className="text-gray-400 hover:text-action"
                     >
                       <X className="h-3 w-3" />
