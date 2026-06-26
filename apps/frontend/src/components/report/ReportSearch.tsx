@@ -64,6 +64,76 @@ export default function ReportSearch() {
     setResult({ status: 'idle' })
   }
 
+  function renderResult() {
+    if (loading) {
+      return (
+        <div className="rounded-xl border border-gray-100 bg-surface px-4 py-9 text-center text-sm text-gray-500">
+          Consultando reporte...
+        </div>
+      )
+    }
+
+    if (result.status === 'idle') {
+      return (
+        <div className="rounded-xl border border-dashed border-gray-300 bg-surface px-4 py-9 text-center">
+          <FileSearch className="mx-auto h-8 w-8 text-gray-400" />
+          <p className="mt-3 text-sm font-medium text-gray-600">
+            Escribe tu código de seguimiento para ver el estado de tu reporte.
+          </p>
+          <p className="mt-1 text-xs text-gray-500">
+            ¿Aún no tienes un reporte?{' '}
+            <Link to="/reporte/nuevo" className="font-semibold text-primary hover:underline">
+              Crea uno nuevo
+            </Link>
+            .
+          </p>
+        </div>
+      )
+    }
+
+    if (result.status === 'notFound') {
+      return (
+        <div className="rounded-xl border border-dashed border-gray-300 bg-surface px-4 py-9 text-center">
+          <p className="text-sm font-medium text-gray-600">
+            No encontramos ningún reporte con el código <span className="font-bold text-gray-800">{result.codigo}</span>.
+          </p>
+          <p className="mt-1 text-xs text-gray-500">Verifica que el código sea correcto e inténtalo de nuevo.</p>
+          <div className="mt-4 flex flex-wrap justify-center gap-2">
+            <button
+              type="button"
+              onClick={clearSearch}
+              className="rounded-lg border border-primary px-4 py-2 text-xs font-semibold text-primary transition-colors hover:bg-primary hover:text-white"
+            >
+              Limpiar búsqueda
+            </button>
+            <Link
+              to="/reporte/nuevo"
+              className="inline-flex rounded-lg bg-action px-4 py-2 text-xs font-semibold text-white transition-colors hover:bg-red-700"
+            >
+              Crear nuevo reporte
+            </Link>
+          </div>
+        </div>
+      )
+    }
+
+    if (result.status === 'error') {
+      return (
+        <div className="flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-4 text-sm text-red-700">
+          <AlertCircle className="mt-0.5 h-5 w-5 shrink-0" />
+          <div>
+            <p className="font-semibold">No se pudo completar la consulta.</p>
+            <p className="mt-0.5 text-red-600">{result.message}</p>
+          </div>
+        </div>
+      )
+    }
+
+    return (
+      <ResultCard reporte={result.reporte} onOpen={() => navigate(`/reportes/${result.reporte.codigo_seguimiento}`)} />
+    )
+  }
+
   return (
     <section aria-labelledby="report-search-heading" className="relative mx-auto max-w-4xl px-6 py-12 sm:py-14">
       <div className="pointer-events-none absolute bottom-10 right-4 flex items-center justify-center opacity-[0.14]">
@@ -120,57 +190,7 @@ export default function ReportSearch() {
         </div>
 
         <div className="mt-6" aria-live="polite">
-          {loading ? (
-            <div className="rounded-xl border border-gray-100 bg-surface px-4 py-9 text-center text-sm text-gray-500">
-              Consultando reporte...
-            </div>
-          ) : result.status === 'idle' ? (
-            <div className="rounded-xl border border-dashed border-gray-300 bg-surface px-4 py-9 text-center">
-              <FileSearch className="mx-auto h-8 w-8 text-gray-400" />
-              <p className="mt-3 text-sm font-medium text-gray-600">
-                Escribe tu código de seguimiento para ver el estado de tu reporte.
-              </p>
-              <p className="mt-1 text-xs text-gray-500">
-                ¿Aún no tienes un reporte?{' '}
-                <Link to="/reporte/nuevo" className="font-semibold text-primary hover:underline">
-                  Crea uno nuevo
-                </Link>
-                .
-              </p>
-            </div>
-          ) : result.status === 'notFound' ? (
-            <div className="rounded-xl border border-dashed border-gray-300 bg-surface px-4 py-9 text-center">
-              <p className="text-sm font-medium text-gray-600">
-                No encontramos ningún reporte con el código <span className="font-bold text-gray-800">{result.codigo}</span>.
-              </p>
-              <p className="mt-1 text-xs text-gray-500">Verifica que el código sea correcto e inténtalo de nuevo.</p>
-              <div className="mt-4 flex flex-wrap justify-center gap-2">
-                <button
-                  type="button"
-                  onClick={clearSearch}
-                  className="rounded-lg border border-primary px-4 py-2 text-xs font-semibold text-primary transition-colors hover:bg-primary hover:text-white"
-                >
-                  Limpiar búsqueda
-                </button>
-                <Link
-                  to="/reporte/nuevo"
-                  className="inline-flex rounded-lg bg-action px-4 py-2 text-xs font-semibold text-white transition-colors hover:bg-red-700"
-                >
-                  Crear nuevo reporte
-                </Link>
-              </div>
-            </div>
-          ) : result.status === 'error' ? (
-            <div className="flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-4 text-sm text-red-700">
-              <AlertCircle className="mt-0.5 h-5 w-5 shrink-0" />
-              <div>
-                <p className="font-semibold">No se pudo completar la consulta.</p>
-                <p className="mt-0.5 text-red-600">{result.message}</p>
-              </div>
-            </div>
-          ) : (
-            <ResultCard reporte={result.reporte} onOpen={() => navigate(`/reportes/${result.reporte.codigo_seguimiento}`)} />
-          )}
+          {renderResult()}
         </div>
       </div>
     </section>
