@@ -28,7 +28,7 @@ export default function CambiarContrasenaPage() {
   const [loading, setLoading] = useState(false)
 
   function validate() {
-    const actualErr = !actual ? 'Ingresa tu contraseña actual' : null
+    const actualErr = actual ? null : 'Ingresa tu contraseña actual'
     const passwordErr = validateRegisterPassword(password, '', '', '')
       || (password === actual ? 'La nueva contraseña debe ser distinta de la actual' : null)
     let confirmErr = null

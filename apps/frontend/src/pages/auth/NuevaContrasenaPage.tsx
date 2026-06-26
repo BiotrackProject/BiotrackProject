@@ -30,11 +30,9 @@ export default function NuevaContrasenaPage() {
 
   function validate() {
     const passwordErr = validateRegisterPassword(password, '', '', email)
-    const confirmErr = !confirm
-      ? 'Confirma tu contraseña'
-      : confirm !== password
-        ? 'Las contraseñas no coinciden'
-        : null
+    let confirmErr = null
+    if (!confirm) confirmErr = 'Confirma tu contraseña'
+    else if (confirm !== password) confirmErr = 'Las contraseñas no coinciden'
     setErrors({ password: passwordErr, confirm: confirmErr })
     return !passwordErr && !confirmErr
   }
