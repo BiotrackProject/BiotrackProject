@@ -289,7 +289,7 @@ export default function ReportForm() {
             {form.evidence.length > 0 && (
               <ul className="mt-2 flex flex-wrap gap-2">
                 {form.evidence.map((file, i) => (
-                  <li key={i} className="flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs text-gray-600">
+                  <li key={`${file.name}-${file.size}-${file.lastModified}`} className="flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs text-gray-600">
                     {file.name}
                     <button
                       type="button"
