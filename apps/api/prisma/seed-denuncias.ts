@@ -14,25 +14,25 @@ const CANTIDAD = Number(process.env['SEED_DENUNCIAS_COUNT'] ?? 30);
  * Puntos base reales de RD donde ocurre extracción ilegal de arena
  * (ríos y zonas costeras). Cada denuncia toma uno de estos y le aplica
  * un pequeño jitter para dispersarla de forma realista sobre el mapa.
- * Formato: [lat, lng] — dentro de DR_BOUNDS [[17.4,-72.0],[20.1,-68.2]].
+ * Formato: [lat, lng] — dentro de DR_BOUNDS [[17.4,-72],[20.1,-68.2]].
  */
 const UBICACIONES: Array<{ nombre: string; lat: number; lng: number; tipo: tipo_actividad_ilegal }> = [
-  { nombre: 'Río Ozama, Santo Domingo',          lat: 18.4900, lng: -69.8500, tipo: 'Extraccion_Rio' },
-  { nombre: 'Río Haina, San Cristóbal',          lat: 18.4200, lng: -70.0200, tipo: 'Extraccion_Rio' },
-  { nombre: 'Río Nizao, Baní',                   lat: 18.2800, lng: -70.2000, tipo: 'Extraccion_Rio' },
-  { nombre: 'Río Yaque del Norte, Santiago',     lat: 19.4500, lng: -70.6900, tipo: 'Extraccion_Rio' },
-  { nombre: 'Río Yuna, Bonao',                   lat: 18.9400, lng: -70.4100, tipo: 'Extraccion_Rio' },
-  { nombre: 'Río Camú, La Vega',                 lat: 19.2200, lng: -70.5200, tipo: 'Extraccion_Rio' },
-  { nombre: 'Río Yaque del Sur, Azua',           lat: 18.4500, lng: -70.7300, tipo: 'Extraccion_Rio' },
-  { nombre: 'Río Higuamo, San Pedro de Macorís', lat: 18.4600, lng: -69.3000, tipo: 'Extraccion_Rio' },
-  { nombre: 'Playa Najayo, San Cristóbal',       lat: 18.3000, lng: -70.1800, tipo: 'Extraccion_Playa' },
-  { nombre: 'Playa Palenque, San Cristóbal',     lat: 18.2700, lng: -70.1500, tipo: 'Extraccion_Playa' },
-  { nombre: 'Playa de Boca Chica',               lat: 18.4500, lng: -69.6100, tipo: 'Extraccion_Playa' },
-  { nombre: 'Costa de Barahona',                 lat: 18.2100, lng: -71.1000, tipo: 'Extraccion_Playa' },
-  { nombre: 'Costa de Puerto Plata',             lat: 19.7900, lng: -70.6900, tipo: 'Extraccion_Playa' },
-  { nombre: 'Bahía de Samaná',                   lat: 19.2000, lng: -69.3300, tipo: 'Extraccion_Zona_Protegida' },
-  { nombre: 'Monte Cristi (área protegida)',     lat: 19.8500, lng: -71.6500, tipo: 'Extraccion_Zona_Protegida' },
-  { nombre: 'Carretera Sánchez (ruta camiones)', lat: 18.3500, lng: -70.4000, tipo: 'Transporte_Ilegal' },
+  { nombre: 'Río Ozama, Santo Domingo',          lat: 18.49, lng: -69.85, tipo: 'Extraccion_Rio' },
+  { nombre: 'Río Haina, San Cristóbal',          lat: 18.42, lng: -70.02, tipo: 'Extraccion_Rio' },
+  { nombre: 'Río Nizao, Baní',                   lat: 18.28, lng: -70.2,  tipo: 'Extraccion_Rio' },
+  { nombre: 'Río Yaque del Norte, Santiago',     lat: 19.45, lng: -70.69, tipo: 'Extraccion_Rio' },
+  { nombre: 'Río Yuna, Bonao',                   lat: 18.94, lng: -70.41, tipo: 'Extraccion_Rio' },
+  { nombre: 'Río Camú, La Vega',                 lat: 19.22, lng: -70.52, tipo: 'Extraccion_Rio' },
+  { nombre: 'Río Yaque del Sur, Azua',           lat: 18.45, lng: -70.73, tipo: 'Extraccion_Rio' },
+  { nombre: 'Río Higuamo, San Pedro de Macorís', lat: 18.46, lng: -69.3,  tipo: 'Extraccion_Rio' },
+  { nombre: 'Playa Najayo, San Cristóbal',       lat: 18.3,  lng: -70.18, tipo: 'Extraccion_Playa' },
+  { nombre: 'Playa Palenque, San Cristóbal',     lat: 18.27, lng: -70.15, tipo: 'Extraccion_Playa' },
+  { nombre: 'Playa de Boca Chica',               lat: 18.45, lng: -69.61, tipo: 'Extraccion_Playa' },
+  { nombre: 'Costa de Barahona',                 lat: 18.21, lng: -71.1,  tipo: 'Extraccion_Playa' },
+  { nombre: 'Costa de Puerto Plata',             lat: 19.79, lng: -70.69, tipo: 'Extraccion_Playa' },
+  { nombre: 'Bahía de Samaná',                   lat: 19.2,  lng: -69.33, tipo: 'Extraccion_Zona_Protegida' },
+  { nombre: 'Monte Cristi (área protegida)',     lat: 19.85, lng: -71.65, tipo: 'Extraccion_Zona_Protegida' },
+  { nombre: 'Carretera Sánchez (ruta camiones)', lat: 18.35, lng: -70.4,  tipo: 'Transporte_Ilegal' },
 ];
 
 const ESTADOS: estado_denuncia[] = ['Pendiente', 'En_Investigacion', 'Verificada', 'Resuelta', 'Desestimada'];
@@ -177,6 +177,13 @@ async function main(): Promise<void> {
   console.log('\nSeed de denuncias completado.');
 }
 
-main()
-  .catch((e) => { console.error(e); process.exit(1); })
-  .finally(() => prisma.$disconnect());
+
+try {
+    await main();
+} catch (e) {
+    console.error(e);
+    process.exit(1);
+} finally {
+    prisma.$disconnect();
+    process.exit(0);
+}

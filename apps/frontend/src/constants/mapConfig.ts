@@ -3,7 +3,7 @@ import type { LatLngTuple } from 'leaflet'
 /** Geographic defaults for the Dominican Republic */
 export const DR_CENTER: LatLngTuple = [18.7357, -70.1627]
 export const DR_ZOOM   = 8
-export const DR_BOUNDS: [LatLngTuple, LatLngTuple] = [[17.4, -72.0], [20.1, -68.2]]
+export const DR_BOUNDS: [LatLngTuple, LatLngTuple] = [[17.4, -72], [20.1, -68.2]]
 
 /** OpenStreetMap tile layer — free, no API key needed */
 export const TILE_URL         = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
