@@ -31,11 +31,9 @@ export default function CambiarContrasenaPage() {
     const actualErr = !actual ? 'Ingresa tu contraseña actual' : null
     const passwordErr = validateRegisterPassword(password, '', '', '')
       || (password === actual ? 'La nueva contraseña debe ser distinta de la actual' : null)
-    const confirmErr = !confirm
-      ? 'Confirma tu contraseña'
-      : confirm !== password
-        ? 'Las contraseñas no coinciden'
-        : null
+    let confirmErr = null
+    if (!confirm) confirmErr = 'Confirma tu contraseña'
+    else if (confirm !== password) confirmErr = 'Las contraseñas no coinciden'
     setErrors({ actual: actualErr, password: passwordErr, confirm: confirmErr })
     return !actualErr && !passwordErr && !confirmErr
   }
