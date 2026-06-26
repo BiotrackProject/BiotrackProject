@@ -5,7 +5,7 @@ import { useForm, useStore } from '@tanstack/react-form'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { UploadCloud, X, CheckCircle } from 'lucide-react'
 import BackofficeTopbar from '../../components/backoffice/BackofficeTopbar'
-import { denunciasService, filtrarEvidencias, EVIDENCIA_MAX_FILES, EVIDENCIA_MAX_SIZE_MB, TIPOS_ACTIVIDAD, TIPO_LABEL } from '../../services/denunciasService'
+import { denunciasService, filtrarEvidencias, TIPOS_ACTIVIDAD, TIPO_LABEL } from '../../services/denunciasService'
 import { toast } from '../../utils/toast'
 
 function Label({ children, required }) {
