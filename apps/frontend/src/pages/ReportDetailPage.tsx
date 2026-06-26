@@ -90,7 +90,7 @@ export default function ReportDetailPage() {
   )
 }
 
-function ReportDetail({ reporte }: { reporte: DenunciaSeguimiento }) {
+function ReportDetail({ reporte }: Readonly<{ reporte: DenunciaSeguimiento }>) {
   const fecha = new Date(reporte.Fecha_denuncia).toLocaleDateString('es-DO')
   const fechaIncidente = reporte.fecha_incidente
     ? new Date(reporte.fecha_incidente).toLocaleDateString('es-DO')

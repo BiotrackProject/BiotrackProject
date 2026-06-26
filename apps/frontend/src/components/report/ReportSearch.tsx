@@ -197,7 +197,7 @@ export default function ReportSearch() {
   )
 }
 
-function ResultCard({ reporte, onOpen }: { reporte: DenunciaSeguimiento; onOpen: () => void }) {
+function ResultCard({ reporte, onOpen }: Readonly<{ reporte: DenunciaSeguimiento; onOpen: () => void }>) {
   const fecha = new Date(reporte.Fecha_denuncia).toLocaleDateString('es-DO')
   return (
     <article className="rounded-xl border border-gray-100 bg-white p-5 shadow-sm">
