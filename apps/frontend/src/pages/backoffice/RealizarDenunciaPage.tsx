@@ -176,6 +176,10 @@ export default function RealizarDenunciaPage() {
     if (aceptados.length) setFiles((prev) => [...prev, ...aceptados])
   }
 
+  function removeFile(index) {
+    setFiles((prev) => prev.filter((_, j) => j !== index))
+  }
+
   if (submitted) {
     return (
       <>
@@ -464,7 +468,7 @@ export default function RealizarDenunciaPage() {
               {files.map((f, i) => (
                 <li key={i} className="flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs text-gray-600">
                   {f.name}
-                  <button type="button" onClick={() => setFiles((prev) => prev.filter((_, j) => j !== i))} className="text-gray-400 hover:text-action">
+                  <button type="button" onClick={() => removeFile(i)} className="text-gray-400 hover:text-action">
                     <X className="h-3 w-3" />
                   </button>
                 </li>
