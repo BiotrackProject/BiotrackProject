@@ -4,6 +4,12 @@ import logger from './logger.js';
 
 let transporter: nodemailer.Transporter | null = null;
 
+function stripTrailingSlashes(url: string): string {
+  let end = url.length;
+  while (end > 0 && url[end - 1] === '/') end--;
+  return url.slice(0, end);
+}
+
 function getTransporter(): nodemailer.Transporter {
   if (transporter) return transporter;
   transporter = nodemailer.createTransport({
@@ -50,7 +56,7 @@ export async function sendRegistroAprobado(params: {
   correo: string;
   contrasena: string;
 }): Promise<void> {
-  const loginUrl = `${env.FRONTEND_URL.replace(/\/+$/, '')}/login`;
+  const loginUrl = `${stripTrailingSlashes(env.FRONTEND_URL)}/login`;
   await sendMail({
     to: params.correo,
     subject: 'BIOTRACK — Acceso aprobado',
