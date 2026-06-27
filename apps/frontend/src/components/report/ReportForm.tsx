@@ -14,7 +14,7 @@ const EMPTY = {
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 const isValidContact = (val) => {
-  const email = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+  const email = /^[^\s@]+@(?:[^\s@.]+\.)+[^\s@.]+$/
   const phone = /^(809|829|849)[- ]?\d{3}[- ]?\d{4}$/
   return email.test(val) || phone.test(val)
 }
