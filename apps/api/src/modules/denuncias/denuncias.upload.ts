@@ -12,7 +12,7 @@ const UPLOAD_SUBDIR = 'denuncias';
 const UPLOAD_DIR = path.resolve(env.STORAGE_LOCAL_PATH, UPLOAD_SUBDIR);
 mkdirSync(UPLOAD_DIR, { recursive: true });
 
-const MAX_FILE_SIZE = 25 * 1024 * 1024; // 25 MB por archivo
+const MAX_FILE_SIZE = 8_000_000; // 8 MB por archivo (límite seguro S5693)
 const MAX_FILES = 10;
 const MAX_FIELD_SIZE = 100 * 1024; // 100 KB por campo de texto
 const MAX_FIELDS = 20; // nº máximo de campos de texto (no-archivo)
