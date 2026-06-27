@@ -2,7 +2,7 @@ import bcrypt from 'bcryptjs';
 import type { estado_solicitud } from '@prisma/client';
 import prisma from '../../config/database.js';
 import { logAuditoria } from '../../middleware/auditLog.js';
-import { sendRegistroAprobado, sendRegistroRechazado } from '../../shared/utils/email.js';
+import { sendRegistroAprobado, sendRegistroRechazado } from '../../shared/utils/ses.js';
 import { NotFoundError, ConflictError, AppError } from '../../shared/errors/AppError.js';
 import { MODULO_SISTEMA } from '../../shared/constants/enums.js';
 import type {
