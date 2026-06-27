@@ -117,10 +117,6 @@ jobs:
           EMAIL_USER: ${{ secrets.EMAIL_USER }}
           EMAIL_PASS: ${{ secrets.EMAIL_PASS }}
           EMAIL_FROM: ${{ secrets.EMAIL_FROM }}
-          EMAIL_FROM_NAME: ${{ secrets.EMAIL_FROM_NAME }}
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          AWS_REGION: ${{ secrets.AWS_REGION }}
           DOZZLE_USERNAME: ${{ secrets.DOZZLE_USERNAME }}
           DOZZLE_PASSWORD: ${{ secrets.DOZZLE_PASSWORD }}
           DOZZLE_KEY: ${{ secrets.DOZZLE_KEY }}
@@ -137,11 +133,7 @@ jobs:
             echo "EMAIL_USER=$EMAIL_USER"
             echo "EMAIL_PASS=$EMAIL_PASS"
             echo "EMAIL_FROM=$EMAIL_FROM"
-            echo "EMAIL_FROM_NAME=$EMAIL_FROM_NAME"
             echo "EMAIL_FROM_NAME=BIOTRACK"
-            echo "AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID"
-            echo "AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY"
-            echo "AWS_REGION=$AWS_REGION"
             echo "FRONTEND_URL=https://biotrack.org.do"
             echo "RATE_LIMIT_WINDOW_MS=60000"
             echo "RATE_LIMIT_MAX_REQUESTS=100"

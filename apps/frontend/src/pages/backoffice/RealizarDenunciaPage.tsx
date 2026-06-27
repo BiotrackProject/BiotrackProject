@@ -376,7 +376,7 @@ export default function RealizarDenunciaPage() {
                     error={field.state.meta.errors[0]}
                   >
                     <option value="">Seleccione el tipo de actividad</option>
-                    {TIPOS_ACTIVIDAD.map((t) => <option key={t} value={t}>{TIPO_LABEL[t]}</option>)}
+                    {TIPOS_ACTIVIDAD.map((tipo) => <option key={tipo} value={tipo}>{TIPO_LABEL[tipo]}</option>)}
                   </Select>
                 )}
               </form.Field>

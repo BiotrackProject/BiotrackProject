@@ -55,21 +55,21 @@ export default function ReportForm() {
     { value: 'immediate', label: t('reportForm.urgencyLevels.immediate') },
   ]
 
-  const validate = (form: FormValues): Record<string, string> => {
+  const validate = (values: FormValues): Record<string, string> => {
     const e: Record<string, string> = {}
-    if (!form.location.trim() || form.location.trim().length < 5)
+    if (!values.location.trim() || values.location.trim().length < 5)
       e.location = t('reportForm.validation.locationMin')
-    if (!form.activityType)
+    if (!values.activityType)
       e.activityType = t('reportForm.validation.activityRequired')
-    if (!form.datetime)
+    if (!values.datetime)
       e.datetime = t('reportForm.validation.datetimeRequired')
-    else if (new Date(form.datetime) > new Date())
+    else if (new Date(values.datetime) > new Date())
       e.datetime = t('reportForm.validation.datetimeFuture')
-    if (!form.urgency)
+    if (!values.urgency)
       e.urgency = t('reportForm.validation.urgencyRequired')
-    if (!form.description.trim() || form.description.trim().length < 20)
+    if (!values.description.trim() || values.description.trim().length < 20)
       e.description = t('reportForm.validation.descriptionMin')
-    if (form.contact.trim() && !isValidContact(form.contact.trim()))
+    if (values.contact.trim() && !isValidContact(values.contact.trim()))
       e.contact = t('reportForm.validation.contactInvalid')
     return e
   }
@@ -190,8 +190,8 @@ export default function ReportForm() {
               className={inputCls(errors.activityType)}
             >
               <option value="">Seleccionar</option>
-              {TIPOS_ACTIVIDAD.map((t) => (
-                <option key={t} value={t}>{TIPO_LABEL[t]}</option>
+              {TIPOS_ACTIVIDAD.map((tipo) => (
+                <option key={tipo} value={tipo}>{TIPO_LABEL[tipo]}</option>
               ))}
             </select>
             {!errors.activityType && (
