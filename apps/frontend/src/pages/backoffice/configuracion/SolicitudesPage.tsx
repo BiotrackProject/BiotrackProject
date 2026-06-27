@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { useState, useEffect, useMemo } from 'react'
 import { Search, Check, X as XIcon, UserCheck } from 'lucide-react'
 import BackofficeTopbar from '../../../components/backoffice/BackofficeTopbar'
@@ -45,13 +44,17 @@ function formatFecha(iso: string | null) {
   return new Date(iso).toLocaleDateString('es-DO', { day: '2-digit', month: 'short', year: 'numeric' })
 }
 
-function EstadoBadge({ estado }: { estado: string }) {
+function EstadoBadge({ estado }: Readonly<{ estado: string }>) {
   const style = ESTADO_STYLES[estado] ?? 'bg-gray-100 text-gray-500 border border-gray-200'
   return (
     <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${style}`}>
       {ESTADO_LABEL[estado] ?? estado}
     </span>
   )
+}
+
+function fieldCls(err?: string) {
+  return `w-full rounded-lg border px-3 py-2.5 text-sm outline-none transition-colors ${err ? 'border-action focus:border-action' : 'border-gray-200 focus:border-primary focus:ring-1 focus:ring-primary/20'}`
 }
 
 const EMPTY_APROBAR = { rol_id: '', contrasena: '', comentario: '' }
@@ -101,10 +104,6 @@ export default function SolicitudesPage() {
         s.correo_electronico.toLowerCase().includes(q)
       )
   }, [solicitudes, query, tab])
-
-  function fieldCls(err?: string) {
-    return `w-full rounded-lg border px-3 py-2.5 text-sm outline-none transition-colors ${err ? 'border-action focus:border-action' : 'border-gray-200 focus:border-primary focus:ring-1 focus:ring-primary/20'}`
-  }
 
   function openAprobar(solicitud: SolicitudRegistro) {
     setAprobarForm({ ...EMPTY_APROBAR, rol_id: roles[0]?.id ?? '' })
@@ -327,8 +326,9 @@ export default function SolicitudesPage() {
               </p>
             </div>
             <div className="flex flex-col gap-1">
-              <label className="text-xs font-semibold text-gray-600">Rol asignado *</label>
+              <label htmlFor="aprobar-rol" className="text-xs font-semibold text-gray-600">Rol asignado *</label>
               <select
+                id="aprobar-rol"
                 value={aprobarForm.rol_id}
                 onChange={(e) => setAprobarForm((p) => ({ ...p, rol_id: e.target.value }))}
                 className={`rounded-lg border px-3 py-2.5 text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 ${aprobarErrors.rol_id ? 'border-action' : 'border-gray-200'}`}
@@ -339,8 +339,9 @@ export default function SolicitudesPage() {
               {aprobarErrors.rol_id && <p className="text-xs text-action">{aprobarErrors.rol_id}</p>}
             </div>
             <div className="flex flex-col gap-1">
-              <label className="text-xs font-semibold text-gray-600">Contraseña temporal *</label>
+              <label htmlFor="aprobar-contrasena" className="text-xs font-semibold text-gray-600">Contraseña temporal *</label>
               <input
+                id="aprobar-contrasena"
                 type="password"
                 value={aprobarForm.contrasena}
                 onChange={(e) => setAprobarForm((p) => ({ ...p, contrasena: e.target.value }))}
@@ -352,8 +353,9 @@ export default function SolicitudesPage() {
                 : <p className="text-xs text-gray-400">Se enviará por correo; el usuario la cambiará al iniciar sesión.</p>}
             </div>
             <div className="flex flex-col gap-1">
-              <label className="text-xs font-semibold text-gray-600">Comentario (opcional)</label>
+              <label htmlFor="aprobar-comentario" className="text-xs font-semibold text-gray-600">Comentario (opcional)</label>
               <textarea
+                id="aprobar-comentario"
                 value={aprobarForm.comentario}
                 onChange={(e) => setAprobarForm((p) => ({ ...p, comentario: e.target.value }))}
                 rows={2}
@@ -384,8 +386,9 @@ export default function SolicitudesPage() {
               Se le notificará por correo.
             </p>
             <div className="flex flex-col gap-1">
-              <label className="text-xs font-semibold text-gray-600">Motivo (opcional)</label>
+              <label htmlFor="rechazar-motivo" className="text-xs font-semibold text-gray-600">Motivo (opcional)</label>
               <textarea
+                id="rechazar-motivo"
                 value={rechazarComentario}
                 onChange={(e) => setRechazarComentario(e.target.value)}
                 rows={3}
