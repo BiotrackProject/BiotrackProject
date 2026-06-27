@@ -1,6 +1,7 @@
 // @ts-nocheck
 import { useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { UploadCloud, X, CheckCircle } from 'lucide-react'
 import BackofficeTopbar from '../../components/backoffice/BackofficeTopbar'
 import { PROVINCIAS_MUNICIPIOS } from '../../data/mockDenuncias'
@@ -81,12 +82,12 @@ const FILE_TYPES = ['MP3', 'MP4', 'PNG', 'JPG', 'PDF']
 const ALLOWED_EXT = ['.mp3', '.mp4', '.png', '.jpg', '.jpeg', '.pdf']
 
 export default function RealizarDenunciaPage() {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const fileInputRef = useRef(null)
   const [submitted, setSubmitted] = useState(false)
 
   const [form, setForm] = useState({
-    anonimo: '',
     nombres: '',
     apellidos: '',
     correo: '',
@@ -108,8 +109,6 @@ export default function RealizarDenunciaPage() {
   const [errors, setErrors] = useState({})
   const [dragging, setDragging] = useState(false)
 
-  const isAnon = form.anonimo === 'Sí'
-
   function set(field, value) {
     setForm((f) => ({ ...f, [field]: value }))
     if (errors[field]) setErrors((e) => ({ ...e, [field]: '' }))
@@ -124,19 +123,18 @@ export default function RealizarDenunciaPage() {
 
   function validate() {
     const e = {}
-    if (!form.anonimo) e.anonimo = 'Requerido'
-    if (!isAnon && !form.nombres.trim()) e.nombres = 'Requerido'
-    if (!isAnon && !form.apellidos.trim()) e.apellidos = 'Requerido'
-    if (!form.fechaIncidente) e.fechaIncidente = 'Requerido'
-    if (!form.provincia) e.provincia = 'Requerido'
-    if (!form.municipio) e.municipio = 'Requerido'
-    if (!form.sector.trim()) e.sector = 'Requerido'
-    if (!form.detalleUbicacion.trim()) e.detalleUbicacion = 'Requerido'
-    if (!form.tipoExtraccion) e.tipoExtraccion = 'Requerido'
-    if (!form.numPersonas) e.numPersonas = 'Requerido'
-    if (!form.cantidadArena.trim()) e.cantidadArena = 'Requerido'
-    if (!form.detalleActividad.trim()) e.detalleActividad = 'Requerido'
-    if (!form.consentimiento) e.consentimiento = 'Debes aceptar la declaración para continuar'
+    if (!form.nombres.trim()) e.nombres = t('realizarDenuncia.required')
+    if (!form.apellidos.trim()) e.apellidos = t('realizarDenuncia.required')
+    if (!form.fechaIncidente) e.fechaIncidente = t('realizarDenuncia.required')
+    if (!form.provincia) e.provincia = t('realizarDenuncia.required')
+    if (!form.municipio) e.municipio = t('realizarDenuncia.required')
+    if (!form.sector.trim()) e.sector = t('realizarDenuncia.required')
+    if (!form.detalleUbicacion.trim()) e.detalleUbicacion = t('realizarDenuncia.required')
+    if (!form.tipoExtraccion) e.tipoExtraccion = t('realizarDenuncia.required')
+    if (!form.numPersonas) e.numPersonas = t('realizarDenuncia.required')
+    if (!form.cantidadArena.trim()) e.cantidadArena = t('realizarDenuncia.required')
+    if (!form.detalleActividad.trim()) e.detalleActividad = t('realizarDenuncia.required')
+    if (!form.consentimiento) e.consentimiento = t('realizarDenuncia.consentError')
     return e
   }
 
@@ -150,16 +148,16 @@ export default function RealizarDenunciaPage() {
   if (submitted) {
     return (
       <>
-        <BackofficeTopbar title="Realizar Denuncia" backTo="/admin/denuncias" />
+        <BackofficeTopbar title={t('realizarDenuncia.title')} backTo="/admin/denuncias" />
         <main className="flex flex-col items-center justify-center p-16 gap-4">
           <CheckCircle className="h-16 w-16 text-emerald-500" />
-          <h2 className="text-xl font-bold text-primary">Denuncia creada exitosamente</h2>
-          <p className="text-sm text-gray-500">La denuncia ha sido registrada en el sistema.</p>
+          <h2 className="text-xl font-bold text-primary">{t('realizarDenuncia.successTitle')}</h2>
+          <p className="text-sm text-gray-500">{t('realizarDenuncia.successMsg')}</p>
           <button
             onClick={() => navigate('/admin/denuncias')}
             className="mt-4 rounded-full bg-primary px-6 py-2.5 text-sm font-semibold text-white hover:bg-primary/90 transition-colors"
           >
-            Ver Denuncias
+            {t('realizarDenuncia.viewDenuncias')}
           </button>
         </main>
       </>
@@ -168,63 +166,52 @@ export default function RealizarDenunciaPage() {
 
   return (
     <>
-      <BackofficeTopbar title="Realizar Denuncia" backTo="/admin/denuncias" />
+      <BackofficeTopbar title={t('realizarDenuncia.title')} backTo="/admin/denuncias" />
 
       <main className="p-8 flex flex-col gap-5">
         {/* Información del Denunciante */}
         <div data-tour="backoffice-denuncia-form-personal">
-          <SectionCard title="Información del Denunciante">
+          <SectionCard title={t('realizarDenuncia.personalInfo')}>
             <div className="grid grid-cols-3 gap-4">
-            <div className="col-span-3">
-              <RadioGroup
-                label="Deseas Permanecer Anónimo/a"
-                required
-                name="anonimo"
-                options={['Sí', 'No']}
-                value={form.anonimo}
-                onChange={(v) => set('anonimo', v)}
-                error={errors.anonimo}
-              />
-            </div>
             <div>
-              <Label required={!isAnon}>Nombres</Label>
+              <Label required>{t('realizarDenuncia.namesLabel')}</Label>
               <Input
-                placeholder="Nombres"
+                placeholder={t('realizarDenuncia.namesLabel')}
                 value={form.nombres}
                 onChange={(e) => set('nombres', e.target.value)}
-                disabled={isAnon}
+
                 error={errors.nombres}
               />
             </div>
             <div>
-              <Label>Apellidos</Label>
+              <Label>{t('realizarDenuncia.lastNameLabel')}</Label>
               <Input
-                placeholder="Apellidos"
+                placeholder={t('realizarDenuncia.lastNameLabel')}
                 value={form.apellidos}
                 onChange={(e) => set('apellidos', e.target.value)}
-                disabled={isAnon}
+
                 error={errors.apellidos}
               />
             </div>
             <div />
             <div>
-              <Label>Correo Electrónico</Label>
+              <Label>{t('realizarDenuncia.emailLabel')}</Label>
               <Input
                 type="email"
-                placeholder="Correo Electrónico"
+                placeholder={t('realizarDenuncia.emailLabel')}
                 value={form.correo}
                 onChange={(e) => set('correo', e.target.value)}
-                disabled={isAnon}
+
               />
             </div>
             <div>
-              <Label>Teléfono de contacto</Label>
+              <Label>{t('realizarDenuncia.phoneLabel')}</Label>
               <Input
                 type="tel"
-                placeholder="(000)-000-000"
+                placeholder={t('realizarDenuncia.phonePlaceholder')}
                 value={form.telefono}
                 onChange={(e) => set('telefono', e.target.value)}
-                disabled={isAnon}
+
               />
             </div>
             </div>
@@ -233,10 +220,10 @@ export default function RealizarDenunciaPage() {
 
         {/* Ubicación del Incidente */}
         <div data-tour="backoffice-denuncia-form-location">
-          <SectionCard title="Ubicación del Incidente">
+          <SectionCard title={t('realizarDenuncia.locationInfo')}>
             <div className="grid grid-cols-3 gap-4">
             <div>
-              <Label required>Fecha del incidente</Label>
+              <Label required>{t('realizarDenuncia.dateLabel')}</Label>
               <Input
                 type="date"
                 value={form.fechaIncidente}
@@ -245,7 +232,7 @@ export default function RealizarDenunciaPage() {
               />
             </div>
             <div>
-              <Label>Hora aproximada</Label>
+              <Label>{t('realizarDenuncia.timeLabel')}</Label>
               <Input
                 type="time"
                 value={form.hora}
@@ -253,52 +240,52 @@ export default function RealizarDenunciaPage() {
               />
             </div>
             <div>
-              <Label required>Provincia</Label>
+              <Label required>{t('realizarDenuncia.provinciaLabel')}</Label>
               <Select
                 value={form.provincia}
                 onChange={(e) => { set('provincia', e.target.value); set('municipio', '') }}
                 error={errors.provincia}
               >
-                <option value="">Seleccione una Provincia</option>
+                <option value="">{t('realizarDenuncia.provinciaPlaceholder')}</option>
                 {PROVINCIAS.map((p) => <option key={p} value={p}>{p}</option>)}
               </Select>
             </div>
             <div>
-              <Label required>Municipio</Label>
+              <Label required>{t('realizarDenuncia.municipioLabel')}</Label>
               <Select
                 value={form.municipio}
                 onChange={(e) => set('municipio', e.target.value)}
                 disabled={!form.provincia}
                 error={errors.municipio}
               >
-                <option value="">Seleccione un Municipio</option>
+                <option value="">{t('realizarDenuncia.municipioPlaceholder')}</option>
                 {(PROVINCIAS_MUNICIPIOS[form.provincia] ?? []).map((m) => (
                   <option key={m} value={m}>{m}</option>
                 ))}
               </Select>
             </div>
             <div>
-              <Label required>Sector</Label>
+              <Label required>{t('realizarDenuncia.sectorLabel')}</Label>
               <Input
-                placeholder="Ingrese el sector"
+                placeholder={t('realizarDenuncia.sectorPlaceholder')}
                 value={form.sector}
                 onChange={(e) => set('sector', e.target.value)}
                 error={errors.sector}
               />
             </div>
             <div>
-              <Label>Coordenadas GPS</Label>
+              <Label>{t('realizarDenuncia.gpsLabel')}</Label>
               <Input
-                placeholder="Ejemplo: 18.7357, -70.1627"
+                placeholder={t('realizarDenuncia.gpsPlaceholder')}
                 value={form.gps}
                 onChange={(e) => set('gps', e.target.value)}
               />
             </div>
             <div className="col-span-3">
-              <Label required>Detalle de la actividad realizada</Label>
+              <Label required>{t('realizarDenuncia.locationDetailLabel')}</Label>
               <textarea
                 rows={3}
-                placeholder="Describir la zona afectada..."
+                placeholder={t('realizarDenuncia.locationDetailPlaceholder')}
                 value={form.detalleUbicacion}
                 onChange={(e) => set('detalleUbicacion', e.target.value)}
                 className={`w-full rounded-xl border px-3.5 py-2.5 text-sm text-gray-700 placeholder:text-gray-400 outline-none resize-none transition-colors
@@ -311,40 +298,40 @@ export default function RealizarDenunciaPage() {
         </div>
 
         {/* Detalles del Incidente */}
-        <SectionCard title="Detalles del Incidente">
+        <SectionCard title={t('realizarDenuncia.incidentDetails')}>
           <div className="grid grid-cols-3 gap-6">
             <RadioGroup
-              label="Tipo de extracción observada"
+              label={t('realizarDenuncia.extractionTypeLabel')}
               required
               name="tipoExtraccion"
-              options={['Manual', 'Maquinaria pesada']}
+              options={[t('realizarDenuncia.extractionManual'), t('realizarDenuncia.extractionHeavy')]}
               value={form.tipoExtraccion}
               onChange={(v) => set('tipoExtraccion', v)}
               error={errors.tipoExtraccion}
             />
             <RadioGroup
-              label="Número de personas involucradas"
+              label={t('realizarDenuncia.peopleLabel')}
               required
               name="numPersonas"
-              options={['1-5', 'Más de 6 personas']}
+              options={[t('realizarDenuncia.people1to5'), t('realizarDenuncia.peopleMore')]}
               value={form.numPersonas}
               onChange={(v) => set('numPersonas', v)}
               error={errors.numPersonas}
             />
             <div>
-              <Label required>Cantidad estimada de arena extraída</Label>
+              <Label required>{t('realizarDenuncia.sandAmountLabel')}</Label>
               <Input
-                placeholder='Ejemplo: "Un camión lleno"'
+                placeholder={t('realizarDenuncia.sandAmountPlaceholder')}
                 value={form.cantidadArena}
                 onChange={(e) => set('cantidadArena', e.target.value)}
                 error={errors.cantidadArena}
               />
             </div>
             <div className="col-span-3">
-              <Label required>Detalle de la actividad realizada</Label>
+              <Label required>{t('realizarDenuncia.activityDetailLabel')}</Label>
               <textarea
                 rows={3}
-                placeholder="Describir la zona afectada..."
+                placeholder={t('realizarDenuncia.locationDetailPlaceholder')}
                 value={form.detalleActividad}
                 onChange={(e) => set('detalleActividad', e.target.value)}
                 className={`w-full rounded-xl border px-3.5 py-2.5 text-sm text-gray-700 placeholder:text-gray-400 outline-none resize-none transition-colors
@@ -357,7 +344,7 @@ export default function RealizarDenunciaPage() {
 
         {/* Adjuntar Evidencias */}
         <div data-tour="backoffice-denuncia-form-evidence">
-          <SectionCard title="Adjuntar Evidencias">
+          <SectionCard title={t('realizarDenuncia.evidenceTitle')}>
             <div
             onDragOver={(e) => { e.preventDefault(); setDragging(true) }}
             onDragLeave={() => setDragging(false)}
@@ -367,8 +354,8 @@ export default function RealizarDenunciaPage() {
               ${dragging ? 'border-primary bg-primary/5' : 'border-gray-200 bg-[#F8F9FB] hover:border-primary/50'}`}
           >
             <UploadCloud className="h-10 w-10 text-primary/70" />
-            <p className="text-sm font-medium text-gray-600">Haga clic para cargar o arrastre y suelte</p>
-            <p className="text-xs text-gray-400">Solo es permitido subir archivos ({FILE_TYPES.join(', ')})</p>
+            <p className="text-sm font-medium text-gray-600">{t('realizarDenuncia.evidenceDropText')}</p>
+            <p className="text-xs text-gray-400">{t('realizarDenuncia.evidenceAllowed', { types: FILE_TYPES.join(', ') })}</p>
             <input
               ref={fileInputRef}
               type="file"
@@ -401,7 +388,7 @@ export default function RealizarDenunciaPage() {
                 className="mt-0.5 h-4 w-4 accent-primary shrink-0"
               />
               <span className="text-xs text-gray-600 leading-relaxed">
-                Declaro que la información proporcionada es verídica y doy mi consentimiento para que sea utilizada en investigaciones relacionadas.
+                {t('realizarDenuncia.consentLabel')}
               </span>
             </label>
             {errors.consentimiento && <p className="mt-1 text-xs text-action">{errors.consentimiento}</p>}
@@ -412,13 +399,13 @@ export default function RealizarDenunciaPage() {
               onClick={() => navigate('/admin/denuncias')}
               className="rounded-full border border-gray-300 bg-white px-6 py-2.5 text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-colors"
             >
-              Volver atrás
+              {t('realizarDenuncia.back')}
             </button>
             <button
               onClick={handleSubmit}
               className="rounded-full bg-action px-8 py-2.5 text-sm font-semibold text-white hover:bg-action/90 transition-colors"
             >
-              Crear Denuncia
+              {t('realizarDenuncia.createDenuncia')}
             </button>
           </div>
           </SectionCard>

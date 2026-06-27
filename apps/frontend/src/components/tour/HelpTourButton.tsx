@@ -1,24 +1,15 @@
-/**
- * HelpTourButton — reusable "?" button that triggers a guided tour.
- *
- * Props:
- *  onStart:     () => void   — callback that fires the tour
- *  position:    'fixed-bottom-right' | 'inline'  (default: 'fixed-bottom-right')
- *  label:       string  — tooltip/aria-label (default: 'Ver recorrido de ayuda')
- *  variant:     'primary' | 'white'  — colour scheme (default: 'primary')
- *  className:   string  — extra Tailwind classes
- *
- * Usage:
- *   <HelpTourButton onStart={() => startTour(LANDING_STEPS)} />
- */
+import { useTranslation } from 'react-i18next'
+
 export default function HelpTourButton({
   onStart,
   position  = 'fixed-bottom-right',
-  label     = 'Ver recorrido de ayuda',
+  label,
   variant   = 'primary',
   className = '',
   dataTour,
 }) {
+  const { t } = useTranslation()
+  const resolvedLabel = label ?? t('tour.helpBtn')
   const baseStyle = 'flex items-center justify-center rounded-full font-bold select-none shadow-lg transition-[transform,background-color,color,border-color,box-shadow] duration-150 ease-out active:scale-[0.96] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2'
 
   const variantStyle = variant === 'white'
@@ -32,8 +23,8 @@ export default function HelpTourButton({
   return (
     <button
       onClick={onStart}
-      aria-label={label}
-      title={label}
+      aria-label={resolvedLabel}
+      title={resolvedLabel}
       data-tour={dataTour}
       className={[baseStyle, variantStyle, positionStyle, className].filter(Boolean).join(' ')}
     >

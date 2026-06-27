@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 import Navbar from '../components/layout/Navbar'
 import Footer from '../components/layout/Footer'
@@ -7,13 +8,16 @@ import ReportForm from '../components/report/ReportForm'
 import ReportSidebar from '../components/report/ReportSidebar'
 import HelpTourButton from '../components/tour/HelpTourButton'
 import { useGuidedTour } from '../hooks/useGuidedTour'
-import { CITIZEN_TOUR_STEPS } from '../data/tourSteps'
+import { getCitizenTourSteps } from '../data/tourSteps'
 
 export default function ReportPage() {
+  const { t } = useTranslation()
   const { startTour, startAutoTour } = useGuidedTour('citizen')
 
+  const citizenSteps = getCitizenTourSteps(t)
+
   useEffect(() => {
-    const cleanup = startAutoTour(CITIZEN_TOUR_STEPS)
+    const cleanup = startAutoTour(citizenSteps)
     return cleanup
   }, [])  // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -26,8 +30,8 @@ export default function ReportPage() {
       <main id="main-content" className="flex-1">
         <div data-tour="citizen-report-intro">
           <ReportHero
-            category="Reporte"
-            title="Actividad sospechosa de extracción de arena"
+            category={t('reportPage.category')}
+            title={t('reportPage.title')}
           />
         </div>
 
@@ -36,27 +40,25 @@ export default function ReportPage() {
           <div className="grid gap-6 rounded-2xl border border-gray-100 bg-white p-6 shadow-sm lg:grid-cols-[1.1fr_0.9fr]">
             <div>
               <p className="text-sm leading-relaxed text-gray-600">
-                Completa los campos esenciales para registrar una denuncia relacionada
-                con extraccion ilegal de arena u otras actividades ambientales
-                irregulares.
+                {t('reportPage.introText')}
               </p>
               <ol className="mt-4 space-y-2 text-sm text-gray-600">
-                <li><span className="font-semibold text-primary">1.</span> Describe ubicacion, actividad y fecha aproximada.</li>
-                <li><span className="font-semibold text-primary">2.</span> Adjunta evidencia visual si esta disponible.</li>
-                <li><span className="font-semibold text-primary">3.</span> Recibe un ID para dar seguimiento en la consulta.</li>
+                <li><span className="font-semibold text-primary">1.</span> {t('reportPage.step1')}</li>
+                <li><span className="font-semibold text-primary">2.</span> {t('reportPage.step2')}</li>
+                <li><span className="font-semibold text-primary">3.</span> {t('reportPage.step3')}</li>
               </ol>
             </div>
 
             <div className="rounded-xl bg-blue-50 p-4">
-              <p className="text-sm font-bold text-primary">¿Ya reportaste antes?</p>
+              <p className="text-sm font-bold text-primary">{t('reportPage.alreadyReported')}</p>
               <p className="mt-1 text-xs leading-relaxed text-gray-600">
-                Consulta el estado de un caso existente por ID o ubicacion sin volver a registrar la incidencia.
+                {t('reportPage.alreadyReportedDesc')}
               </p>
               <Link
                 to="/reportes"
                 className="mt-3 inline-flex rounded-lg border border-primary px-4 py-2 text-xs font-semibold text-primary transition-colors hover:bg-primary hover:text-white"
               >
-                Ir a consulta de reportes
+                {t('reportPage.goToConsult')}
               </Link>
             </div>
           </div>
@@ -79,8 +81,8 @@ export default function ReportPage() {
 
       <HelpTourButton
         dataTour="citizen-tour-btn"
-        onStart={() => startTour(CITIZEN_TOUR_STEPS)}
-        label="Ver recorrido de la página"
+        onStart={() => startTour(citizenSteps)}
+        label={t('reportPage.tourLabel')}
       />
     </div>
   )

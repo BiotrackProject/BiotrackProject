@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { NavLink, Link } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { useAuth } from '../../context/AuthContext'
 import {
   LayoutDashboard,
@@ -15,19 +16,6 @@ import {
 import imagotipoBlanco from '../../assets/images/imagotipo negativo.svg'
 import isotipoNegativo from '../../assets/images/isotiponegativo.png'
 
-const NAV = [
-  { to: '/admin/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
-  { to: '/admin/denuncias', icon: FileWarning,     label: 'Denuncias' },
-  { to: '/admin/monitoreo', icon: MapPin,          label: 'Monitoreo de Zonas' },
-  { to: '/admin/acciones',  icon: ClipboardCheck,  label: 'Acciones Correctivas' },
-  { to: '/admin/mapa',      icon: Map,             label: 'Mapa de Denuncias' },
-]
-
-const CONFIG_LINKS = [
-  { to: '/admin/configuracion/usuarios', label: 'Usuarios' },
-  { to: '/admin/configuracion/sistema',  label: 'Sistema' },
-]
-
 function Tooltip({ children }) {
   return (
     <span className="pointer-events-none absolute left-full ml-3 top-1/2 -translate-y-1/2 z-[100] rounded-md bg-gray-900/90 px-2.5 py-1.5 text-xs font-medium text-white opacity-0 shadow-lg whitespace-nowrap transition-opacity duration-150 group-hover:opacity-100">
@@ -37,9 +25,23 @@ function Tooltip({ children }) {
 }
 
 export default function Sidebar({ mobileOpen = false, setMobileOpen = () => {} }: { mobileOpen?: boolean; setMobileOpen?: React.Dispatch<React.SetStateAction<boolean>> }) {
+  const { t } = useTranslation()
   const [open, setOpen]             = useState(true)
   const [configOpen, setConfigOpen] = useState(false)
   const { user } = useAuth()
+
+  const NAV = [
+    { to: '/admin/dashboard', icon: LayoutDashboard, label: t('sidebar.dashboard') },
+    { to: '/admin/denuncias', icon: FileWarning,     label: t('sidebar.denuncias') },
+    { to: '/admin/monitoreo', icon: MapPin,          label: t('sidebar.monitoreo') },
+    { to: '/admin/acciones',  icon: ClipboardCheck,  label: t('sidebar.acciones') },
+    { to: '/admin/mapa',      icon: Map,             label: t('sidebar.mapa') },
+  ]
+
+  const CONFIG_LINKS = [
+    { to: '/admin/configuracion/usuarios', label: t('sidebar.configUsuarios') },
+    { to: '/admin/configuracion/sistema',  label: t('sidebar.configSistema') },
+  ]
 
   const initials = user
     ? user.nombre_completo.split(' ').slice(0, 2).map(p => p[0]).join('').toUpperCase()
@@ -59,13 +61,13 @@ export default function Sidebar({ mobileOpen = false, setMobileOpen = () => {} }
       {mobileOpen && (
         <button
           type="button"
-          aria-label="Cerrar menú"
+          aria-label={t('sidebar.closeMenu')}
           onClick={() => setMobileOpen(false)}
           className="fixed inset-0 z-30 bg-primary/40 backdrop-blur-[1px] lg:hidden"
         />
       )}
       <aside
-        aria-label="Navegación administrativa"
+        aria-label={t('sidebar.navLabel')}
         data-tour="backoffice-sidebar"
         className={`fixed inset-y-0 left-0 z-40 flex min-h-screen w-[252px] shrink-0 flex-col bg-primary transition-[transform,width] duration-[280ms] ease-out lg:static lg:z-auto lg:translate-x-0 lg:transition-[width] ${
           open ? 'lg:w-[252px]' : 'lg:w-[76px]'
@@ -79,7 +81,7 @@ export default function Sidebar({ mobileOpen = false, setMobileOpen = () => {} }
       >
         <Link
           to="/"
-          title="Volver al portal ciudadano"
+          title={t('sidebar.backToPortal')}
           className="shrink-0 opacity-90 hover:opacity-100 transition-opacity"
         >
           {open ? (
@@ -92,13 +94,13 @@ export default function Sidebar({ mobileOpen = false, setMobileOpen = () => {} }
         <div className="group relative shrink-0">
           <button
             onClick={() => setOpen(v => !v)}
-            aria-label={open ? 'Contraer menú' : 'Expandir menú'}
+            aria-label={open ? t('sidebar.collapse') : t('sidebar.expand')}
             aria-expanded={open}
             className="flex h-9 w-9 items-center justify-center rounded-lg text-white/60 transition-[transform,background-color,color] duration-150 ease-out hover:bg-white/15 hover:text-white active:scale-[0.95] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/55"
           >
             {open ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
           </button>
-          {!open && <Tooltip>Expandir menú</Tooltip>}
+          {!open && <Tooltip>{t('sidebar.expand')}</Tooltip>}
         </div>
       </div>
 
@@ -189,7 +191,7 @@ export default function Sidebar({ mobileOpen = false, setMobileOpen = () => {} }
                   open ? 'max-w-[160px] opacity-100' : 'max-w-0 opacity-0'
                 }`}
               >
-                Configuración
+                {t('sidebar.config')}
               </span>
 
               {open && (
@@ -200,7 +202,7 @@ export default function Sidebar({ mobileOpen = false, setMobileOpen = () => {} }
                 />
               )}
             </button>
-            {!open && <Tooltip>Configuración</Tooltip>}
+            {!open && <Tooltip>{t('sidebar.config')}</Tooltip>}
           </div>
 
           {open && (

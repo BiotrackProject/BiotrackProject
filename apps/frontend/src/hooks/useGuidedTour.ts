@@ -1,4 +1,5 @@
 import { useCallback } from 'react'
+import { useTranslation } from 'react-i18next'
 import introJs from 'intro.js'
 
 declare global {
@@ -23,11 +24,7 @@ function getStorageKey(area: StorageArea): string {
   return STORAGE_KEYS[area] ?? `biotrack_intro_${area}_seen`
 }
 
-const INTRO_OPTIONS = {
-  nextLabel:          'Siguiente →',
-  prevLabel:          '← Anterior',
-  skipLabel:          'Saltar tour',
-  doneLabel:          'Finalizar',
+const BASE_INTRO_OPTIONS = {
   showProgress:       true,
   showBullets:        false,
   showStepNumbers:    false,
@@ -53,6 +50,7 @@ function resolveSteps(rawSteps: Record<string, any>[]): Record<string, any>[] {
 }
 
 export function useGuidedTour(area: StorageArea) {
+  const { t } = useTranslation()
   const key = getStorageKey(area)
 
   const hasSeenTour = useCallback(() => localStorage.getItem(key) === 'true', [key])
@@ -62,11 +60,18 @@ export function useGuidedTour(area: StorageArea) {
     const steps = resolveSteps(rawSteps)
     if (steps.length === 0) return
     introJs()
-      .setOptions({ ...INTRO_OPTIONS, steps })
+      .setOptions({
+        ...BASE_INTRO_OPTIONS,
+        nextLabel: t('tour.next'),
+        prevLabel: t('tour.prev'),
+        skipLabel: t('tour.skip'),
+        doneLabel: t('tour.done'),
+        steps,
+      })
       .oncomplete(() => { markSeen(); onFinish?.() })
       .onexit(() => { markSeen(); onFinish?.() })
       .start()
-  }, [markSeen])
+  }, [markSeen, t])
 
   const startAutoTour = useCallback((rawSteps: Record<string, any>[], delayMs = 600) => {
     if (hasSeenTour()) return

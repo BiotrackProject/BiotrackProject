@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import ImagePanel from '../../components/auth/ImagePanel'
 import { validateEmail } from '../../utils/validation'
 
@@ -13,6 +14,7 @@ const INPUT_CLS = (hasError) =>
   }`
 
 export default function ForgotPasswordPage() {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const [email, setEmail] = useState('')
   const [error, setError] = useState(null)
@@ -45,30 +47,30 @@ export default function ForgotPasswordPage() {
         <div className="relative h-32 w-full overflow-hidden md:hidden" style={{ backgroundImage: `url(${recoverBg})`, backgroundSize: 'cover', backgroundPosition: 'center' }}>
           <div className="absolute inset-0 bg-[linear-gradient(145deg,rgba(19,53,108,0.74),rgba(40,40,40,0.64))]" />
           <div className="absolute left-6 top-6 border-l-2 border-secondary/80 pl-3 text-[11px] font-semibold uppercase tracking-[0.2em] text-surface/90">
-            Seguridad BIOTRACK
+            {t('forgot.mobileTag')}
           </div>
         </div>
 
         <div className="relative flex w-full items-center px-6 py-8 sm:px-10 md:px-12 lg:px-16">
           <div className="pointer-events-none absolute left-5 top-5 h-14 w-14 border-l-2 border-t-2 border-primary/25" />
           <div className="w-full max-w-[460px]">
-            <p className="mb-4 text-[11px] font-semibold uppercase tracking-[0.22em] text-primary/75">Recuperación de acceso</p>
+            <p className="mb-4 text-[11px] font-semibold uppercase tracking-[0.22em] text-primary/75">{t('forgot.tag')}</p>
             <h2 className="mb-3 text-[clamp(1.9rem,3.5vw,2.85rem)] leading-[0.98] font-extrabold text-primary">
-              Recuperar Contraseña
+              {t('forgot.title')}
             </h2>
             <p className="mb-8 max-w-[46ch] text-[14px] leading-6 text-dark/80">
-              Ingresa tu correo registrado. Te enviaremos un código para verificar tu identidad.
+              {t('forgot.subtitle')}
             </p>
 
             <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-5">
               <div className="flex flex-col gap-1">
                 <label htmlFor="recover-email" className="text-[12px] font-semibold uppercase tracking-[0.08em] text-dark/80">
-                  Correo Electrónico
+                  {t('forgot.emailLabel')}
                 </label>
                 <input
                   id="recover-email"
                   type="email"
-                  placeholder="Ingresar correo electrónico"
+                  placeholder={t('forgot.emailPlaceholder')}
                   value={email}
                   onChange={handleChange}
                   onBlur={handleBlur}
@@ -83,12 +85,12 @@ export default function ForgotPasswordPage() {
                 disabled={loading}
                 className="mt-2 w-full rounded-md bg-dark py-3 text-[16px] font-bold text-surface transition-[transform,background-color] duration-200 active:scale-[0.985] hover:bg-primary disabled:cursor-not-allowed disabled:opacity-50"
               >
-                {loading ? 'Enviando...' : 'Enviar código'}
+                {loading ? t('forgot.submitting') : t('forgot.submit')}
               </button>
 
               <p className="text-center text-[13px] text-dark/85">
                 <Link to="/login" className="font-bold text-primary hover:text-primary/80">
-                  Volver a inicio de sesión
+                  {t('forgot.backToLogin')}
                 </Link>
               </p>
             </form>

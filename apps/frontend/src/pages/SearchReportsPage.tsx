@@ -1,17 +1,20 @@
 import { useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import Navbar from '../components/layout/Navbar'
 import Footer from '../components/layout/Footer'
 import ReportHero from '../components/report/ReportHero'
 import ReportSearch from '../components/report/ReportSearch'
 import HelpTourButton from '../components/tour/HelpTourButton'
 import { useGuidedTour } from '../hooks/useGuidedTour'
-import { CITIZEN_SEARCH_TOUR_STEPS } from '../data/tourSteps'
+import { getCitizenSearchTourSteps } from '../data/tourSteps'
 
 export default function SearchReportsPage() {
+  const { t } = useTranslation()
   const { startTour, startAutoTour } = useGuidedTour('citizen_search')
+  const searchSteps = getCitizenSearchTourSteps(t)
 
   useEffect(() => {
-    const cleanup = startAutoTour(CITIZEN_SEARCH_TOUR_STEPS, 800)
+    const cleanup = startAutoTour(searchSteps, 800)
     return cleanup
   }, [])  // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -23,8 +26,8 @@ export default function SearchReportsPage() {
 
       <main id="main-content" className="flex-1">
         <ReportHero
-          category="Consulta"
-          title="Búsqueda de Reportes"
+          category={t('searchPage.category')}
+          title={t('searchPage.title')}
         />
         <div data-tour="citizen-search-area">
           <ReportSearch />
@@ -35,8 +38,8 @@ export default function SearchReportsPage() {
 
       <HelpTourButton
         dataTour="citizen-tour-btn"
-        onStart={() => startTour(CITIZEN_SEARCH_TOUR_STEPS)}
-        label="Ver recorrido de la página"
+        onStart={() => startTour(searchSteps)}
+        label={t('searchPage.tourLabel')}
       />
     </div>
   )

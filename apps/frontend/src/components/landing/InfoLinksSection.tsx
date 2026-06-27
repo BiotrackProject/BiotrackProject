@@ -1,23 +1,24 @@
 import { Link } from 'react-router-dom'
-
-const ITEMS = [
-  {
-    title: 'Antes de Reportar',
-    description:
-      'Conoce señales frecuentes de extraccion ilegal y prepara evidencia util (fotos, horario, ubicacion) para que tu reporte sea mas verificable.',
-    button: 'Iniciar reporte guiado',
-    href: '/reporte/nuevo',
-  },
-  {
-    title: 'Seguimiento de Casos',
-    description:
-      'Consulta reportes por ID o ubicacion para revisar su estado actual, linea de tiempo y progreso de verificacion.',
-    button: 'Buscar reportes',
-    href: '/reportes',
-  },
-]
+import { useTranslation } from 'react-i18next'
 
 export default function InfoLinksSection() {
+  const { t } = useTranslation()
+
+  const ITEMS = [
+    {
+      title: t('infoLinks.beforeTitle'),
+      description: t('infoLinks.beforeDesc'),
+      button: t('infoLinks.beforeCta'),
+      href: '/reporte/nuevo',
+    },
+    {
+      title: t('infoLinks.trackingTitle'),
+      description: t('infoLinks.trackingDesc'),
+      button: t('infoLinks.trackingCta'),
+      href: '/reportes',
+    },
+  ]
+
   return (
     <section className="bg-white py-14">
       <div className="mx-auto max-w-6xl px-6">

@@ -1,9 +1,10 @@
 import { useState, useEffect, useCallback } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import { Search, SlidersHorizontal, Plus, Download, ChevronLeft, ChevronRight, Map } from 'lucide-react'
 import BackofficeTopbar from '../../components/backoffice/BackofficeTopbar'
 import LoadingSpinner from '../../components/ui/LoadingSpinner'
-import { denunciasService, ESTADOS_DENUNCIA, ESTADO_LABEL, ESTADO_STYLES } from '../../services/denunciasService'
+import { denunciasService, ESTADOS_DENUNCIA, ESTADO_STYLES } from '../../services/denunciasService'
 import type { Denuncia, EstadoDenuncia } from '../../services/denunciasService'
 import { toast } from '../../utils/toast'
 
@@ -29,6 +30,7 @@ function exportCSV(data: Denuncia[]) {
 }
 
 export default function DenunciasPage() {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const [denuncias, setDenuncias] = useState<Denuncia[]>([])
   const [total, setTotal] = useState(0)
@@ -64,7 +66,7 @@ export default function DenunciasPage() {
   return (
     <>
       <BackofficeTopbar
-        title="Denuncias"
+        title={t('denuncias.title')}
         actions={
           <div className="flex items-center gap-2">
             <button
@@ -72,21 +74,21 @@ export default function DenunciasPage() {
               className="flex items-center gap-1.5 rounded-lg bg-primary/10 text-primary px-3 py-2 text-xs font-semibold transition-colors hover:bg-primary/20 sm:px-4 sm:text-sm"
             >
               <Map className="h-4 w-4" />
-              Ver mapa
+              {t('denuncias.viewMap')}
             </button>
             <button
               onClick={() => navigate('/admin/denuncias/nueva')}
               className="flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-xs font-semibold text-white transition-colors hover:bg-primary/90 sm:px-4 sm:text-sm"
             >
               <Plus className="h-4 w-4" />
-              Realizar Denuncia
+              {t('denuncias.newDenuncia')}
             </button>
             <button
               onClick={() => exportCSV(denuncias)}
               className="flex items-center gap-1.5 rounded-lg border border-emerald-500 px-3 py-2 text-xs font-semibold text-emerald-600 transition-colors hover:bg-emerald-50 sm:px-4 sm:text-sm"
             >
               <Download className="h-4 w-4" />
-              Exportar
+              {t('denuncias.export')}
             </button>
           </div>
         }
@@ -99,8 +101,8 @@ export default function DenunciasPage() {
             <div className="relative w-full sm:flex-1 sm:max-w-md">
               <input
                 type="text"
-                aria-label="Buscar denuncia"
-                placeholder="Buscar denuncia..."
+                aria-label={t('denuncias.searchLabel')}
+                placeholder={t('denuncias.searchPlaceholder')}
                 value={query}
                 onChange={(e) => { setQuery(e.target.value); setPage(1) }}
                 className="w-full rounded-xl border border-gray-200 py-2.5 pl-4 pr-10 text-sm text-gray-700 placeholder:text-gray-400 outline-none focus:border-primary focus:ring-1 focus:ring-primary"
@@ -110,7 +112,7 @@ export default function DenunciasPage() {
             <div className="relative">
               <button
                 onClick={() => setFilterOpen((v) => !v)}
-                aria-label="Filtrar por estado"
+                aria-label={t('denuncias.filterLabel')}
                 aria-expanded={filterOpen}
                 className={`flex items-center justify-center h-10 w-10 rounded-xl border transition-colors ${filterOpen || filterEstado ? 'border-primary bg-primary/10 text-primary' : 'border-gray-200 text-gray-400 hover:border-gray-300'}`}
               >
@@ -118,14 +120,14 @@ export default function DenunciasPage() {
               </button>
               {filterOpen && (
                 <div className="absolute top-12 left-0 z-20 w-48 rounded-xl border border-gray-100 bg-white shadow-lg p-2">
-                  <p className="px-2 py-1 text-xs font-semibold text-gray-400 uppercase tracking-wide">Estado</p>
+                  <p className="px-2 py-1 text-xs font-semibold text-gray-400 uppercase tracking-wide">{t('denuncias.filterTitle')}</p>
                   {(['', ...ESTADOS_DENUNCIA] as Array<EstadoDenuncia | ''>).map((e) => (
                     <button
                       key={e}
                       onClick={() => { setFilterEstado(e); setFilterOpen(false); setPage(1) }}
                       className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${filterEstado === e ? 'bg-primary/10 text-primary font-semibold' : 'text-gray-600 hover:bg-gray-50'}`}
                     >
-                      {e ? ESTADO_LABEL[e] : 'Todos'}
+                      {e ? t('estados.' + e) : t('denuncias.filterAll')}
                     </button>
                   ))}
                 </div>
@@ -140,7 +142,7 @@ export default function DenunciasPage() {
               {/* Mobile list */}
               <div data-tour="backoffice-denuncias-list" className="divide-y divide-gray-100 lg:hidden">
                 {denuncias.length === 0 ? (
-                  <div className="px-5 py-10 text-center text-sm text-gray-400">No se encontraron denuncias.</div>
+                  <div className="px-5 py-10 text-center text-sm text-gray-400">{t('denuncias.noResults')}</div>
                 ) : (
                   denuncias.map((d) => (
                     <article key={d.IDDenuncia} className="space-y-3 px-4 py-4 sm:px-5">
@@ -150,7 +152,7 @@ export default function DenunciasPage() {
                           <p className="mt-1 text-sm text-dark/85 line-clamp-2">{d.Descripcion}</p>
                         </div>
                         <span className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold ${ESTADO_STYLES[d.Estado]}`}>
-                          {ESTADO_LABEL[d.Estado]}
+                          {t('estados.' + d.Estado)}
                         </span>
                       </div>
                       <div className="flex items-center justify-between text-xs text-gray-500">
@@ -161,7 +163,7 @@ export default function DenunciasPage() {
                         onClick={() => navigate(`/admin/denuncias/${d.IDDenuncia}`)}
                         className="inline-flex items-center gap-1 text-sm font-semibold text-primary hover:text-primary/80"
                       >
-                        Ver detalle <ChevronRight className="h-4 w-4" />
+                        {t('denuncias.viewDetail')} <ChevronRight className="h-4 w-4" />
                       </button>
                     </article>
                   ))
@@ -173,7 +175,7 @@ export default function DenunciasPage() {
                 <table className="w-full min-w-[860px] text-sm">
                   <thead className="bg-[#F0F2F5]">
                     <tr>
-                      {['Código', 'Descripción\nde actividad', 'Tipo', 'Fecha de\nincidente', 'Estado de la\nDenuncia', 'Acciones'].map((h) => (
+                      {[t('denuncias.colCode'), t('denuncias.colDescription'), t('denuncias.colType'), t('denuncias.colDate'), t('denuncias.colStatus'), t('denuncias.colActions')].map((h) => (
                         <th key={h} className="px-5 py-3 text-left text-xs font-semibold text-gray-500 whitespace-pre-line">{h}</th>
                       ))}
                     </tr>
@@ -181,7 +183,7 @@ export default function DenunciasPage() {
                   <tbody className="divide-y divide-gray-100">
                     {denuncias.length === 0 ? (
                       <tr>
-                        <td colSpan={6} className="px-5 py-10 text-center text-sm text-gray-400">No se encontraron denuncias.</td>
+                        <td colSpan={6} className="px-5 py-10 text-center text-sm text-gray-400">{t('denuncias.noResults')}</td>
                       </tr>
                     ) : (
                       denuncias.map((d) => (
@@ -192,7 +194,7 @@ export default function DenunciasPage() {
                           <td className="px-5 py-4 text-gray-600">{new Date(d.Fecha_denuncia).toLocaleDateString('es-DO')}</td>
                           <td className="px-5 py-4">
                             <span className={`rounded-full px-3 py-1 text-xs font-semibold ${ESTADO_STYLES[d.Estado]}`}>
-                              {ESTADO_LABEL[d.Estado]}
+                              {t('estados.' + d.Estado)}
                             </span>
                           </td>
                           <td className="px-5 py-4">
@@ -215,7 +217,7 @@ export default function DenunciasPage() {
           {/* Footer / pagination */}
           <div data-tour="backoffice-denuncias-pagination" className="flex flex-wrap items-center justify-between gap-3 border-t border-gray-100 px-4 py-4 sm:px-5">
             <p className="text-xs text-gray-400 order-2 w-full sm:order-1 sm:w-auto">
-              Mostrando {total === 0 ? 0 : (page - 1) * pageSize + 1} a {Math.min(page * pageSize, total)} de {total} entradas
+              {t('denuncias.showing', { from: total === 0 ? 0 : (page - 1) * pageSize + 1, to: Math.min(page * pageSize, total), total })}
             </p>
             <div className="order-1 flex items-center gap-1 sm:order-2">
               <button onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1} className="h-8 w-8 flex items-center justify-center rounded-lg border border-gray-200 text-gray-400 hover:bg-gray-50 disabled:opacity-30 transition-colors">
@@ -229,7 +231,7 @@ export default function DenunciasPage() {
               </button>
             </div>
             <div className="order-3 flex items-center gap-2 text-xs text-gray-500">
-              Registros por página
+              {t('denuncias.perPage')}
               <select value={pageSize} onChange={(e) => { setPageSize(Number(e.target.value)); setPage(1) }} className="rounded-lg border border-gray-200 px-2 py-1 text-xs outline-none focus:border-primary">
                 {PAGE_SIZE_OPTIONS.map((n) => <option key={n} value={n}>{n}</option>)}
               </select>

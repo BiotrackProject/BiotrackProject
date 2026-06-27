@@ -39,7 +39,7 @@ describe('Landing flow pages', () => {
 
     expect(screen.getByRole('link', { name: 'Reportar' })).toBeInTheDocument()
     expect(screen.getByRole('link', { name: 'Consultar' })).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: 'Iniciar Sesion' })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Iniciar Sesión' })).toBeInTheDocument()
   })
 
   it('renders Report page form for citizen reporting', () => {
@@ -82,6 +82,6 @@ describe('Landing flow pages', () => {
     )
 
     expect(screen.getByRole('heading', { name: 'Reporte no encontrado' })).toBeInTheDocument()
-    expect(screen.getByText('El identificador consultado no existe o no esta disponible.')).toBeInTheDocument()
+    expect(screen.getByText('El identificador consultado no existe o no está disponible.')).toBeInTheDocument()
   })
 })

@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import ImagePanel from '../../components/auth/ImagePanel'
 import { validateCode } from '../../utils/validation'
 
@@ -13,6 +14,7 @@ const INPUT_CLS = (hasError) =>
   }`
 
 export default function VerifyCodePage() {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const location = useLocation()
   const email = location.state?.email ?? ''
@@ -47,7 +49,7 @@ export default function VerifyCodePage() {
 
   async function handleResend() {
     // TODO: conectar con el backend — POST /api/auth/forgot-password (reenviar)
-    setResendMsg('Código reenviado. Revisa tu correo electrónico.')
+    setResendMsg(t('verify.resendMsg'))
     setCode('')
     setError(null)
   }
@@ -58,29 +60,29 @@ export default function VerifyCodePage() {
         <div className="relative h-32 w-full overflow-hidden md:hidden" style={{ backgroundImage: `url(${recoverBg})`, backgroundSize: 'cover', backgroundPosition: 'center' }}>
           <div className="absolute inset-0 bg-[linear-gradient(145deg,rgba(19,53,108,0.74),rgba(40,40,40,0.64))]" />
           <div className="absolute left-6 top-6 border-l-2 border-secondary/80 pl-3 text-[11px] font-semibold uppercase tracking-[0.2em] text-surface/90">
-            Seguridad BIOTRACK
+            {t('verify.mobileTag')}
           </div>
         </div>
 
         <div className="relative flex w-full items-center px-6 py-8 sm:px-10 md:px-12 lg:px-16">
           <div className="pointer-events-none absolute left-5 top-5 h-14 w-14 border-l-2 border-t-2 border-primary/25" />
           <div className="w-full max-w-[460px]">
-            <p className="mb-4 text-[11px] font-semibold uppercase tracking-[0.22em] text-primary/75">Verificación de identidad</p>
+            <p className="mb-4 text-[11px] font-semibold uppercase tracking-[0.22em] text-primary/75">{t('verify.tag')}</p>
             <h2 className="mb-3 text-[clamp(1.9rem,3.5vw,2.85rem)] leading-[0.98] font-extrabold text-primary">
-              Ingresar Código
+              {t('verify.title')}
             </h2>
             <p className="mb-8 max-w-[46ch] text-[14px] leading-6 text-dark/80">
-              Escribe el código enviado{email ? ` a ${email}` : ' a tu correo'} para continuar con la recuperación de tu cuenta.
+              {email ? t('verify.subtitleWithEmail', { email }) : t('verify.subtitle')}
             </p>
 
             <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-5">
               <div className="flex flex-col gap-1">
                 <label htmlFor="code" className="text-[12px] font-semibold uppercase tracking-[0.08em] text-dark/80">
-                  Código de verificación
+                  {t('verify.codeLabel')}
                 </label>
                 <input
                   id="code"
-                  placeholder="Ingresar código"
+                  placeholder={t('verify.codePlaceholder')}
                   value={code}
                   onChange={handleChange}
                   onBlur={handleBlur}
@@ -97,23 +99,23 @@ export default function VerifyCodePage() {
                 disabled={loading}
                 className="mt-2 w-full rounded-md bg-dark py-3 text-[16px] font-bold text-surface transition-[transform,background-color] duration-200 active:scale-[0.985] hover:bg-primary disabled:cursor-not-allowed disabled:opacity-50"
               >
-                {loading ? 'Verificando...' : 'Validar código'}
+                {loading ? t('verify.submitting') : t('verify.submit')}
               </button>
 
               <p className="text-center text-[13px] text-dark/85">
-                ¿No has recibido el código?{' '}
+                {t('verify.noCode')}{' '}
                 <button
                   type="button"
                   onClick={handleResend}
                   className="font-bold text-primary hover:text-primary/80"
                 >
-                  Reenviar
+                  {t('verify.resend')}
                 </button>
               </p>
 
               <p className="text-center text-[13px] text-dark/85">
                 <Link to="/login" className="font-bold text-primary hover:text-primary/80">
-                  Iniciar sesión
+                  {t('verify.loginLink')}
                 </Link>
               </p>
             </form>
