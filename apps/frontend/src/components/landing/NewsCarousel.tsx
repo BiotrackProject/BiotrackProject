@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { ChevronLeft, ChevronRight, ExternalLink } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 
 // TODO: Replace with API/CMS call when backend is ready.
 const NEWS = [
@@ -65,7 +66,7 @@ const NEWS = [
   },
 ]
 
-function NewsCard({ item }) {
+function NewsCard({ item, readLabel }) {
   return (
     <a
       href={item.url}
@@ -89,7 +90,7 @@ function NewsCard({ item }) {
         <div className="mt-4 flex items-center justify-between text-xs">
           <span className="font-medium text-gray-500">{item.date}</span>
           <span className="inline-flex items-center gap-1 font-bold text-action">
-            Leer noticia
+            {readLabel}
             <ExternalLink className="h-3.5 w-3.5" />
           </span>
         </div>
@@ -99,6 +100,7 @@ function NewsCard({ item }) {
 }
 
 export default function NewsCarousel() {
+  const { t } = useTranslation()
   const [cardsPerView, setCardsPerView] = useState(() => {
     if (typeof window === 'undefined') return 3
     if (window.innerWidth < 768) return 1
@@ -180,16 +182,16 @@ export default function NewsCarousel() {
       <div className="mx-auto max-w-6xl px-6">
         <div className="mb-8 flex flex-col gap-3 sm:mb-10 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <p className="text-xs font-bold uppercase tracking-[0.16em] text-primary/70">Actualidad ambiental</p>
-            <h2 className="mt-1 text-3xl font-black uppercase tracking-wide text-primary">Noticias</h2>
-            <p className="mt-2 text-sm text-gray-600">Cobertura reciente sobre monitoreo, operativos y protección de ríos y costas.</p>
+            <p className="text-xs font-bold uppercase tracking-[0.16em] text-primary/70">{t('news.sectionTag')}</p>
+            <h2 className="mt-1 text-3xl font-black uppercase tracking-wide text-primary">{t('news.sectionTitle')}</h2>
+            <p className="mt-2 text-sm text-gray-600">{t('news.sectionDesc')}</p>
           </div>
           <div className="text-xs font-medium text-gray-500">
             <p className="inline-flex items-center gap-2">
               <span className="pulse-dot inline-block h-2 w-2 rounded-full bg-action" />
-              Actualización permanente
+              {t('news.liveUpdate')}
             </p>
-            <p className="mt-1">Desliza o usa las flechas para explorar</p>
+            <p className="mt-1">{t('news.swipeHint')}</p>
           </div>
         </div>
 
@@ -201,7 +203,7 @@ export default function NewsCarousel() {
           {/* Left arrow */}
           <button
             onClick={() => advance(-1)}
-            aria-label="Noticia anterior"
+            aria-label={t('news.prevLabel')}
             className="absolute left-0 top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-blue-100 bg-white shadow-sm text-primary transition-colors hover:bg-primary hover:text-white"
           >
             <ChevronLeft className="h-5 w-5" />
@@ -224,7 +226,7 @@ export default function NewsCarousel() {
                   key={`${item.id}-${i}`}
                   style={{ width: `${cardPct}%`, flexShrink: 0, padding: '0 8px' }}
                 >
-                  <NewsCard item={item} />
+                  <NewsCard item={item} readLabel={t('news.readArticle')} />
                 </div>
               ))}
             </div>
@@ -233,7 +235,7 @@ export default function NewsCarousel() {
           {/* Right arrow */}
           <button
             onClick={() => advance(1)}
-            aria-label="Siguiente noticia"
+            aria-label={t('news.nextLabel')}
             className="absolute right-0 top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-blue-100 bg-white shadow-sm text-primary transition-colors hover:bg-primary hover:text-white"
           >
             <ChevronRight className="h-5 w-5" />
@@ -246,7 +248,7 @@ export default function NewsCarousel() {
             <button
               key={i}
               onClick={() => { setTrackTransition(true); setPos(i + clones) }}
-              aria-label={`Ir a noticia ${i + 1}`}
+              aria-label={t('news.goToLabel', { n: i + 1 })}
               aria-current={i === realIndex ? 'true' : 'false'}
               className={`h-2 rounded-full transition-[width,background-color] duration-220 ease-out ${
                 i === realIndex ? 'w-6 bg-primary' : 'w-2 bg-gray-300 hover:bg-gray-400'

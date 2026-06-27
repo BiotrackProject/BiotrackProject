@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom'
 import imagotipoNegativo from '../../assets/images/imagotipo negativo.svg'
 import isotipoNegativo from '../../assets/images/isotiponegativo.png'
 
@@ -18,9 +19,9 @@ export default function ImagePanel({
       <div className={`absolute inset-0 ${overlayClassName}`} />
       <div className="pointer-events-none absolute left-10 top-10 h-16 w-16 border-l-2 border-t-2 border-secondary/75" />
       <div className="pointer-events-none absolute bottom-10 right-10 h-16 w-16 border-b-2 border-r-2 border-secondary/60" />
-      <div className="relative z-10">
-        <img src={logoSrc} alt="BIOTRACK" className={logoClassName} />
-      </div>
+      <Link to="/" className="relative z-10">
+        <img src={logoSrc} alt="BIOTRACK — ir al inicio" className={logoClassName} />
+      </Link>
     </div>
   )
 }

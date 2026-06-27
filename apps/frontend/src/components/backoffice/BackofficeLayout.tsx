@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Outlet, useLocation } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { Menu } from 'lucide-react'
 import Sidebar from './Sidebar'
 import ToastContainer from '../ui/ToastContainer'
@@ -27,12 +28,13 @@ function getTourSection(pathname) {
 }
 
 export default function BackofficeLayout() {
+  const { t } = useTranslation()
   const [mobileNavOpen, setMobileNavOpen] = useState(false)
   const location = useLocation()
   const section = getTourSection(location.pathname)
   const tourKey = section ? `backoffice-${section}` : 'backoffice'
   const { startTour, startAutoTour } = useGuidedTour(tourKey)
-  const steps = section ? getBackofficeTourSteps(section) : null
+  const steps = section ? getBackofficeTourSteps(t, section) : null
 
   useEffect(() => {
     if (!steps || section === 'mapa') return
@@ -41,17 +43,17 @@ export default function BackofficeLayout() {
   }, [section, steps, startAutoTour])
 
   return (
-    <div className="flex min-h-screen bg-[linear-gradient(180deg,#eef2f7_0%,#f4f6f9_100%)]">
+    <div className="flex h-screen overflow-hidden bg-[linear-gradient(180deg,#eef2f7_0%,#f4f6f9_100%)]">
       <button
         onClick={() => setMobileNavOpen(true)}
-        aria-label="Abrir menú"
+        aria-label={t('sidebar.expand')}
         className="fixed left-3 top-3 z-30 flex h-10 w-10 items-center justify-center rounded-xl border border-primary/20 bg-white text-primary shadow-sm transition-colors hover:bg-primary/5 lg:hidden"
       >
         <Menu className="h-5 w-5" />
       </button>
 
       <Sidebar mobileOpen={mobileNavOpen} setMobileOpen={setMobileNavOpen} />
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex-1 overflow-y-auto min-w-0 flex flex-col">
         <Outlet />
       </div>
       <ToastContainer />
@@ -60,7 +62,7 @@ export default function BackofficeLayout() {
       <HelpTourButton
         dataTour="backoffice-help-btn"
         onStart={() => steps && startTour(steps)}
-        label="Ver recorrido de esta pantalla"
+        label={t('tour.helpBtn')}
       />
     </div>
   )

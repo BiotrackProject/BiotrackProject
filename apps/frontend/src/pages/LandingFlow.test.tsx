@@ -72,7 +72,7 @@ describe('Landing flow pages', () => {
 
     expect(screen.getByRole('link', { name: 'Reportar' })).toBeInTheDocument()
     expect(screen.getByRole('link', { name: 'Consultar' })).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: 'Iniciar Sesion' })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Iniciar Sesión' })).toBeInTheDocument()
   })
 
   it('renders Report page form for citizen reporting', () => {

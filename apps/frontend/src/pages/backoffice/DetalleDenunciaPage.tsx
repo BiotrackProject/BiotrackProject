@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useParams, useNavigate } from 'react-router-dom'
 import { Download, FileText } from 'lucide-react'
 import BackofficeTopbar from '../../components/backoffice/BackofficeTopbar'
 import StatusBadge from '../../components/ui/StatusBadge'
 import LoadingSpinner from '../../components/ui/LoadingSpinner'
 import Modal from '../../components/ui/Modal'
-import { denunciasService, ESTADOS_DENUNCIA, ESTADO_LABEL, ESTADO_STYLES, TIPO_LABEL } from '../../services/denunciasService'
+import { denunciasService, ESTADOS_DENUNCIA, ESTADO_STYLES } from '../../services/denunciasService'
 import type { Denuncia, EstadoDenuncia } from '../../services/denunciasService'
 import { toast } from '../../utils/toast'
 
@@ -37,6 +38,7 @@ function InfoCard({ title, children }: { title: string; children: React.ReactNod
 
 export default function DetalleDenunciaPage() {
   const { id } = useParams()
+  const { t } = useTranslation()
   const navigate = useNavigate()
 
   const [denuncia, setDenuncia] = useState<Denuncia | null>(null)
@@ -66,14 +68,13 @@ export default function DetalleDenunciaPage() {
     try {
       const { Estado } = await denunciasService.cambiarEstado(id!, pendingEstado, comentario || undefined)
       setEstado(Estado)
-      // Refrescamos para reflejar la nueva entrada del historial junto al estado.
       const refreshed = await denunciasService.getById(id!)
       setDenuncia(refreshed)
       setEstado(refreshed.Estado)
       toast.success(`Estado actualizado a "${ESTADO_LABEL[pendingEstado]}"`)
       setStatusModal(false)
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Error al cambiar estado')
+      toast.error(err instanceof Error ? err.message : t('detalleDenuncia.statusError'))
     } finally {
       setSaving(false)
     }
@@ -83,9 +84,9 @@ export default function DetalleDenunciaPage() {
     if (!denuncia) return
     const lines = [
       `Código: ${denuncia.codigo_seguimiento}`,
-      `Estado: ${ESTADO_LABEL[estado]}`,
+      `Estado: ${t('estados.' + estado)}`,
       `Fecha: ${new Date(denuncia.Fecha_denuncia).toLocaleDateString('es-DO')}`,
-      `Tipo: ${TIPO_LABEL[denuncia.tipo_actividad]}`,
+      `Tipo: ${t('tipos.' + denuncia.tipo_actividad)}`,
       `Descripción: ${denuncia.Descripcion}`,
     ]
     const blob = new Blob([lines.join('\n')], { type: 'text/plain' })
@@ -93,13 +94,13 @@ export default function DetalleDenunciaPage() {
     const a = document.createElement('a')
     a.href = url; a.download = `denuncia_${denuncia.codigo_seguimiento}.txt`; a.click()
     URL.revokeObjectURL(url)
-    toast.info('Exportación iniciada')
+    toast.info(t('denuncias.exportStarted'))
   }
 
   if (loading) {
     return (
       <>
-        <BackofficeTopbar title="Detalle de Denuncia" backTo="/admin/denuncias" />
+        <BackofficeTopbar title={t('detalleDenuncia.title')} backTo="/admin/denuncias" />
         <LoadingSpinner fullPage />
       </>
     )
@@ -108,9 +109,9 @@ export default function DetalleDenunciaPage() {
   if (notFound || !denuncia) {
     return (
       <>
-        <BackofficeTopbar title="Detalle de Denuncia" backTo="/admin/denuncias" />
+        <BackofficeTopbar title={t('detalleDenuncia.title')} backTo="/admin/denuncias" />
         <main className="p-8">
-          <p className="text-sm text-gray-400">Denuncia no encontrada.</p>
+          <p className="text-sm text-gray-400">{t('detalleDenuncia.notFound')}</p>
         </main>
       </>
     )
@@ -119,19 +120,19 @@ export default function DetalleDenunciaPage() {
   return (
     <>
       <BackofficeTopbar
-        title="Detalle de Denuncia"
+        title={t('detalleDenuncia.title')}
         backTo="/admin/denuncias"
         actions={
           <div data-tour="backoffice-denuncia-status" className="flex items-center gap-2">
             <div className="flex items-center gap-1.5 rounded-lg border border-gray-200 px-2 py-1">
-              <span className="text-xs font-semibold text-gray-500">Estado:</span>
+              <span className="text-xs font-semibold text-gray-500">{t('detalleDenuncia.statusLabel')}</span>
               <select
                 value={estado}
                 onChange={(e) => openStatusModal(e.target.value as EstadoDenuncia)}
                 className="text-sm font-semibold text-primary bg-transparent outline-none cursor-pointer"
               >
                 {ESTADOS_DENUNCIA.map((e) => (
-                  <option key={e} value={e}>{ESTADO_LABEL[e]}</option>
+                  <option key={e} value={e}>{t('estados.' + e)}</option>
                 ))}
               </select>
             </div>
@@ -140,7 +141,7 @@ export default function DetalleDenunciaPage() {
               className="flex items-center gap-1.5 rounded-lg border border-emerald-500 px-4 py-2 text-sm font-semibold text-emerald-600 hover:bg-emerald-50 transition-colors"
             >
               <Download className="h-4 w-4" />
-              Exportar
+              {t('denuncias.export')}
             </button>
           </div>
         }
@@ -152,19 +153,19 @@ export default function DetalleDenunciaPage() {
         <div data-tour="backoffice-denuncia-summary" className="bg-white rounded-2xl px-6 py-4 shadow-sm flex items-center gap-6 flex-wrap">
           <div className="flex items-center gap-2">
             <FileText className="h-5 w-5 text-primary" />
-            <span className="text-base font-bold text-primary">Denuncia: {denuncia.codigo_seguimiento}</span>
+            <span className="text-base font-bold text-primary">{t('detalleDenuncia.denunciaLabel', { code: denuncia.codigo_seguimiento })}</span>
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-sm font-semibold text-gray-500">Estado:</span>
+            <span className="text-sm font-semibold text-gray-500">{t('detalleDenuncia.statusLabel')}</span>
             <span className={`rounded-full px-3 py-1 text-xs font-semibold ${ESTADO_STYLES[estado]}`}>
-              {ESTADO_LABEL[estado]}
+              {t('estados.' + estado)}
             </span>
           </div>
         </div>
 
         {/* Info cards */}
         <div data-tour="backoffice-denuncia-details" className="grid grid-cols-2 gap-5">
-          <InfoCard title="Información del Incidente">
+          <InfoCard title={t('detalleDenuncia.incidentInfo')}>
             <div className="flex flex-col gap-2">
               <InfoRow label="Tipo de actividad" value={TIPO_LABEL[denuncia.tipo_actividad]} />
               <InfoRow
@@ -195,18 +196,18 @@ export default function DetalleDenunciaPage() {
 
         {/* Historial de estados */}
         {denuncia.historial && denuncia.historial.length > 0 && (
-          <InfoCard title="Historial de Estados">
+          <InfoCard title={t('detalleDenuncia.historyTitle')}>
             <div className="flex flex-col gap-3">
               {denuncia.historial.map((h) => (
                 <div key={h.id} className="flex items-start gap-3 text-sm">
                   <div className="flex flex-col gap-1 flex-1">
                     <div className="flex items-center gap-2">
                       <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${ESTADO_STYLES[h.estado_anterior]}`}>
-                        {ESTADO_LABEL[h.estado_anterior]}
+                        {t('estados.' + h.estado_anterior)}
                       </span>
                       <span className="text-gray-400">→</span>
                       <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${ESTADO_STYLES[h.estado_nuevo]}`}>
-                        {ESTADO_LABEL[h.estado_nuevo]}
+                        {t('estados.' + h.estado_nuevo)}
                       </span>
                     </div>
                     {h.comentario && <p className="text-xs text-gray-500 mt-1">{h.comentario}</p>}
@@ -221,9 +222,9 @@ export default function DetalleDenunciaPage() {
         )}
 
         {/* Evidencias */}
-        <InfoCard title="Evidencias Adjuntas">
+        <InfoCard title={t('detalleDenuncia.evidenceTitle')}>
           {!denuncia.Evidencia_Denuncia || denuncia.Evidencia_Denuncia.length === 0 ? (
-            <p className="text-sm text-gray-400">Sin evidencias adjuntas.</p>
+            <p className="text-sm text-gray-400">{t('detalleDenuncia.noEvidence')}</p>
           ) : (
             <div className="flex flex-wrap gap-6">
               {denuncia.Evidencia_Denuncia.map((ev) => {
@@ -245,13 +246,13 @@ export default function DetalleDenunciaPage() {
         {(estado === 'Verificada' || estado === 'En_Investigacion') && (
           <div className="bg-cyan-50 border border-cyan-200 rounded-2xl px-6 py-4 flex items-center justify-between">
             <p className="text-sm text-cyan-700 font-medium">
-              Esta denuncia tiene acciones correctivas asociadas.
+              {t('detalleDenuncia.relatedActions')}
             </p>
             <button
               onClick={() => navigate('/admin/acciones')}
               className="rounded-lg bg-cyan-600 px-4 py-2 text-sm font-semibold text-white hover:bg-cyan-700 transition-colors"
             >
-              Ver acciones
+              {t('detalleDenuncia.viewActions')}
             </button>
           </div>
         )}
@@ -261,24 +262,22 @@ export default function DetalleDenunciaPage() {
       <Modal
         open={statusModal}
         onClose={() => setStatusModal(false)}
-        title="Cambiar Estado de Denuncia"
-        confirmLabel="Confirmar cambio"
+        title={t('detalleDenuncia.changeStatusTitle')}
+        confirmLabel={t('detalleDenuncia.changeStatusConfirm')}
         onConfirm={confirmEstado}
         loading={saving}
       >
         <div className="flex flex-col gap-4">
           <p>
-            ¿Confirmas cambiar el estado de la denuncia{' '}
-            <span className="font-semibold text-gray-800">{denuncia.codigo_seguimiento}</span> a{' '}
-            <span className="font-semibold text-primary">{ESTADO_LABEL[pendingEstado]}</span>?
+            {t('detalleDenuncia.changeStatusMsg', { code: denuncia.codigo_seguimiento, status: t('estados.' + pendingEstado) })}
           </p>
           <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-semibold text-gray-600">Comentario (opcional)</label>
+            <label className="text-xs font-semibold text-gray-600">{t('detalleDenuncia.commentLabel')}</label>
             <textarea
               value={comentario}
               onChange={(e) => setComentario(e.target.value)}
               rows={3}
-              placeholder="Motivo del cambio de estado..."
+              placeholder={t('detalleDenuncia.commentPlaceholder')}
               className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 resize-none"
             />
           </div>

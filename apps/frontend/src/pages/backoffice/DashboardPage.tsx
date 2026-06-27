@@ -1,5 +1,6 @@
 // @ts-nocheck
 import { useState, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import { ChevronLeft, ChevronRight, FileWarning, MapPin, ClipboardCheck, Map } from 'lucide-react'
 import BackofficeTopbar from '../../components/backoffice/BackofficeTopbar'
@@ -95,12 +96,13 @@ function Card({ title, subtitle, action, children }) {
 }
 
 function VerTodasBtn({ onClick }) {
+  const { t } = useTranslation()
   return (
     <button
       onClick={onClick}
       className="shrink-0 rounded-full border border-action px-4 py-1.5 text-xs font-semibold text-action hover:bg-action hover:text-white transition-colors"
     >
-      Ver Todas
+      {t('dashboard.viewAll')}
     </button>
   )
 }
@@ -133,8 +135,9 @@ function KpiCard({ icon: Icon, label, value, color, sub, onClick }) {
 // ── Chart cards ───────────────────────────────────────────────────────────────
 
 function ImpactDonutCard({ data }) {
+  const { t } = useTranslation()
   return (
-    <Card title="Impacto de la extracción de arena en las comunidades locales">
+    <Card title={t('dashboard.impactTitle')}>
       <div className="flex items-center gap-6">
         <ResponsiveContainer width={180} height={180}>
           <PieChart>
@@ -160,14 +163,15 @@ function ImpactDonutCard({ data }) {
 }
 
 function FrequencyLineCard({ pages }) {
+  const { t } = useTranslation()
   const [page, setPage] = useState(0)
   const data = pages[Math.min(page, pages.length - 1)] ?? []
   const peakMonth = data.length ? data.reduce((a, b) => (b.value > a.value ? b : a)).month : ''
 
   return (
     <Card
-      title="Frecuencia de actividades ilegales"
-      subtitle={peakMonth ? `${peakMonth} es el mes con mayores incidencias` : undefined}
+      title={t('dashboard.frequencyTitle')}
+      subtitle={peakMonth ? t('dashboard.frequencySubtitle', { month: peakMonth }) : undefined}
       action={
         <div className="flex items-center gap-1">
           <button onClick={() => setPage((p) => Math.max(0, p - 1))} disabled={page === 0} className="p-1 rounded-full border border-gray-200 text-gray-400 hover:bg-gray-50 disabled:opacity-30">
@@ -199,8 +203,9 @@ function FrequencyLineCard({ pages }) {
 }
 
 function ZonesBarCard({ onVerTodas }) {
+  const { t } = useTranslation()
   return (
-    <Card title="Zonas Monitoreadas" subtitle="Extracción de arena ilegal por provincia" action={<VerTodasBtn onClick={onVerTodas} />}>
+    <Card title={t('dashboard.zonesTitle')} subtitle={t('dashboard.zonesSubtitle')} action={<VerTodasBtn onClick={onVerTodas} />}>
       <ResponsiveContainer width="100%" height={220}>
         <BarChart layout="vertical" data={ZONES_DATA} margin={{ top: 0, right: 16, bottom: 0, left: 8 }} barSize={28}>
           <XAxis type="number" tick={{ fontSize: 11, fill: '#9CA3AF' }} axisLine={false} tickLine={false} tickFormatter={(v) => `${(v/1000).toFixed(0)}k`} domain={[0, 16000]} ticks={[0, 7000, 12000, 15000]} />
@@ -215,8 +220,9 @@ function ZonesBarCard({ onVerTodas }) {
 }
 
 function VolumeBarCard({ onVerTodas }) {
+  const { t } = useTranslation()
   return (
-    <Card title="Volumen de arena extraída" subtitle="Extracción de arena ilegal por provincia" action={<VerTodasBtn onClick={onVerTodas} />}>
+    <Card title={t('dashboard.volumeTitle')} subtitle={t('dashboard.volumeSubtitle')} action={<VerTodasBtn onClick={onVerTodas} />}>
       <ResponsiveContainer width="100%" height={260}>
         <BarChart layout="vertical" data={VOLUME_DATA} margin={{ top: 0, right: 16, bottom: 0, left: 8 }} barSize={16}>
           <XAxis type="number" tick={{ fontSize: 11, fill: '#9CA3AF' }} axisLine={false} tickLine={false} tickFormatter={(v) => `${v}m³`} domain={[0, 2200]} ticks={[0, 500, 900, 1000, 2000]} />
@@ -232,6 +238,7 @@ function VolumeBarCard({ onVerTodas }) {
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export default function DashboardPage() {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const [stats, setStats]                   = useState(null)
   const [loading, setLoading]               = useState(true)
@@ -246,13 +253,13 @@ export default function DashboardPage() {
 
   return (
     <>
-      <BackofficeTopbar title="Dashboard" />
+      <BackofficeTopbar title={t('dashboard.title')} />
       <main className="flex flex-col gap-5 p-4 sm:p-6 lg:p-8">
 
         <section className="rounded-2xl border border-primary/10 bg-[linear-gradient(145deg,rgba(19,53,108,0.08),rgba(255,255,255,0.72))] p-5 sm:p-6">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-primary/70">Resumen operativo</p>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-primary/70">{t('dashboard.summaryTag')}</p>
           <p className="mt-2 max-w-[62ch] text-sm leading-6 text-dark/80">
-            Prioriza denuncias en revisión y zonas con incidencias activas para acelerar el cierre de acciones correctivas.
+            {t('dashboard.summaryDesc')}
           </p>
         </section>
 
@@ -263,34 +270,34 @@ export default function DashboardPage() {
           <div data-tour="backoffice-dashboard-stats" className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
             <KpiCard
               icon={FileWarning}
-              label="Total Denuncias"
+              label={t('dashboard.totalDenuncias')}
               value={stats?.totalDenuncias ?? 0}
               color="bg-primary/10 text-primary"
-              sub={`${(stats?.por_estado?.Pendiente ?? 0) + (stats?.por_estado?.En_Investigacion ?? 0)} activas`}
+              sub={`${(stats?.por_estado?.Pendiente ?? 0) + (stats?.por_estado?.En_Investigacion ?? 0)} ${t('dashboard.activas')}`}
               onClick={() => navigate('/admin/denuncias')}
             />
             <KpiCard
               icon={FileWarning}
-              label="Pendientes"
+              label={t('dashboard.pendientes')}
               value={stats?.por_estado?.Pendiente ?? 0}
               color="bg-amber-50 text-amber-500"
-              sub="Sin asignar"
+              sub={t('dashboard.sinAsignar')}
               onClick={() => navigate('/admin/denuncias')}
             />
             <KpiCard
               icon={MapPin}
-              label="En Investigación"
+              label={t('dashboard.enInvestigacion')}
               value={stats?.por_estado?.En_Investigacion ?? 0}
               color="bg-teal-50 text-teal-600"
-              sub={`${stats?.por_estado?.Verificada ?? 0} verificadas`}
+              sub={`${stats?.por_estado?.Verificada ?? 0} ${t('dashboard.verificadas')}`}
               onClick={() => navigate('/admin/monitoreo')}
             />
             <KpiCard
               icon={ClipboardCheck}
-              label="Acciones Completadas"
+              label={t('dashboard.accionesCompletadas')}
               value={stats?.por_estado_accion?.Completada ?? 0}
               color="bg-emerald-50 text-emerald-600"
-              sub={`${stats?.por_estado_accion?.En_Ejecucion ?? 0} en ejecución`}
+              sub={`${stats?.por_estado_accion?.En_Ejecucion ?? 0} ${t('dashboard.enEjecucion')}`}
               onClick={() => navigate('/admin/acciones')}
             />
           </div>
@@ -307,11 +314,11 @@ export default function DashboardPage() {
               <Map className="h-5 w-5 text-primary" />
             </div>
             <div>
-              <p className="text-sm font-bold text-primary">Mapa de Denuncias</p>
-              <p className="text-xs text-gray-500">Ver todas las denuncias y zonas geolocalizadas en el mapa interactivo</p>
+              <p className="text-sm font-bold text-primary">{t('dashboard.mapTitle')}</p>
+              <p className="text-xs text-gray-500">{t('dashboard.mapDesc')}</p>
             </div>
           </div>
-          <span className="text-primary text-sm font-semibold shrink-0">Ver mapa →</span>
+          <span className="text-primary text-sm font-semibold shrink-0">{t('dashboard.viewMap')}</span>
         </button>
 
         {/* Charts */}

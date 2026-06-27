@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import { Bell, FileWarning, MapPin, CheckCircle, Settings, CheckCheck } from 'lucide-react'
 import BackofficeTopbar from '../../components/backoffice/BackofficeTopbar'
@@ -63,6 +64,7 @@ const TIPO_CONFIG = {
 }
 
 export default function NotificacionesPage() {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const [items, setItems] = useState(MOCK_NOTIFICACIONES)
 
@@ -84,7 +86,7 @@ export default function NotificacionesPage() {
   return (
     <>
       <BackofficeTopbar
-        title="Notificaciones"
+        title={t('notificaciones.title')}
         backTo="/admin/dashboard"
         actions={
           unread > 0 && (
@@ -94,7 +96,7 @@ export default function NotificacionesPage() {
               className="flex items-center gap-1.5 rounded-lg border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-colors"
             >
               <CheckCheck className="h-4 w-4" />
-              Marcar todas como leídas
+              {t('notificaciones.markAllRead')}
             </button>
           )
         }
@@ -106,11 +108,11 @@ export default function NotificacionesPage() {
           <div data-tour="backoffice-notificaciones-header" className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
             <div className="flex items-center gap-2">
               <Bell className="h-4 w-4 text-primary" />
-              <span className="text-sm font-bold text-primary">Centro de notificaciones</span>
+              <span className="text-sm font-bold text-primary">{t('notificaciones.center')}</span>
             </div>
             {unread > 0 && (
               <span className="rounded-full bg-action px-2.5 py-0.5 text-xs font-bold text-white">
-                {unread} nueva{unread > 1 ? 's' : ''}
+                {t('notificaciones.newCount', { count: unread })}
               </span>
             )}
           </div>
@@ -120,7 +122,7 @@ export default function NotificacionesPage() {
             {items.length === 0 ? (
               <li className="flex flex-col items-center py-16 text-gray-400">
                 <Bell className="h-8 w-8 mb-2 opacity-30" />
-                <p className="text-sm">Sin notificaciones</p>
+                <p className="text-sm">{t('notificaciones.empty')}</p>
               </li>
             ) : (
               items.map((item) => {

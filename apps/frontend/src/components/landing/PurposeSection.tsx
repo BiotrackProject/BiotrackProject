@@ -1,33 +1,33 @@
 import { Contact, Target, Heart } from 'lucide-react'
-
-const CARDS = [
-  {
-    Icon: Contact,
-    title: 'Para qué existe BIOTRACK',
-    description:
-      'Convertir denuncias ciudadanas en información accionable para proteger ríos, costas y comunidades afectadas por extracción ilegal.',
-  },
-  {
-    Icon: Target,
-    title: 'Qué queremos lograr',
-    description:
-      'Que cualquier persona pueda reportar en minutos, dar seguimiento con transparencia y ver resultados en territorio.',
-  },
-  {
-    Icon: Heart,
-    title: 'Cómo te acompañamos',
-    description:
-      'Guiamos cada paso con un proceso claro, protección de datos y canales de consulta para mantenerte informado.',
-  },
-]
+import { useTranslation } from 'react-i18next'
 
 export default function PurposeSection() {
+  const { t } = useTranslation()
+
+  const CARDS = [
+    {
+      Icon: Contact,
+      title: t('purpose.card1Title'),
+      description: t('purpose.card1Desc'),
+    },
+    {
+      Icon: Target,
+      title: t('purpose.card2Title'),
+      description: t('purpose.card2Desc'),
+    },
+    {
+      Icon: Heart,
+      title: t('purpose.card3Title'),
+      description: t('purpose.card3Desc'),
+    },
+  ]
+
   return (
     <section className="bg-surface pb-12">
       <div className="mx-auto max-w-6xl px-6">
         <div className="relative z-10 -mt-10 rounded-2xl bg-white px-6 py-8 shadow-md sm:-mt-14 sm:px-8 sm:py-10 lg:-mt-16 lg:px-10">
           <h2 className="mb-10 border-l-4 border-action pl-3 text-sm font-black uppercase tracking-widest text-primary">
-            Por qué tu reporte importa
+            {t('purpose.sectionTitle')}
           </h2>
 
           <div className="grid gap-8 md:grid-cols-3 md:divide-x md:divide-gray-100 md:gap-0">

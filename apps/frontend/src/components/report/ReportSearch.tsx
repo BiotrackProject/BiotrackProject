@@ -49,7 +49,6 @@ export default function ReportSearch() {
     }
   }, [queryCodigo])
 
-  // Mientras la URL pide un código cuyo resultado aún no llega, mostramos carga.
   const loading = Boolean(queryCodigo) && (result.status === 'idle' || result.codigo !== queryCodigo)
 
   function handleSubmit(e: FormEvent) {

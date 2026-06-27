@@ -6,7 +6,7 @@ export const MOCK_DENUNCIAS = [
     provincia: 'La Romana',
     fecha: '14 ene 2025',
     estado: 'Nueva',
-    anonimo: false,
+
     nombres: 'Juan',
     apellidos: 'Pérez',
     correo: 'juan.perez@email.com',
@@ -34,7 +34,7 @@ export const MOCK_DENUNCIAS = [
     provincia: 'María Trinidad Sánchez',
     fecha: '9 ene 2025',
     estado: 'En revisión',
-    anonimo: true,
+
     nombres: 'N/A',
     apellidos: 'N/A',
     correo: 'N/A',
@@ -61,7 +61,7 @@ export const MOCK_DENUNCIAS = [
     provincia: 'La Altagracia',
     fecha: '6 ene 2025',
     estado: 'Monitorear',
-    anonimo: false,
+
     nombres: 'María',
     apellidos: 'González',
     correo: 'mgonzalez@example.com',
@@ -87,7 +87,7 @@ export const MOCK_DENUNCIAS = [
     provincia: 'Sánchez Ramírez',
     fecha: '3 ene 2025',
     estado: 'Declinada',
-    anonimo: true,
+
     nombres: 'N/A',
     apellidos: 'N/A',
     correo: 'N/A',
