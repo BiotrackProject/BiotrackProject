@@ -3,7 +3,7 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import prisma from '../../config/database.js';
 import { env } from '../../config/env.js';
-import { sendRegistroRecibido, sendCodigoRecuperacion } from '../../shared/utils/email.js';
+import { sendRegistroRecibido, sendCodigoRecuperacion } from '../../shared/utils/ses.js';
 import { sha256 } from '../../shared/utils/crypto.js';
 import { logAuditoria } from '../../middleware/auditLog.js';
 import { segundosBloqueo, registrarFallo, limpiarIntentos } from './auth.lockout.js';

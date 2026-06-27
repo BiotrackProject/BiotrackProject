@@ -3,7 +3,7 @@ import prisma from '../../config/database.js';
 import { encrypt, decrypt } from '../../shared/utils/crypto.js';
 import { generateUniqueTrackingCode } from '../../shared/utils/trackingCode.js';
 import { parsePagination, buildPaginatedResponse } from '../../shared/utils/pagination.js';
-import { sendEstadoDenunciaActualizado } from '../../shared/utils/email.js';
+import { sendEstadoDenunciaActualizado } from '../../shared/utils/ses.js';
 import { logAuditoria } from '../../middleware/auditLog.js';
 import { NotFoundError, AppError } from '../../shared/errors/AppError.js';
 import { TRANSICIONES_DENUNCIA, ESTADOS_REQUIEREN_COMENTARIO, MODULO_SISTEMA } from '../../shared/constants/enums.js';
