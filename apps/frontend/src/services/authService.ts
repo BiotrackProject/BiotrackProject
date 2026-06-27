@@ -10,14 +10,19 @@ export interface PerfilCompleto {
   institucion: string | null
   Estado: string
   Fecha_creacion: string
+  debe_cambiar_contrasena: boolean
   rol: { id: string; nombre: string }
 }
 
 export async function login(correo_electronico: string, contrasena: string) {
-  return apiClient.post<{ token: string; usuario: AuthUser }>(
+  return apiClient.post<{ usuario: AuthUser }>(
     '/api/v1/auth/login',
     { correo_electronico, contrasena }
   )
+}
+
+export async function logout() {
+  return apiClient.post<{ mensaje: string }>('/api/v1/auth/logout', {})
 }
 
 export async function registro(data: {

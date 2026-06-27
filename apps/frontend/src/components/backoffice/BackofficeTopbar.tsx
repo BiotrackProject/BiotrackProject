@@ -22,7 +22,7 @@ export default function BackofficeTopbar({ title, backTo, actions }: BackofficeT
   function handleLogout() {
     setUserMenuOpen(false)
     logout()
-    navigate('/login')
+    navigate('/')
   }
 
   useEffect(() => {
