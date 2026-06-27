@@ -6,7 +6,7 @@ import BackofficeTopbar from '../../components/backoffice/BackofficeTopbar'
 import StatusBadge from '../../components/ui/StatusBadge'
 import LoadingSpinner from '../../components/ui/LoadingSpinner'
 import Modal from '../../components/ui/Modal'
-import { denunciasService, ESTADOS_DENUNCIA, ESTADO_STYLES } from '../../services/denunciasService'
+import { denunciasService, ESTADOS_DENUNCIA, ESTADO_LABEL, ESTADO_STYLES, TIPO_LABEL } from '../../services/denunciasService'
 import type { Denuncia, EstadoDenuncia } from '../../services/denunciasService'
 import { toast } from '../../utils/toast'
 
