@@ -175,11 +175,7 @@ export default function DenunciasPage() {
                 <table className="w-full min-w-[860px] text-sm">
                   <thead className="bg-[#F0F2F5]">
                     <tr>
-<<<<<<< HEAD
                       {[t('denuncias.colCode'), t('denuncias.colDescription'), t('denuncias.colType'), t('denuncias.colDate'), t('denuncias.colStatus'), t('denuncias.colActions')].map((h) => (
-=======
-                      {['Código', 'Descripción\nde actividad', 'Tipo', 'Fecha de\nregistro', 'Estado de la\nDenuncia', 'Acciones'].map((h) => (
->>>>>>> main
                         <th key={h} className="px-5 py-3 text-left text-xs font-semibold text-gray-500 whitespace-pre-line">{h}</th>
                       ))}
                     </tr>
