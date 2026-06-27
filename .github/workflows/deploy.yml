@@ -138,7 +138,6 @@ jobs:
             echo "EMAIL_PASS=$EMAIL_PASS"
             echo "EMAIL_FROM=$EMAIL_FROM"
             echo "EMAIL_FROM_NAME=$EMAIL_FROM_NAME"
-            echo "EMAIL_FROM_NAME=BIOTRACK"
             echo "AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID"
             echo "AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY"
             echo "AWS_REGION=$AWS_REGION"
