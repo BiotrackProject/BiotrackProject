@@ -4,16 +4,20 @@ import { useNavigate } from 'react-router-dom'
 import { ChevronLeft, ChevronRight, FileWarning, MapPin, ClipboardCheck, Map } from 'lucide-react'
 import BackofficeTopbar from '../../components/backoffice/BackofficeTopbar'
 import LoadingSpinner from '../../components/ui/LoadingSpinner'
-import { dashboardService } from '../../services/dashboardService'
+import { dashboardService, type ImpactoRow, type FrecuenciaRow } from '../../services/dashboardService'
 import {
   PieChart, Pie, Cell, Tooltip, ResponsiveContainer,
   AreaChart, Area, XAxis, YAxis, CartesianGrid,
   BarChart, Bar, LabelList,
 } from 'recharts'
 
-// ── Chart data (stays as mock; replace with dashboardService.getChartData() later) ──
+// ── Chart colors ──────────────────────────────────────────────────────────────
 
-const IMPACT_DATA = [
+const CHART_COLORS = ['#22C55E', '#3B82F6', '#FBBF24', '#F97316', '#A855F7', '#EF4444', '#06B6D4', '#64748B']
+
+// ── Chart data fallbacks (shown while real data loads or if fetch fails) ──────
+
+const FALLBACK_IMPACT_DATA = [
   { name: 'Degradación ambiental',     value: 40, color: '#22C55E' },
   { name: 'Problemas de salud',         value: 25, color: '#3B82F6' },
   { name: 'Impacto económico',          value: 20, color: '#FBBF24' },
@@ -21,7 +25,7 @@ const IMPACT_DATA = [
   { name: 'Conflictos sociales',        value:  5, color: '#A855F7' },
 ]
 
-const FREQUENCY_MONTHS = [
+const FALLBACK_FREQUENCY_PAGES = [
   [
     { month: 'Enero',    value: 21 },
     { month: 'Febrero',  value: 19 },
@@ -37,6 +41,24 @@ const FREQUENCY_MONTHS = [
     { month: 'Octubre',   value: 17 },
   ],
 ]
+
+function toImpactData(rows: ImpactoRow[]) {
+  const total = rows.reduce((s, r) => s + r.total, 0)
+  if (total === 0) return FALLBACK_IMPACT_DATA
+  return rows.map((r, i) => ({
+    name: r.tipo_actividad.replace(/_/g, ' '),
+    value: Math.round((r.total / total) * 100),
+    color: CHART_COLORS[i % CHART_COLORS.length],
+  }))
+}
+
+function toFrequencyPages(rows: FrecuenciaRow[]) {
+  if (!rows.length) return FALLBACK_FREQUENCY_PAGES
+  const mapped = rows.map((r) => ({ month: r.mes, value: r.total }))
+  const pages: { month: string; value: number }[][] = []
+  for (let i = 0; i < mapped.length; i += 5) pages.push(mapped.slice(i, i + 5))
+  return pages
+}
 
 const ZONES_DATA = [
   { zone: 'Zona Oeste', value: 15000, color: '#3B82F6' },
@@ -110,14 +132,14 @@ function KpiCard({ icon: Icon, label, value, color, sub, onClick }) {
 
 // ── Chart cards ───────────────────────────────────────────────────────────────
 
-function ImpactDonutCard() {
+function ImpactDonutCard({ data }) {
   return (
     <Card title="Impacto de la extracción de arena en las comunidades locales">
       <div className="flex items-center gap-6">
         <ResponsiveContainer width={180} height={180}>
           <PieChart>
-            <Pie data={IMPACT_DATA} cx="50%" cy="50%" innerRadius={55} outerRadius={85} dataKey="value" strokeWidth={2}>
-              {IMPACT_DATA.map((entry) => (
+            <Pie data={data} cx="50%" cy="50%" innerRadius={55} outerRadius={85} dataKey="value" strokeWidth={2}>
+              {data.map((entry) => (
                 <Cell key={entry.name} fill={entry.color} />
               ))}
             </Pie>
@@ -125,7 +147,7 @@ function ImpactDonutCard() {
           </PieChart>
         </ResponsiveContainer>
         <ul className="flex flex-col gap-2">
-          {IMPACT_DATA.map((d) => (
+          {data.map((d) => (
             <li key={d.name} className="flex items-center gap-2 text-xs text-gray-600">
               <span className="h-2.5 w-2.5 rounded-full shrink-0" style={{ background: d.color }} />
               {d.name}
@@ -137,21 +159,21 @@ function ImpactDonutCard() {
   )
 }
 
-function FrequencyLineCard() {
+function FrequencyLineCard({ pages }) {
   const [page, setPage] = useState(0)
-  const data = FREQUENCY_MONTHS[page]
-  const peakMonth = data.reduce((a, b) => (b.value > a.value ? b : a)).month
+  const data = pages[Math.min(page, pages.length - 1)] ?? []
+  const peakMonth = data.length ? data.reduce((a, b) => (b.value > a.value ? b : a)).month : ''
 
   return (
     <Card
       title="Frecuencia de actividades ilegales"
-      subtitle={`${peakMonth} es el mes con mayores incidencias`}
+      subtitle={peakMonth ? `${peakMonth} es el mes con mayores incidencias` : undefined}
       action={
         <div className="flex items-center gap-1">
           <button onClick={() => setPage((p) => Math.max(0, p - 1))} disabled={page === 0} className="p-1 rounded-full border border-gray-200 text-gray-400 hover:bg-gray-50 disabled:opacity-30">
             <ChevronLeft className="h-4 w-4" />
           </button>
-          <button onClick={() => setPage((p) => Math.min(FREQUENCY_MONTHS.length - 1, p + 1))} disabled={page === FREQUENCY_MONTHS.length - 1} className="p-1 rounded-full border border-gray-200 text-gray-400 hover:bg-gray-50 disabled:opacity-30">
+          <button onClick={() => setPage((p) => Math.min(pages.length - 1, p + 1))} disabled={page === pages.length - 1} className="p-1 rounded-full border border-gray-200 text-gray-400 hover:bg-gray-50 disabled:opacity-30">
             <ChevronRight className="h-4 w-4" />
           </button>
         </div>
@@ -167,7 +189,7 @@ function FrequencyLineCard() {
           </defs>
           <CartesianGrid strokeDasharray="3 3" stroke="#F3F4F6" vertical={false} />
           <XAxis dataKey="month" tick={{ fontSize: 11, fill: '#9CA3AF' }} axisLine={false} tickLine={false} />
-          <YAxis tick={{ fontSize: 11, fill: '#9CA3AF' }} axisLine={false} tickLine={false} domain={[10, 24]} ticks={[10, 14, 17, 21, 24]} />
+          <YAxis tick={{ fontSize: 11, fill: '#9CA3AF' }} axisLine={false} tickLine={false} />
           <Tooltip contentStyle={{ borderRadius: 8, border: 'none', boxShadow: '0 2px 8px rgba(0,0,0,.1)', fontSize: 12 }} />
           <Area type="monotone" dataKey="value" stroke="#EF4444" strokeWidth={2} fill="url(#freqGrad)" dot={false} />
         </AreaChart>
@@ -211,11 +233,15 @@ function VolumeBarCard({ onVerTodas }) {
 
 export default function DashboardPage() {
   const navigate = useNavigate()
-  const [stats, setStats]     = useState(null)
-  const [loading, setLoading] = useState(true)
+  const [stats, setStats]                   = useState(null)
+  const [loading, setLoading]               = useState(true)
+  const [impactData, setImpactData]         = useState(FALLBACK_IMPACT_DATA)
+  const [frequencyPages, setFrequencyPages] = useState(FALLBACK_FREQUENCY_PAGES)
 
   useEffect(() => {
     dashboardService.getStats().then(setStats).finally(() => setLoading(false))
+    dashboardService.getImpacto().then((rows) => setImpactData(toImpactData(rows))).catch(() => {})
+    dashboardService.getFrecuencia().then((rows) => setFrequencyPages(toFrequencyPages(rows))).catch(() => {})
   }, [])
 
   return (
@@ -290,8 +316,8 @@ export default function DashboardPage() {
 
         {/* Charts */}
         <div data-tour="backoffice-dashboard-charts" className="grid grid-cols-1 gap-4 xl:grid-cols-2 xl:gap-6">
-          <ImpactDonutCard />
-          <FrequencyLineCard />
+          <ImpactDonutCard data={impactData} />
+          <FrequencyLineCard pages={frequencyPages} />
           <ZonesBarCard onVerTodas={() => navigate('/admin/monitoreo')} />
           <VolumeBarCard onVerTodas={() => navigate('/admin/denuncias')} />
         </div>

@@ -1,15 +1,13 @@
 // @ts-nocheck
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { MapPin, CheckCircle } from 'lucide-react'
 import BackofficeTopbar from '../../components/backoffice/BackofficeTopbar'
 import LocationPickerMap from '../../components/map/LocationPickerMap'
 import Modal from '../../components/ui/Modal'
 import { monitoreoService } from '../../services/monitoreoService'
+import { usuariosService, type Usuario } from '../../services/usuariosService'
 import { toast } from '../../utils/toast'
-import { PROVINCIAS_MUNICIPIOS } from '../../data/mockDenuncias'
-
-const PROVINCIAS = Object.keys(PROVINCIAS_MUNICIPIOS).sort()
 const FRECUENCIAS = ['Diario', 'Semanal', 'Quincenal', 'Mensual']
 const DIAS = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom']
 const MEDIOS = ['Drones', 'Motor', 'Auto', 'Camioneta']
@@ -38,10 +36,17 @@ function Input({ error, ...props }) {
 export default function PlanificarMonitoreoPage() {
   const { id } = useParams()
   const navigate = useNavigate()
-  const [submitted, setSubmitted] = useState(false)
-  const [mapOpen, setMapOpen]     = useState(false)
-  const [saving, setSaving]       = useState(false)
-  const [mapPin, setMapPin]       = useState(null)   // { lat, lng } | null
+  const [submitted, setSubmitted]   = useState(false)
+  const [mapOpen, setMapOpen]       = useState(false)
+  const [saving, setSaving]         = useState(false)
+  const [mapPin, setMapPin]         = useState(null)   // { lat, lng } | null
+  const [usuarios, setUsuarios]     = useState<Usuario[]>([])
+
+  useEffect(() => {
+    usuariosService.getAll()
+      .then((lista) => setUsuarios(lista.filter((u) => u.Estado === 'Activo')))
+      .catch(() => {})
+  }, [])
 
   const [form, setForm] = useState({
     nombre: '',
@@ -189,9 +194,11 @@ export default function PlanificarMonitoreoPage() {
                 onChange={(e) => set('responsable', e.target.value)}
                 className={`w-full rounded-xl border px-3.5 py-2.5 text-sm text-gray-700 outline-none bg-white transition-colors ${errors.responsable ? 'border-action' : 'border-gray-200 focus:border-primary focus:ring-1 focus:ring-primary'}`}
               >
-                <option value="">Seleccione un Municipio</option>
-                {PROVINCIAS.flatMap((p) => PROVINCIAS_MUNICIPIOS[p]).map((m) => (
-                  <option key={m} value={m}>{m}</option>
+                <option value="">Seleccione un responsable</option>
+                {usuarios.map((u) => (
+                  <option key={u.IDUsuario} value={u.IDUsuario}>
+                    {u.nombre_completo}{u.cargo ? ` — ${u.cargo}` : ''}
+                  </option>
                 ))}
               </select>
               {errors.responsable && <p className="mt-1 text-xs text-action">{errors.responsable}</p>}
