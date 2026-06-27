@@ -2,11 +2,12 @@
 import { useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
+import { useForm, useStore } from '@tanstack/react-form'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { UploadCloud, X, CheckCircle } from 'lucide-react'
 import BackofficeTopbar from '../../components/backoffice/BackofficeTopbar'
-import { PROVINCIAS_MUNICIPIOS } from '../../data/mockDenuncias'
-
-const PROVINCIAS = Object.keys(PROVINCIAS_MUNICIPIOS).sort()
+import { denunciasService, filtrarEvidencias, TIPOS_ACTIVIDAD, TIPO_LABEL } from '../../services/denunciasService'
+import { toast } from '../../utils/toast'
 
 function Label({ children, required }) {
   return (
@@ -81,68 +82,104 @@ function SectionCard({ title, children }) {
 const FILE_TYPES = ['MP3', 'MP4', 'PNG', 'JPG', 'PDF']
 const ALLOWED_EXT = ['.mp3', '.mp4', '.png', '.jpg', '.jpeg', '.pdf']
 
+const DEFAULT_VALUES = {
+  anonimo: '',
+  nombres: '',
+  apellidos: '',
+  correo: '',
+  telefono: '',
+  tipoActividad: '',
+  fechaIncidente: '',
+  hora: '',
+  gps: '',
+  detalleUbicacion: '',
+  tipoExtraccion: '',
+  numPersonas: '',
+  cantidadArena: '',
+  detalleActividad: '',
+  consentimiento: false,
+}
+/** Datos de contacto (cifrados en el backend). Vacío si la denuncia es anónima. */
+function buildContacto(v) {
+  if (v.anonimo === 'Sí') return undefined
+  const partes = [
+    [v.nombres, v.apellidos].filter(Boolean).join(' ').trim(),
+    v.correo.trim(),
+    v.telefono.trim(),
+  ].filter(Boolean)
+  return partes.length ? partes.join(' · ').slice(0, 500) : undefined
+}
+
 export default function RealizarDenunciaPage() {
   const { t } = useTranslation()
   const navigate = useNavigate()
+  const queryClient = useQueryClient()
   const fileInputRef = useRef(null)
   const [submitted, setSubmitted] = useState(false)
-
-  const [form, setForm] = useState({
-    nombres: '',
-    apellidos: '',
-    correo: '',
-    telefono: '',
-    fechaIncidente: '',
-    hora: '',
-    provincia: '',
-    municipio: '',
-    sector: '',
-    gps: '',
-    detalleUbicacion: '',
-    tipoExtraccion: '',
-    numPersonas: '',
-    cantidadArena: '',
-    detalleActividad: '',
-    consentimiento: false,
-  })
+  const [codigoSeguimiento, setCodigoSeguimiento] = useState('')
   const [files, setFiles] = useState([])
-  const [errors, setErrors] = useState({})
   const [dragging, setDragging] = useState(false)
 
-  function set(field, value) {
-    setForm((f) => ({ ...f, [field]: value }))
-    if (errors[field]) setErrors((e) => ({ ...e, [field]: '' }))
-  }
+  const mutation = useMutation({
+    mutationFn: (payload) => denunciasService.crear(payload),
+    onSuccess: (result) => {
+      // Refrescar el listado de denuncias para que la nueva aparezca
+      queryClient.invalidateQueries({ queryKey: ['denuncias'] })
+      setCodigoSeguimiento(result.codigo_seguimiento)
+      setSubmitted(true)
+    },
+    onError: (err) => {
+      toast.error(err instanceof Error ? err.message : 'Error al crear la denuncia')
+    },
+  })
+
+  const form = useForm({
+    defaultValues: DEFAULT_VALUES,
+    validators: {
+      onSubmit: ({ value }) => {
+        const fields = {}
+        const anon = value.anonimo === 'Sí'
+        if (!value.anonimo) fields.anonimo = 'Requerido'
+        if (!anon && !value.nombres.trim()) fields.nombres = 'Requerido'
+        if (!anon && !value.apellidos.trim()) fields.apellidos = 'Requerido'
+        if (!value.tipoActividad) fields.tipoActividad = 'Requerido'
+        if (!value.fechaIncidente) fields.fechaIncidente = 'Requerido'
+        if (!value.detalleUbicacion.trim()) fields.detalleUbicacion = 'Requerido'
+        if (!value.tipoExtraccion) fields.tipoExtraccion = 'Requerido'
+        if (!value.numPersonas) fields.numPersonas = 'Requerido'
+        if (!value.cantidadArena.trim()) fields.cantidadArena = 'Requerido'
+        if (!value.detalleActividad.trim()) fields.detalleActividad = 'Requerido'
+        if (!value.consentimiento) fields.consentimiento = 'Debes aceptar la declaración para continuar'
+        return Object.keys(fields).length ? { fields } : undefined
+      },
+    },
+    onSubmit: async ({ value }) => {
+      await mutation.mutateAsync({
+        Descripcion: value.detalleActividad.trim(),
+        tipo_actividad: value.tipoActividad,
+        fecha_incidente: value.fechaIncidente || undefined,
+        hora_aproximada: value.hora || undefined,
+        detalle_ubicacion: value.detalleUbicacion.trim() || undefined,
+        gps: value.gps.trim() || undefined,
+        tipo_extraccion: value.tipoExtraccion || undefined,
+        numero_personas: value.numPersonas || undefined,
+        cantidad_arena: value.cantidadArena.trim() || undefined,
+        contacto: buildContacto(value),
+        evidencias: files,
+      })
+    },
+  })
+
+  const isAnon = useStore(form.store, (s) => s.values.anonimo === 'Sí')
 
   function addFiles(newFiles) {
-    const valid = Array.from(newFiles).filter((f) =>
-      ALLOWED_EXT.some((ext) => f.name.toLowerCase().endsWith(ext))
-    )
-    setFiles((prev) => [...prev, ...valid])
+    const { aceptados, errores } = filtrarEvidencias(files, Array.from(newFiles))
+    if (errores.length) toast.error(errores.join(' '))
+    if (aceptados.length) setFiles((prev) => [...prev, ...aceptados])
   }
 
-  function validate() {
-    const e = {}
-    if (!form.nombres.trim()) e.nombres = t('realizarDenuncia.required')
-    if (!form.apellidos.trim()) e.apellidos = t('realizarDenuncia.required')
-    if (!form.fechaIncidente) e.fechaIncidente = t('realizarDenuncia.required')
-    if (!form.provincia) e.provincia = t('realizarDenuncia.required')
-    if (!form.municipio) e.municipio = t('realizarDenuncia.required')
-    if (!form.sector.trim()) e.sector = t('realizarDenuncia.required')
-    if (!form.detalleUbicacion.trim()) e.detalleUbicacion = t('realizarDenuncia.required')
-    if (!form.tipoExtraccion) e.tipoExtraccion = t('realizarDenuncia.required')
-    if (!form.numPersonas) e.numPersonas = t('realizarDenuncia.required')
-    if (!form.cantidadArena.trim()) e.cantidadArena = t('realizarDenuncia.required')
-    if (!form.detalleActividad.trim()) e.detalleActividad = t('realizarDenuncia.required')
-    if (!form.consentimiento) e.consentimiento = t('realizarDenuncia.consentError')
-    return e
-  }
-
-  function handleSubmit() {
-    const e = validate()
-    if (Object.keys(e).length) { setErrors(e); return }
-    // TODO: POST /api/admin/denuncias
-    setSubmitted(true)
+  function removeFile(index) {
+    setFiles((prev) => prev.filter((_, j) => j !== index))
   }
 
   if (submitted) {
@@ -151,8 +188,14 @@ export default function RealizarDenunciaPage() {
         <BackofficeTopbar title={t('realizarDenuncia.title')} backTo="/admin/denuncias" />
         <main className="flex flex-col items-center justify-center p-16 gap-4">
           <CheckCircle className="h-16 w-16 text-emerald-500" />
-          <h2 className="text-xl font-bold text-primary">{t('realizarDenuncia.successTitle')}</h2>
-          <p className="text-sm text-gray-500">{t('realizarDenuncia.successMsg')}</p>
+          <h2 className="text-xl font-bold text-primary">Denuncia creada exitosamente</h2>
+          <p className="text-sm text-gray-500">La denuncia ha sido registrada en el sistema.</p>
+          {codigoSeguimiento && (
+            <p className="text-sm text-gray-500">
+              Código de seguimiento:{' '}
+              <span className="font-bold text-primary">{codigoSeguimiento}</span>
+            </p>
+          )}
           <button
             onClick={() => navigate('/admin/denuncias')}
             className="mt-4 rounded-full bg-primary px-6 py-2.5 text-sm font-semibold text-white hover:bg-primary/90 transition-colors"
@@ -168,51 +211,90 @@ export default function RealizarDenunciaPage() {
     <>
       <BackofficeTopbar title={t('realizarDenuncia.title')} backTo="/admin/denuncias" />
 
-      <main className="p-8 flex flex-col gap-5">
+      <form
+        onSubmit={(e) => {
+          e.preventDefault()
+          e.stopPropagation()
+          form.handleSubmit()
+        }}
+        noValidate
+      >
+        <main className="p-8 flex flex-col gap-5">
         {/* Información del Denunciante */}
         <div data-tour="backoffice-denuncia-form-personal">
           <SectionCard title={t('realizarDenuncia.personalInfo')}>
             <div className="grid grid-cols-3 gap-4">
-            <div>
-              <Label required>{t('realizarDenuncia.namesLabel')}</Label>
-              <Input
-                placeholder={t('realizarDenuncia.namesLabel')}
-                value={form.nombres}
-                onChange={(e) => set('nombres', e.target.value)}
-
-                error={errors.nombres}
-              />
+            <div className="col-span-3">
+              <form.Field name="anonimo">
+                {(field) => (
+                  <RadioGroup
+                    label="Deseas Permanecer Anónimo/a"
+                    required
+                    name="anonimo"
+                    options={['Sí', 'No']}
+                    value={field.state.value}
+                    onChange={(v) => field.handleChange(v)}
+                    error={field.state.meta.errors[0]}
+                  />
+                )}
+              </form.Field>
             </div>
             <div>
-              <Label>{t('realizarDenuncia.lastNameLabel')}</Label>
-              <Input
-                placeholder={t('realizarDenuncia.lastNameLabel')}
-                value={form.apellidos}
-                onChange={(e) => set('apellidos', e.target.value)}
-
-                error={errors.apellidos}
-              />
+              <Label required={!isAnon}>Nombres</Label>
+              <form.Field name="nombres">
+                {(field) => (
+                  <Input
+                    placeholder="Nombres"
+                    value={field.state.value}
+                    onChange={(e) => field.handleChange(e.target.value)}
+                    disabled={isAnon}
+                    error={field.state.meta.errors[0]}
+                  />
+                )}
+              </form.Field>
+            </div>
+            <div>
+              <Label required={!isAnon}>Apellidos</Label>
+              <form.Field name="apellidos">
+                {(field) => (
+                  <Input
+                    placeholder="Apellidos"
+                    value={field.state.value}
+                    onChange={(e) => field.handleChange(e.target.value)}
+                    disabled={isAnon}
+                    error={field.state.meta.errors[0]}
+                  />
+                )}
+              </form.Field>
             </div>
             <div />
             <div>
-              <Label>{t('realizarDenuncia.emailLabel')}</Label>
-              <Input
-                type="email"
-                placeholder={t('realizarDenuncia.emailLabel')}
-                value={form.correo}
-                onChange={(e) => set('correo', e.target.value)}
-
-              />
+              <Label>Correo Electrónico</Label>
+              <form.Field name="correo">
+                {(field) => (
+                  <Input
+                    type="email"
+                    placeholder="Correo Electrónico"
+                    value={field.state.value}
+                    onChange={(e) => field.handleChange(e.target.value)}
+                    disabled={isAnon}
+                  />
+                )}
+              </form.Field>
             </div>
             <div>
-              <Label>{t('realizarDenuncia.phoneLabel')}</Label>
-              <Input
-                type="tel"
-                placeholder={t('realizarDenuncia.phonePlaceholder')}
-                value={form.telefono}
-                onChange={(e) => set('telefono', e.target.value)}
-
-              />
+              <Label>Teléfono de contacto</Label>
+              <form.Field name="telefono">
+                {(field) => (
+                  <Input
+                    type="tel"
+                    placeholder="(000)-000-000"
+                    value={field.state.value}
+                    onChange={(e) => field.handleChange(e.target.value)}
+                    disabled={isAnon}
+                  />
+                )}
+              </form.Field>
             </div>
             </div>
           </SectionCard>
@@ -223,75 +305,59 @@ export default function RealizarDenunciaPage() {
           <SectionCard title={t('realizarDenuncia.locationInfo')}>
             <div className="grid grid-cols-3 gap-4">
             <div>
-              <Label required>{t('realizarDenuncia.dateLabel')}</Label>
-              <Input
-                type="date"
-                value={form.fechaIncidente}
-                onChange={(e) => set('fechaIncidente', e.target.value)}
-                error={errors.fechaIncidente}
-              />
+              <Label required>Fecha del incidente</Label>
+              <form.Field name="fechaIncidente">
+                {(field) => (
+                  <Input
+                    type="date"
+                    value={field.state.value}
+                    onChange={(e) => field.handleChange(e.target.value)}
+                    error={field.state.meta.errors[0]}
+                  />
+                )}
+              </form.Field>
             </div>
             <div>
-              <Label>{t('realizarDenuncia.timeLabel')}</Label>
-              <Input
-                type="time"
-                value={form.hora}
-                onChange={(e) => set('hora', e.target.value)}
-              />
+              <Label>Hora aproximada</Label>
+              <form.Field name="hora">
+                {(field) => (
+                  <Input
+                    type="time"
+                    value={field.state.value}
+                    onChange={(e) => field.handleChange(e.target.value)}
+                  />
+                )}
+              </form.Field>
             </div>
             <div>
-              <Label required>{t('realizarDenuncia.provinciaLabel')}</Label>
-              <Select
-                value={form.provincia}
-                onChange={(e) => { set('provincia', e.target.value); set('municipio', '') }}
-                error={errors.provincia}
-              >
-                <option value="">{t('realizarDenuncia.provinciaPlaceholder')}</option>
-                {PROVINCIAS.map((p) => <option key={p} value={p}>{p}</option>)}
-              </Select>
-            </div>
-            <div>
-              <Label required>{t('realizarDenuncia.municipioLabel')}</Label>
-              <Select
-                value={form.municipio}
-                onChange={(e) => set('municipio', e.target.value)}
-                disabled={!form.provincia}
-                error={errors.municipio}
-              >
-                <option value="">{t('realizarDenuncia.municipioPlaceholder')}</option>
-                {(PROVINCIAS_MUNICIPIOS[form.provincia] ?? []).map((m) => (
-                  <option key={m} value={m}>{m}</option>
-                ))}
-              </Select>
-            </div>
-            <div>
-              <Label required>{t('realizarDenuncia.sectorLabel')}</Label>
-              <Input
-                placeholder={t('realizarDenuncia.sectorPlaceholder')}
-                value={form.sector}
-                onChange={(e) => set('sector', e.target.value)}
-                error={errors.sector}
-              />
-            </div>
-            <div>
-              <Label>{t('realizarDenuncia.gpsLabel')}</Label>
-              <Input
-                placeholder={t('realizarDenuncia.gpsPlaceholder')}
-                value={form.gps}
-                onChange={(e) => set('gps', e.target.value)}
-              />
+              <Label>Coordenadas GPS</Label>
+              <form.Field name="gps">
+                {(field) => (
+                  <Input
+                    placeholder="Ejemplo: 18.7357, -70.1627"
+                    value={field.state.value}
+                    onChange={(e) => field.handleChange(e.target.value)}
+                  />
+                )}
+              </form.Field>
             </div>
             <div className="col-span-3">
-              <Label required>{t('realizarDenuncia.locationDetailLabel')}</Label>
-              <textarea
-                rows={3}
-                placeholder={t('realizarDenuncia.locationDetailPlaceholder')}
-                value={form.detalleUbicacion}
-                onChange={(e) => set('detalleUbicacion', e.target.value)}
-                className={`w-full rounded-xl border px-3.5 py-2.5 text-sm text-gray-700 placeholder:text-gray-400 outline-none resize-none transition-colors
-                  ${errors.detalleUbicacion ? 'border-action focus:ring-1 focus:ring-action' : 'border-gray-200 focus:border-primary focus:ring-1 focus:ring-primary'}`}
-              />
-              {errors.detalleUbicacion && <p className="mt-1 text-xs text-action">{errors.detalleUbicacion}</p>}
+              <Label required>Detalle de la ubicación</Label>
+              <form.Field name="detalleUbicacion">
+                {(field) => (
+                  <>
+                    <textarea
+                      rows={3}
+                      placeholder="Describir la zona afectada..."
+                      value={field.state.value}
+                      onChange={(e) => field.handleChange(e.target.value)}
+                      className={`w-full rounded-xl border px-3.5 py-2.5 text-sm text-gray-700 placeholder:text-gray-400 outline-none resize-none transition-colors
+                        ${field.state.meta.errors[0] ? 'border-action focus:ring-1 focus:ring-action' : 'border-gray-200 focus:border-primary focus:ring-1 focus:ring-primary'}`}
+                    />
+                    {field.state.meta.errors[0] && <p className="mt-1 text-xs text-action">{field.state.meta.errors[0]}</p>}
+                  </>
+                )}
+              </form.Field>
             </div>
             </div>
           </SectionCard>
@@ -300,44 +366,77 @@ export default function RealizarDenunciaPage() {
         {/* Detalles del Incidente */}
         <SectionCard title={t('realizarDenuncia.incidentDetails')}>
           <div className="grid grid-cols-3 gap-6">
-            <RadioGroup
-              label={t('realizarDenuncia.extractionTypeLabel')}
-              required
-              name="tipoExtraccion"
-              options={[t('realizarDenuncia.extractionManual'), t('realizarDenuncia.extractionHeavy')]}
-              value={form.tipoExtraccion}
-              onChange={(v) => set('tipoExtraccion', v)}
-              error={errors.tipoExtraccion}
-            />
-            <RadioGroup
-              label={t('realizarDenuncia.peopleLabel')}
-              required
-              name="numPersonas"
-              options={[t('realizarDenuncia.people1to5'), t('realizarDenuncia.peopleMore')]}
-              value={form.numPersonas}
-              onChange={(v) => set('numPersonas', v)}
-              error={errors.numPersonas}
-            />
+            <div className="col-span-3">
+              <Label required>Tipo de actividad</Label>
+              <form.Field name="tipoActividad">
+                {(field) => (
+                  <Select
+                    value={field.state.value}
+                    onChange={(e) => field.handleChange(e.target.value)}
+                    error={field.state.meta.errors[0]}
+                  >
+                    <option value="">Seleccione el tipo de actividad</option>
+                    {TIPOS_ACTIVIDAD.map((t) => <option key={t} value={t}>{TIPO_LABEL[t]}</option>)}
+                  </Select>
+                )}
+              </form.Field>
+            </div>
+            <form.Field name="tipoExtraccion">
+              {(field) => (
+                <RadioGroup
+                  label="Tipo de extracción observada"
+                  required
+                  name="tipoExtraccion"
+                  options={['Manual', 'Maquinaria pesada']}
+                  value={field.state.value}
+                  onChange={(v) => field.handleChange(v)}
+                  error={field.state.meta.errors[0]}
+                />
+              )}
+            </form.Field>
+            <form.Field name="numPersonas">
+              {(field) => (
+                <RadioGroup
+                  label="Número de personas involucradas"
+                  required
+                  name="numPersonas"
+                  options={['1-5', 'Más de 6 personas']}
+                  value={field.state.value}
+                  onChange={(v) => field.handleChange(v)}
+                  error={field.state.meta.errors[0]}
+                />
+              )}
+            </form.Field>
             <div>
-              <Label required>{t('realizarDenuncia.sandAmountLabel')}</Label>
-              <Input
-                placeholder={t('realizarDenuncia.sandAmountPlaceholder')}
-                value={form.cantidadArena}
-                onChange={(e) => set('cantidadArena', e.target.value)}
-                error={errors.cantidadArena}
-              />
+              <Label required>Cantidad estimada de arena extraída</Label>
+              <form.Field name="cantidadArena">
+                {(field) => (
+                  <Input
+                    placeholder='Ejemplo: "Un camión lleno"'
+                    value={field.state.value}
+                    onChange={(e) => field.handleChange(e.target.value)}
+                    error={field.state.meta.errors[0]}
+                  />
+                )}
+              </form.Field>
             </div>
             <div className="col-span-3">
-              <Label required>{t('realizarDenuncia.activityDetailLabel')}</Label>
-              <textarea
-                rows={3}
-                placeholder={t('realizarDenuncia.locationDetailPlaceholder')}
-                value={form.detalleActividad}
-                onChange={(e) => set('detalleActividad', e.target.value)}
-                className={`w-full rounded-xl border px-3.5 py-2.5 text-sm text-gray-700 placeholder:text-gray-400 outline-none resize-none transition-colors
-                  ${errors.detalleActividad ? 'border-action focus:ring-1 focus:ring-action' : 'border-gray-200 focus:border-primary focus:ring-1 focus:ring-primary'}`}
-              />
-              {errors.detalleActividad && <p className="mt-1 text-xs text-action">{errors.detalleActividad}</p>}
+              <Label required>Detalle de la actividad realizada</Label>
+              <form.Field name="detalleActividad">
+                {(field) => (
+                  <>
+                    <textarea
+                      rows={3}
+                      placeholder="Describir la actividad observada..."
+                      value={field.state.value}
+                      onChange={(e) => field.handleChange(e.target.value)}
+                      className={`w-full rounded-xl border px-3.5 py-2.5 text-sm text-gray-700 placeholder:text-gray-400 outline-none resize-none transition-colors
+                        ${field.state.meta.errors[0] ? 'border-action focus:ring-1 focus:ring-action' : 'border-gray-200 focus:border-primary focus:ring-1 focus:ring-primary'}`}
+                    />
+                    {field.state.meta.errors[0] && <p className="mt-1 text-xs text-action">{field.state.meta.errors[0]}</p>}
+                  </>
+                )}
+              </form.Field>
             </div>
           </div>
         </SectionCard>
@@ -371,7 +470,7 @@ export default function RealizarDenunciaPage() {
               {files.map((f, i) => (
                 <li key={i} className="flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs text-gray-600">
                   {f.name}
-                  <button onClick={() => setFiles((prev) => prev.filter((_, j) => j !== i))} className="text-gray-400 hover:text-action">
+                  <button type="button" onClick={() => removeFile(i)} className="text-gray-400 hover:text-action">
                     <X className="h-3 w-3" />
                   </button>
                 </li>
@@ -380,37 +479,50 @@ export default function RealizarDenunciaPage() {
           )}
 
             <div className="mt-5">
-            <label className="flex items-start gap-3 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={form.consentimiento}
-                onChange={(e) => set('consentimiento', e.target.checked)}
-                className="mt-0.5 h-4 w-4 accent-primary shrink-0"
-              />
-              <span className="text-xs text-gray-600 leading-relaxed">
-                {t('realizarDenuncia.consentLabel')}
-              </span>
-            </label>
-            {errors.consentimiento && <p className="mt-1 text-xs text-action">{errors.consentimiento}</p>}
+            <form.Field name="consentimiento">
+              {(field) => (
+                <>
+                  <label className="flex items-start gap-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={field.state.value}
+                      onChange={(e) => field.handleChange(e.target.checked)}
+                      className="mt-0.5 h-4 w-4 accent-primary shrink-0"
+                    />
+                    <span className="text-xs text-gray-600 leading-relaxed">
+                      Declaro que la información proporcionada es verídica y doy mi consentimiento para que sea utilizada en investigaciones relacionadas.
+                    </span>
+                  </label>
+                  {field.state.meta.errors[0] && <p className="mt-1 text-xs text-action">{field.state.meta.errors[0]}</p>}
+                </>
+              )}
+            </form.Field>
           </div>
 
             <div className="mt-6 flex items-center justify-between">
             <button
+              type="button"
               onClick={() => navigate('/admin/denuncias')}
               className="rounded-full border border-gray-300 bg-white px-6 py-2.5 text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-colors"
             >
               {t('realizarDenuncia.back')}
             </button>
-            <button
-              onClick={handleSubmit}
-              className="rounded-full bg-action px-8 py-2.5 text-sm font-semibold text-white hover:bg-action/90 transition-colors"
-            >
-              {t('realizarDenuncia.createDenuncia')}
-            </button>
+            <form.Subscribe selector={(s) => s.isSubmitting}>
+              {(isSubmitting) => (
+                <button
+                  type="submit"
+                  disabled={isSubmitting || mutation.isPending}
+                  className="rounded-full bg-action px-8 py-2.5 text-sm font-semibold text-white hover:bg-action/90 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                  {isSubmitting || mutation.isPending ? 'Creando...' : 'Crear Denuncia'}
+                </button>
+              )}
+            </form.Subscribe>
           </div>
           </SectionCard>
         </div>
-      </main>
+        </main>
+      </form>
     </>
   )
 }

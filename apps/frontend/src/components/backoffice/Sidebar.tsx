@@ -16,6 +16,7 @@ import {
 import imagotipoBlanco from '../../assets/images/imagotipo negativo.svg'
 import isotipoNegativo from '../../assets/images/isotiponegativo.png'
 
+
 function Tooltip({ children }) {
   return (
     <span className="pointer-events-none absolute left-full ml-3 top-1/2 -translate-y-1/2 z-[100] rounded-md bg-gray-900/90 px-2.5 py-1.5 text-xs font-medium text-white opacity-0 shadow-lg whitespace-nowrap transition-opacity duration-150 group-hover:opacity-100">

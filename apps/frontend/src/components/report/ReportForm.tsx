@@ -1,16 +1,21 @@
 import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { UploadCloud, CheckCircle } from 'lucide-react'
+import { UploadCloud, CheckCircle, X } from 'lucide-react'
+import { denunciasService, filtrarEvidencias, EVIDENCIA_MAX_FILES, EVIDENCIA_MAX_SIZE_MB, TIPOS_ACTIVIDAD, TIPO_LABEL } from '../../services/denunciasService'
+import { toast } from '../../utils/toast'
+import LocationPickerMap from '../map/LocationPickerMap'
+
+const URGENCY_LEVELS = ['Baja', 'Media', 'Alta', 'Riesgo inmediato']
 
 const EMPTY = {
   location: '', activityType: '', datetime: '',
-  urgency: '', description: '', evidence: null,
-  name: '', contact: '',
+  urgency: '', description: '', evidence: [] as File[],
+  name: '', contact: '', gps: '',
 }
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 const isValidContact = (val) => {
-  const email = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+  const email = /^[^\s@]+@(?:[^\s@.]+\.)+[^\s@.]+$/
   const phone = /^(809|829|849)[- ]?\d{3}[- ]?\d{4}$/
   return email.test(val) || phone.test(val)
 }
@@ -43,6 +48,7 @@ export default function ReportForm() {
   const [errors, setErrors] = useState<Record<string, string | null>>({})
   const [sent, setSent]     = useState(false)
   const [trackingId, setTrackingId] = useState('')
+  const [submitting, setSubmitting] = useState(false)
 
   const ACTIVITY_TYPES = [
     { value: 'heavyMachinery', label: t('reportForm.activityTypes.heavyMachinery') },
@@ -81,13 +87,38 @@ export default function ReportForm() {
   const set = (field) => (e) =>
     setForm((f) => ({ ...f, [field]: e.target.value }))
 
-  const handleSubmit = (e) => {
+  const removeEvidence = (index) =>
+    setForm((f) => ({ ...f, evidence: f.evidence.filter((_, j) => j !== index) }))
+
+  const handleSubmit = async (e) => {
     e.preventDefault()
     const errs = validate(form)
     if (Object.keys(errs).length) { setErrors(errs); return }
-    // TODO: POST /api/reports when backend is ready
-    setTrackingId(`BR-${Date.now().toString().slice(-6)}`)
-    setSent(true)
+
+    // datetime-local "2026-06-15T14:30" -> fecha (YYYY-MM-DD) + hora (HH:MM)
+    const [fecha, hora] = form.datetime.split('T')
+    const contacto = [form.name.trim(), form.contact.trim()].filter(Boolean).join(' · ').slice(0, 500)
+
+    setSubmitting(true)
+    try {
+      const result = await denunciasService.crear({
+        Descripcion: form.description.trim(),
+        tipo_actividad: form.activityType as typeof TIPOS_ACTIVIDAD[number],
+        fecha_incidente: fecha || undefined,
+        hora_aproximada: hora || undefined,
+        detalle_ubicacion: form.location.trim() || undefined,
+        gps: form.gps || undefined,
+        nivel_urgencia: form.urgency || undefined,
+        contacto: contacto || undefined,
+        evidencias: form.evidence,
+      })
+      setTrackingId(result.codigo_seguimiento)
+      setSent(true)
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'No se pudo enviar el reporte')
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   const saveDraft = () => {
@@ -168,9 +199,9 @@ export default function ReportForm() {
               onChange={set('activityType')}
               className={inputCls(errors.activityType)}
             >
-              <option value="">{t('reportForm.selectDefault')}</option>
-              {ACTIVITY_TYPES.map((item) => (
-                <option key={item.value} value={item.value}>{item.label}</option>
+              <option value="">Seleccionar</option>
+              {TIPOS_ACTIVIDAD.map((t) => (
+                <option key={t} value={t}>{TIPO_LABEL[t]}</option>
               ))}
             </select>
             {!errors.activityType && (
@@ -222,25 +253,18 @@ export default function ReportForm() {
 
         {/* Map */}
         <div className="mt-6">
-          <p className="mb-2 text-sm font-medium text-gray-700">{t('reportForm.mapLabel')}</p>
-          <div className="overflow-hidden rounded-xl border-2 border-dashed border-blue-200 bg-blue-50">
-            <iframe
-              title="Mapa República Dominicana"
-              className="h-52 w-full border-0"
-              loading="lazy"
-              src="https://www.openstreetmap.org/export/embed.html?bbox=-72.0%2C17.4%2C-68.3%2C20.1&layer=mapnik"
-            />
-          </div>
-          <p className="mt-1 text-center text-xs">
-            <a
-              href="https://www.openstreetmap.org/#map=9/18.7/70.1"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-primary hover:underline"
-            >
-              {t('reportForm.mapLinkText')}
-            </a>
-          </p>
+          <p className="mb-2 text-sm font-medium text-gray-700">Ubicación en mapa</p>
+          <LocationPickerMap
+            lat={form.gps ? Number(form.gps.split(',')[0]) : null}
+            lng={form.gps ? Number(form.gps.split(',')[1]) : null}
+            height="13rem"
+            onChange={(point) =>
+              setForm((f) => ({
+                ...f,
+                gps: point ? `${point.lat.toFixed(6)}, ${point.lng.toFixed(6)}` : '',
+              }))
+            }
+          />
         </div>
 
         {/* Description */}
@@ -261,17 +285,39 @@ export default function ReportForm() {
           <Field label={t('reportForm.evidenceLabel')}>
             <label className="flex w-fit cursor-pointer items-center gap-2 rounded-lg border border-gray-200 bg-surface px-4 py-2 text-sm text-gray-600 transition-colors hover:bg-gray-100">
               <UploadCloud className="h-4 w-4" />
-              {form.evidence ? form.evidence.name : t('reportForm.evidenceAttach')}
+              Adjuntar archivos
               <input
                 type="file"
-                accept="image/*,video/*"
+                accept="image/*,video/*,audio/*,application/pdf"
+                multiple
                 className="hidden"
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, evidence: e.target.files[0] ?? null }))
-                }
+                onChange={(e) => {
+                  const { aceptados, errores } = filtrarEvidencias(form.evidence, Array.from(e.target.files ?? []))
+                  if (errores.length) toast.error(errores.join(' '))
+                  if (aceptados.length) setForm((f) => ({ ...f, evidence: [...f.evidence, ...aceptados] }))
+                  e.target.value = ''
+                }}
               />
             </label>
-            <p className="text-xs text-gray-400">{t('reportForm.evidenceHint')}</p>
+            <p className="text-xs text-gray-400">
+              Imágenes, video, audio o PDF. Máx. {EVIDENCIA_MAX_FILES} archivos, {EVIDENCIA_MAX_SIZE_MB} MB c/u.
+            </p>
+            {form.evidence.length > 0 && (
+              <ul className="mt-2 flex flex-wrap gap-2">
+                {form.evidence.map((file, i) => (
+                  <li key={`${file.name}-${file.size}-${file.lastModified}`} className="flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs text-gray-600">
+                    {file.name}
+                    <button
+                      type="button"
+                      onClick={() => removeEvidence(i)}
+                      className="text-gray-400 hover:text-action"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
           </Field>
         </div>
       </div>
@@ -315,9 +361,10 @@ export default function ReportForm() {
           </button>
           <button
             type="submit"
-            className="rounded-lg bg-action px-6 py-3 text-sm font-bold text-white transition-colors hover:bg-red-700"
+            disabled={submitting}
+            className="rounded-lg bg-action px-6 py-3 text-sm font-bold text-white transition-colors hover:bg-red-700 disabled:opacity-60 disabled:cursor-not-allowed"
           >
-            {t('reportForm.submit')}
+            {submitting ? 'Enviando...' : 'Enviar reporte'}
           </button>
         </div>
         <p className="text-xs text-gray-400">

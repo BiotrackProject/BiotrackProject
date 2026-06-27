@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import ImagePanel from '../../components/auth/ImagePanel'
 import { validateEmail } from '../../utils/validation'
+import { forgotPassword } from '../../services/authService'
 
 import recoverBg from '../../assets/images/recover-bg.jpg'
 
@@ -34,11 +35,13 @@ export default function ForgotPasswordPage() {
     const err = validateEmail(email)
     if (err) { setError(err); return }
     setLoading(true)
-    // TODO: conectar con el backend — POST /api/auth/forgot-password
-    setTimeout(() => {
-      setLoading(false)
-      navigate('/recuperar-cuenta/verificar', { state: { email } })
-    }, 800)
+    const res = await forgotPassword(email.trim().toLowerCase())
+    setLoading(false)
+    if (!res.success) {
+      setError(res.error ?? 'No se pudo enviar el código. Intenta nuevamente.')
+      return
+    }
+    navigate('/recuperar-cuenta/verificar', { state: { email: email.trim().toLowerCase() } })
   }
 
   return (

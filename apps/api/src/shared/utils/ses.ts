@@ -1,18 +1,14 @@
-import nodemailer from 'nodemailer';
+import { SESv2Client, SendEmailCommand } from '@aws-sdk/client-sesv2';
 import { env } from '../../config/env.js';
 import logger from './logger.js';
 
-let transporter: nodemailer.Transporter | null = null;
-
-function getTransporter(): nodemailer.Transporter {
-  if (transporter) return transporter;
-  transporter = nodemailer.createTransport({
-    host: env.EMAIL_HOST,
-    port: env.EMAIL_PORT,
-    auth: { user: env.EMAIL_USER, pass: env.EMAIL_PASS },
-  });
-  return transporter;
-}
+const sesClient = new SESv2Client({
+  region: env.AWS_REGION,
+  credentials: {
+    accessKeyId: env.AWS_ACCESS_KEY_ID,
+    secretAccessKey: env.AWS_SECRET_ACCESS_KEY,
+  },
+});
 
 interface MailOptions {
   to: string;
@@ -23,13 +19,35 @@ interface MailOptions {
 
 async function sendMail(options: MailOptions): Promise<void> {
   try {
-    const info = await getTransporter().sendMail({
-      from: `"${env.EMAIL_FROM_NAME}" <${env.EMAIL_FROM}>`,
-      ...options,
+    const command = new SendEmailCommand({
+      FromEmailAddress: env.EMAIL_FROM,
+      Destination: {
+        ToAddresses: [options.to],
+      },
+      Content: {
+        Simple: {
+          Subject: {
+            Data: options.subject,
+            Charset: 'UTF-8',
+          },
+          Body: {
+            Html: {
+              Data: options.html,
+              Charset: 'UTF-8',
+            },
+            Text: {
+              Data: options.text,
+              Charset: 'UTF-8',
+            },
+          },
+        },
+      },
     });
-    logger.info({ messageId: info.messageId, to: options.to }, 'Email enviado');
+
+    const response = await sesClient.send(command);
+    logger.info({ messageId: response.MessageId, to: options.to }, 'Email enviado vía AWS SES');
   } catch (err) {
-    logger.error({ err, to: options.to, subject: options.subject }, 'Error al enviar email');
+    logger.error({ err, to: options.to, subject: options.subject }, 'Error al enviar email vía AWS SES');
     throw err;
   }
 }
@@ -48,16 +66,22 @@ export async function sendRegistroRecibido(params: { nombre: string; correo: str
 export async function sendRegistroAprobado(params: {
   nombre: string;
   correo: string;
-  passwordResetLink: string;
+  contrasena: string;
 }): Promise<void> {
+  const loginUrl = `${env.FRONTEND_URL}/login`;
   await sendMail({
     to: params.correo,
     subject: 'BIOTRACK — Acceso aprobado',
-    text: `Hola ${params.nombre}, tu solicitud fue aprobada. Establece tu contraseña en: ${params.passwordResetLink}`,
+    text: `Hola ${params.nombre}, tu solicitud fue aprobada.\nCorreo: ${params.correo}\nContraseña temporal: ${params.contrasena}\nInicia sesión en ${loginUrl}. Por seguridad, deberás cambiar esta contraseña en tu primer inicio de sesión.`,
     html: `<p>Hola <strong>${params.nombre}</strong>,</p>
            <p>Tu solicitud de acceso a BIOTRACK ha sido <strong>aprobada</strong>.</p>
-           <p><a href="${params.passwordResetLink}">Haz clic aquí para establecer tu contraseña</a></p>
-           <p>El enlace expira en 24 horas.</p>
+           <p>Estas son tus credenciales de acceso:</p>
+           <ul>
+             <li><strong>Correo:</strong> ${params.correo}</li>
+             <li><strong>Contraseña temporal:</strong> <code>${params.contrasena}</code></li>
+           </ul>
+           <p><a href="${loginUrl}">Iniciar sesión</a></p>
+           <p>Por tu seguridad, el sistema te pedirá <strong>cambiar esta contraseña</strong> en tu primer inicio de sesión.</p>
            <p>— Equipo BIOTRACK</p>`,
   });
 }
@@ -74,6 +98,25 @@ export async function sendRegistroRechazado(params: {
     html: `<p>Hola <strong>${params.nombre}</strong>,</p>
            <p>Tu solicitud de acceso a BIOTRACK no fue aprobada.</p>
            <p><strong>Motivo:</strong> ${params.motivo}</p>
+           <p>— Equipo BIOTRACK</p>`,
+  });
+}
+
+export async function sendCodigoRecuperacion(params: {
+  nombre: string;
+  correo: string;
+  codigo: string;
+  minutosValidez: number;
+}): Promise<void> {
+  await sendMail({
+    to: params.correo,
+    subject: 'BIOTRACK — Código de recuperación de contraseña',
+    text: `Hola ${params.nombre}, tu código de recuperación es ${params.codigo}. Vence en ${params.minutosValidez} minutos. Si no solicitaste este cambio, ignora este correo.`,
+    html: `<p>Hola <strong>${params.nombre}</strong>,</p>
+           <p>Recibimos una solicitud para restablecer tu contraseña. Usa el siguiente código para continuar:</p>
+           <p style="font-size:28px;font-weight:700;letter-spacing:6px;color:#13356c;margin:16px 0;">${params.codigo}</p>
+           <p>El código vence en <strong>${params.minutosValidez} minutos</strong>.</p>
+           <p>Si no solicitaste este cambio, ignora este correo; tu contraseña no se modificará.</p>
            <p>— Equipo BIOTRACK</p>`,
   });
 }

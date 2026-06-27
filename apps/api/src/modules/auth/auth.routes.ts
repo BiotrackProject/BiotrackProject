@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import * as ctrl from './auth.controller.js';
 import { authenticate } from '../../middleware/authenticate.js';
-import { authLimiter } from '../../middleware/rateLimiter.js';
+import { authLimiter, passwordResetLimiter } from '../../middleware/rateLimiter.js';
 
 const router: Router = Router();
 
@@ -92,6 +92,104 @@ router.post('/registro', authLimiter, ctrl.registro);
 
 /**
  * @openapi
+ * /auth/forgot-password:
+ *   post:
+ *     tags: [Autenticación]
+ *     summary: Solicitar código de recuperación de contraseña (RF-1.4)
+ *     description: >
+ *       Envía un código OTP de 6 dígitos al correo registrado.
+ *       Límite de 1 correo cada 3 minutos por cuenta. Respuesta genérica para no revelar
+ *       si el correo existe.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [correo_electronico]
+ *             properties:
+ *               correo_electronico:
+ *                 type: string
+ *                 format: email
+ *     responses:
+ *       200:
+ *         description: Si el correo está registrado, se envía un código.
+ *       422:
+ *         $ref: '#/components/responses/ValidationError'
+ *       429:
+ *         description: Debe esperar antes de solicitar otro código.
+ */
+router.post('/forgot-password', passwordResetLimiter, ctrl.forgotPassword);
+
+/**
+ * @openapi
+ * /auth/verify-code:
+ *   post:
+ *     tags: [Autenticación]
+ *     summary: Verificar código de recuperación (RF-1.4)
+ *     description: Valida el código OTP y devuelve un token de restablecimiento de corta duración.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [correo_electronico, codigo]
+ *             properties:
+ *               correo_electronico:
+ *                 type: string
+ *                 format: email
+ *               codigo:
+ *                 type: string
+ *                 example: "482917"
+ *     responses:
+ *       200:
+ *         description: Código válido; token de restablecimiento emitido.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 token:
+ *                   type: string
+ *       401:
+ *         description: Código inválido o expirado.
+ *       422:
+ *         $ref: '#/components/responses/ValidationError'
+ */
+router.post('/verify-code', passwordResetLimiter, ctrl.verifyCode);
+
+/**
+ * @openapi
+ * /auth/reset-password:
+ *   post:
+ *     tags: [Autenticación]
+ *     summary: Restablecer contraseña con token de recuperación (RF-1.4)
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [token, contrasena]
+ *             properties:
+ *               token:
+ *                 type: string
+ *               contrasena:
+ *                 type: string
+ *                 format: password
+ *     responses:
+ *       200:
+ *         description: Contraseña restablecida.
+ *       401:
+ *         description: Token inválido o expirado.
+ *       422:
+ *         $ref: '#/components/responses/ValidationError'
+ */
+router.post('/reset-password', passwordResetLimiter, ctrl.resetPassword);
+
+/**
+ * @openapi
  * /auth/perfil:
  *   get:
  *     tags: [Autenticación]
@@ -125,6 +223,43 @@ router.post('/registro', authLimiter, ctrl.registro);
  *       401:
  *         $ref: '#/components/responses/Unauthorized'
  */
+/**
+ * @openapi
+ * /auth/cambiar-contrasena:
+ *   post:
+ *     tags: [Autenticación]
+ *     summary: Cambiar la contraseña del usuario autenticado (RF-1.2)
+ *     description: >
+ *       Cambio voluntario u obligatorio (primer inicio de sesión tras aprobación).
+ *       Requiere la contraseña actual y limpia la bandera de cambio obligatorio.
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [contrasena_actual, contrasena_nueva]
+ *             properties:
+ *               contrasena_actual:
+ *                 type: string
+ *                 format: password
+ *               contrasena_nueva:
+ *                 type: string
+ *                 format: password
+ *     responses:
+ *       200:
+ *         description: Contraseña actualizada.
+ *       401:
+ *         description: Contraseña actual incorrecta o sesión inválida.
+ *       409:
+ *         description: La nueva contraseña es igual a la actual.
+ *       422:
+ *         $ref: '#/components/responses/ValidationError'
+ */
+router.post('/cambiar-contrasena', authenticate, ctrl.cambiarContrasena);
+
 router.get('/perfil', authenticate, ctrl.getPerfil);
 router.patch('/perfil', authenticate, ctrl.actualizarPerfil);
 

@@ -2,7 +2,7 @@ import bcrypt from 'bcryptjs';
 import type { estado_solicitud } from '@prisma/client';
 import prisma from '../../config/database.js';
 import { logAuditoria } from '../../middleware/auditLog.js';
-import { sendRegistroAprobado, sendRegistroRechazado } from '../../shared/utils/email.js';
+import { sendRegistroAprobado, sendRegistroRechazado } from '../../shared/utils/ses.js';
 import { NotFoundError, ConflictError, AppError } from '../../shared/errors/AppError.js';
 import { MODULO_SISTEMA } from '../../shared/constants/enums.js';
 import type {
@@ -398,6 +398,9 @@ export async function revisarSolicitud(
           nombre_completo: solicitud.nombre_completo,
           correo_electronico: solicitud.correo_electronico,
           contrasena_hash,
+          // El admin define una contraseña inicial; el usuario debe cambiarla
+          // obligatoriamente en su primer inicio de sesión.
+          debe_cambiar_contrasena: true,
           rol_id: datos.rol_id,
           cargo: datos.cargo ?? solicitud.cargo ?? null,
           institucion: datos.institucion ?? solicitud.institucion ?? null,
@@ -432,7 +435,7 @@ export async function revisarSolicitud(
       await sendRegistroAprobado({
         nombre: solicitud.nombre_completo,
         correo: solicitud.correo_electronico,
-        passwordResetLink: '#',
+        contrasena: datos.contrasena,
       });
     } catch {
       // Do not fail the request if email cannot be sent

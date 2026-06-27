@@ -3,35 +3,103 @@ import prisma from '../../config/database.js';
 import { encrypt, decrypt } from '../../shared/utils/crypto.js';
 import { generateUniqueTrackingCode } from '../../shared/utils/trackingCode.js';
 import { parsePagination, buildPaginatedResponse } from '../../shared/utils/pagination.js';
-import { sendEstadoDenunciaActualizado } from '../../shared/utils/email.js';
+import { sendEstadoDenunciaActualizado } from '../../shared/utils/ses.js';
 import { logAuditoria } from '../../middleware/auditLog.js';
 import { NotFoundError, AppError } from '../../shared/errors/AppError.js';
 import { TRANSICIONES_DENUNCIA, ESTADOS_REQUIEREN_COMENTARIO, MODULO_SISTEMA } from '../../shared/constants/enums.js';
 import type { CrearDenunciaPublicaInput, FiltrosDenunciasInput, CambiarEstadoInput } from './denuncias.validation.js';
+import type { EvidenciaInput } from './denuncias.upload.js';
+
+/** Parsea un GPS en formato "lat, lng" a números. Devuelve null si no es válido. */
+function parseGps(gps: string | undefined): { lat: number; lng: number } | null {
+  if (!gps) return null;
+  const parts = gps.split(',').map((p) => Number(p.trim()));
+  if (parts.length !== 2 || parts.some((n) => Number.isNaN(n))) return null;
+  return { lat: parts[0]!, lng: parts[1]! };
+}
+
+/**
+ * Convierte el texto de un point de PostgreSQL "(lat,lng)" a { lat, lng }.
+ * Devuelve null si el valor es nulo o no parseable.
+ */
+function pointTextToCoords(raw: string | null | undefined): { lat: number; lng: number } | null {
+  if (!raw) return null;
+  const parts = raw.replace(/^\(/, '').replace(/\)$/, '').split(',').map((p) => Number(p.trim()));
+  if (parts.length !== 2 || parts.some((n) => Number.isNaN(n))) return null;
+  return { lat: parts[0]!, lng: parts[1]! };
+}
+
+/**
+ * Lee la columna geométrica ubicacion_gps (Unsupported, no seleccionable por Prisma)
+ * y la devuelve normalizada como "lat, lng", o null si no tiene valor.
+ */
+async function readGps(id: number): Promise<string | null> {
+  const rows = await prisma.$queryRaw<{ gps: string | null }[]>`
+    SELECT ubicacion_gps::text AS gps FROM "Denuncia" WHERE "IDDenuncia" = ${id}
+  `;
+  const coords = pointTextToCoords(rows[0]?.gps);
+  return coords ? `${coords.lat}, ${coords.lng}` : null;
+}
 
 /**
  * RF-2.1 — Crear denuncia pública (anónima o autenticada).
  * Genera código de seguimiento único de 8 caracteres y cifra el contacto si se provee.
  */
-export async function crearDenunciaPublica(datos: CrearDenunciaPublicaInput, ip: string | undefined) {
+export async function crearDenunciaPublica(
+  datos: CrearDenunciaPublicaInput,
+  evidencias: EvidenciaInput[],
+  ip: string | undefined
+) {
   const codigo_seguimiento = await generateUniqueTrackingCode();
 
   const contacto_cifrado = datos.contacto ? encrypt(datos.contacto) : null;
 
-  const denuncia = await prisma.denuncia.create({
-    data: {
-      codigo_seguimiento,
-      Descripcion: datos.Descripcion,
-      tipo_actividad: datos.tipo_actividad,
-      hora_aproximada: datos.hora_aproximada ? new Date(`1970-01-01T${datos.hora_aproximada}:00Z`) : null,
-      contacto_cifrado,
-      IDZona: datos.IDZona ?? null,
-      Fecha_denuncia: new Date(),
-    },
-    select: {
-      IDDenuncia: true,
-      codigo_seguimiento: true,
-    },
+  // GPS llega como "lat, lng"; lo parseamos para guardarlo como geometría point.
+  const coords = parseGps(datos.gps);
+
+  const denuncia = await prisma.$transaction(async (tx) => {
+    const creada = await tx.denuncia.create({
+      data: {
+        codigo_seguimiento,
+        Descripcion: datos.Descripcion,
+        tipo_actividad: datos.tipo_actividad,
+        fecha_incidente: datos.fecha_incidente ? new Date(`${datos.fecha_incidente}T00:00:00Z`) : null,
+        hora_aproximada: datos.hora_aproximada ? new Date(`1970-01-01T${datos.hora_aproximada}:00Z`) : null,
+        detalle_ubicacion: datos.detalle_ubicacion ?? null,
+        tipo_extraccion: datos.tipo_extraccion ?? null,
+        numero_personas: datos.numero_personas ?? null,
+        cantidad_arena: datos.cantidad_arena ?? null,
+        nivel_urgencia: datos.nivel_urgencia ?? null,
+        contacto_cifrado,
+        IDZona: datos.IDZona ?? null,
+        Fecha_denuncia: new Date(),
+      },
+      select: {
+        IDDenuncia: true,
+        codigo_seguimiento: true,
+      },
+    });
+
+    // ubicacion_gps es Unsupported("point"); Prisma no lo escribe vía data, usamos SQL crudo.
+    if (coords) {
+      await tx.$executeRaw`UPDATE "Denuncia" SET ubicacion_gps = point(${coords.lat}, ${coords.lng}) WHERE "IDDenuncia" = ${creada.IDDenuncia}`;
+    }
+
+    // Persistir evidencias adjuntas (archivos ya guardados en disco por multer).
+    if (evidencias.length > 0) {
+      await tx.evidencia_Denuncia.createMany({
+        data: evidencias.map((ev) => ({
+          IDDenuncia: creada.IDDenuncia,
+          archivo_url: ev.archivo_url,
+          TipoArchivo: ev.TipoArchivo,
+          tamano_bytes: ev.tamano_bytes,
+          hash_archivo: ev.hash_archivo,
+          metadata: ev.metadata,
+        })),
+      });
+    }
+
+    return creada;
   });
 
   await logAuditoria({
@@ -62,7 +130,13 @@ export async function getSeguimiento(codigo: string) {
       Descripcion: true,
       tipo_actividad: true,
       Fecha_denuncia: true,
+      fecha_incidente: true,
       hora_aproximada: true,
+      detalle_ubicacion: true,
+      tipo_extraccion: true,
+      numero_personas: true,
+      cantidad_arena: true,
+      nivel_urgencia: true,
       Estado: true,
       IDZona: true,
       historial_estado_denuncia: {
@@ -80,7 +154,8 @@ export async function getSeguimiento(codigo: string) {
 
   if (!denuncia) throw new NotFoundError('Denuncia');
 
-  return denuncia;
+  const gps = await readGps(denuncia.IDDenuncia);
+  return { ...denuncia, gps };
 }
 
 /**
@@ -119,6 +194,7 @@ export async function listarDenuncias(filtros: FiltrosDenunciasInput) {
       select: {
         IDDenuncia: true,
         codigo_seguimiento: true,
+        Descripcion: true,
         tipo_actividad: true,
         Estado: true,
         Fecha_denuncia: true,
@@ -130,6 +206,41 @@ export async function listarDenuncias(filtros: FiltrosDenunciasInput) {
   ]);
 
   return buildPaginatedResponse(denuncias, total, pagination);
+}
+
+/**
+ * Listado ligero para el mapa: solo denuncias con coordenadas (ubicacion_gps).
+ * Una sola consulta raw que lee la columna point y la normaliza a lat/lng,
+ * evitando el N+1 de readGps por denuncia.
+ */
+export async function listarDenunciasMapa() {
+  const rows = await prisma.$queryRaw<
+    {
+      IDDenuncia: number;
+      codigo_seguimiento: string;
+      Estado: estado_denuncia;
+      tipo_actividad: string;
+      nivel_urgencia: string | null;
+      detalle_ubicacion: string | null;
+      Descripcion: string;
+      Fecha_denuncia: Date;
+      gps: string | null;
+    }[]
+  >`
+    SELECT "IDDenuncia", codigo_seguimiento, "Estado", tipo_actividad,
+           nivel_urgencia, detalle_ubicacion, "Descripcion", "Fecha_denuncia",
+           ubicacion_gps::text AS gps
+    FROM "Denuncia"
+    WHERE ubicacion_gps IS NOT NULL
+    ORDER BY "Fecha_denuncia" DESC
+  `;
+
+  return rows.flatMap((row) => {
+    const coords = pointTextToCoords(row.gps);
+    if (!coords) return [];
+    const { gps: _gps, ...rest } = row;
+    return [{ ...rest, lat: coords.lat, lng: coords.lng }];
+  });
 }
 
 /**
@@ -147,18 +258,24 @@ export async function getDenuncia(id: number) {
       Descripcion: true,
       tipo_actividad: true,
       Fecha_denuncia: true,
+      fecha_incidente: true,
       hora_aproximada: true,
+      detalle_ubicacion: true,
+      tipo_extraccion: true,
+      numero_personas: true,
+      cantidad_arena: true,
+      nivel_urgencia: true,
       Estado: true,
       contacto_cifrado: true,
       historial_estado_denuncia: {
         orderBy: { created_at: 'asc' },
         select: {
           id: true,
-          IDUsuario: true,
           estado_anterior: true,
           estado_nuevo: true,
           comentario: true,
           created_at: true,
+          Usuario: { select: { nombre_completo: true } },
         },
       },
       Evidencia_Denuncia: {
@@ -176,10 +293,12 @@ export async function getDenuncia(id: number) {
 
   if (!denuncia) throw new NotFoundError('Denuncia');
 
-  const { contacto_cifrado, ...rest } = denuncia;
+  const { contacto_cifrado, historial_estado_denuncia, ...rest } = denuncia;
   const contacto = contacto_cifrado ? decrypt(contacto_cifrado) : null;
+  const gps = await readGps(denuncia.IDDenuncia);
 
-  return { ...rest, contacto };
+  // El frontend consume el historial bajo la clave `historial`.
+  return { ...rest, historial: historial_estado_denuncia, contacto, gps };
 }
 
 /**

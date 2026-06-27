@@ -24,7 +24,7 @@ export const asignarRolSchema = z.object({
 export const revisarSolicitudSchema = z.object({
   accion: z.enum(['Aprobada', 'Rechazada']),
   comentario: z.string().max(300).optional(),
-  // Only needed when Aprobada:
+  // Only needed when Aprobada (contraseña inicial; el usuario la cambia al primer login):
   contrasena: z.string().min(8).max(72).optional(),
   rol_id: z.string().uuid().optional(),
   cargo: z.string().min(1).max(80).optional(),

@@ -58,7 +58,7 @@ export default function LoginPage() {
       const res = await authService.login(form.email, form.password)
       if (res.success && res.data) {
         setAuth(res.data.token, res.data.usuario)
-        navigate('/admin/dashboard')
+        navigate(res.data.usuario.debe_cambiar_contrasena ? '/cambiar-contrasena' : '/admin/dashboard')
       } else {
         setApiError(res.error ?? t('login.loginError'))
       }

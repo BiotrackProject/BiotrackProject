@@ -20,10 +20,43 @@ vi.mock('../hooks/useGuidedTour', () => ({
   }),
 }))
 
+// La búsqueda y el detalle de reportes consultan el backend por código de
+// seguimiento; mockeamos sólo ese método y conservamos el resto del servicio.
+vi.mock('../services/denunciasService', async (importOriginal) => {
+  const actual = await importOriginal()
+  return {
+    ...actual,
+    denunciasService: {
+      ...actual.denunciasService,
+      getSeguimiento: vi.fn(),
+    },
+  }
+})
+
+import { denunciasService } from '../services/denunciasService'
 import LandingPage from './LandingPage'
 import ReportPage from './ReportPage'
 import SearchReportsPage from './SearchReportsPage'
 import ReportDetailPage from './ReportDetailPage'
+
+const SAMPLE_REPORTE = {
+  IDDenuncia: 1,
+  codigo_seguimiento: 'AB53525',
+  Descripcion: 'Extracción de arena detectada cerca del cauce.',
+  tipo_actividad: 'Extraccion_Rio',
+  Estado: 'Pendiente',
+  Fecha_denuncia: '2026-03-12T10:00:00.000Z',
+  fecha_incidente: null,
+  hora_aproximada: null,
+  detalle_ubicacion: 'Río Nigua',
+  tipo_extraccion: null,
+  numero_personas: null,
+  cantidad_arena: null,
+  nivel_urgencia: 'Alta',
+  IDZona: null,
+  gps: null,
+  historial_estado_denuncia: [],
+}
 
 function renderWithRouter(ui, initialEntries = ['/']) {
   return render(
@@ -51,15 +84,19 @@ describe('Landing flow pages', () => {
     expect(screen.getByRole('button', { name: 'Enviar reporte' })).toBeInTheDocument()
   })
 
-  it('renders Search reports page and query-based result heading', () => {
-    renderWithRouter(<SearchReportsPage />, ['/reportes?q=AB53525'])
+  it('busca un reporte por código de seguimiento desde la URL', async () => {
+    denunciasService.getSeguimiento.mockResolvedValueOnce(SAMPLE_REPORTE)
+    renderWithRouter(<SearchReportsPage />, ['/reportes?codigo=AB53525'])
 
     expect(screen.getByRole('heading', { name: 'Búsqueda de Reportes' })).toBeInTheDocument()
-    expect(screen.getByRole('heading', { name: 'Reporte AB53525' })).toBeInTheDocument()
-    expect(screen.getByRole('textbox', { name: 'Buscar por ID o ubicación' })).toBeInTheDocument()
+    expect(screen.getByRole('textbox', { name: 'Código de seguimiento' })).toBeInTheDocument()
+    expect(denunciasService.getSeguimiento).toHaveBeenCalledWith('AB53525')
+    expect(await screen.findByText('Río Nigua')).toBeInTheDocument()
+    expect(await screen.findByRole('button', { name: 'Ver detalle completo' })).toBeInTheDocument()
   })
 
-  it('renders Report detail page for a valid report id', () => {
+  it('renders Report detail page for a valid report id', async () => {
+    denunciasService.getSeguimiento.mockResolvedValueOnce(SAMPLE_REPORTE)
     render(
       <MemoryRouter initialEntries={['/reportes/AB53525']}>
         <Routes>
@@ -68,11 +105,13 @@ describe('Landing flow pages', () => {
       </MemoryRouter>,
     )
 
-    expect(screen.getByRole('heading', { name: 'Resumen del caso' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Resumen del caso' })).toBeInTheDocument()
     expect(screen.getByText('Estado actual')).toBeInTheDocument()
+    expect(denunciasService.getSeguimiento).toHaveBeenCalledWith('AB53525')
   })
 
-  it('renders not-found state for an invalid report id', () => {
+  it('renders not-found state for an invalid report id', async () => {
+    denunciasService.getSeguimiento.mockRejectedValueOnce(new Error('Denuncia no encontrada'))
     render(
       <MemoryRouter initialEntries={['/reportes/NO-EXISTE']}>
         <Routes>
@@ -81,7 +120,7 @@ describe('Landing flow pages', () => {
       </MemoryRouter>,
     )
 
-    expect(screen.getByRole('heading', { name: 'Reporte no encontrado' })).toBeInTheDocument()
-    expect(screen.getByText('El identificador consultado no existe o no está disponible.')).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Reporte no encontrado' })).toBeInTheDocument()
+    expect(screen.getByText('El código consultado no existe o no está disponible.')).toBeInTheDocument()
   })
 })

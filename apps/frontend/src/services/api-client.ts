@@ -27,9 +27,12 @@ async function request<T>(
   const url = `${API_BASE_URL}${endpoint}`;
   
   const token = localStorage.getItem('biotrack_token');
-  
+
+  // Con FormData dejamos que el navegador fije el Content-Type (incluye el boundary).
+  const isFormData = options.body instanceof FormData;
+
   const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
+    ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
     ...(options.headers as Record<string, string> | undefined),
   };
 
@@ -62,9 +65,12 @@ async function request<T>(
       };
     }
 
+    // El backend devuelve el cuerpo de la respuesta sin envoltorio global,
+    // así que lo pasamos tal cual. (Desempaquetar `data.data` rompía las
+    // respuestas paginadas `{ data, paginacion }`, descartando `paginacion`.)
     return {
       success: true,
-      data: data.data || data,
+      data,
     };
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Error desconocido';
@@ -89,6 +95,13 @@ export const apiClient = {
     request<T>(endpoint, {
       method: 'POST',
       body: JSON.stringify(body),
+    }),
+
+  // POST multipart/form-data (subida de archivos)
+  postForm: <T,>(endpoint: string, formData: FormData) =>
+    request<T>(endpoint, {
+      method: 'POST',
+      body: formData,
     }),
 
   // PATCH
