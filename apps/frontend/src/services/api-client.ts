@@ -1,6 +1,6 @@
 /**
- * Servicio HTTP reutilizable para conectar con la API
- * Ubicación: apps/frontend/src/services/api-client.ts
+ * Servicio HTTP reutilizable para conectar con la API.
+ * Autenticación via cookie HttpOnly (bt_session) — sin token en localStorage.
  */
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
@@ -17,18 +17,12 @@ export interface ApiError {
   status: number;
 }
 
-/**
- * Función genérica para hacer requests a la API
- */
 async function request<T>(
   endpoint: string,
   options: RequestInit & { headers?: Record<string, string> } = {}
 ): Promise<ApiResponse<T>> {
   const url = `${API_BASE_URL}${endpoint}`;
-  
-  const token = localStorage.getItem('biotrack_token');
 
-  // Con FormData dejamos que el navegador fije el Content-Type (incluye el boundary).
   const isFormData = options.body instanceof FormData;
 
   const headers: Record<string, string> = {
@@ -36,24 +30,19 @@ async function request<T>(
     ...(options.headers as Record<string, string> | undefined),
   };
 
-  // Agregar token JWT si existe
-  if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
-  }
-
   try {
     const response = await fetch(url, {
       ...options,
       headers,
+      credentials: 'include', // envía la cookie bt_session automáticamente
     });
 
     const data = await response.json();
 
-    // 401 en endpoint protegido = token expirado → limpiar sesión y redirigir.
-    // 401 en el login mismo = credenciales incorrectas → devolver error normal.
-    if (response.status === 401 && token) {
-      localStorage.removeItem('biotrack_token');
-      localStorage.removeItem('biotrack_user');
+    // 401 fuera de endpoints de auth = cookie expirada → redirigir al login.
+    // Endpoints de auth devuelven 401 como parte de flujos normales (creds incorrectas,
+    // código OTP incorrecto, etc.) — no hay que redirigir en esos casos.
+    if (response.status === 401 && !endpoint.includes('/api/v1/auth/')) {
       window.location.href = '/login';
       return { success: false, error: 'Sesión expirada.' };
     }
@@ -65,69 +54,34 @@ async function request<T>(
       };
     }
 
-    // El backend devuelve el cuerpo de la respuesta sin envoltorio global,
-    // así que lo pasamos tal cual. (Desempaquetar `data.data` rompía las
-    // respuestas paginadas `{ data, paginacion }`, descartando `paginacion`.)
-    return {
-      success: true,
-      data,
-    };
+    return { success: true, data };
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Error desconocido';
-    return {
-      success: false,
-      error: message,
-    };
+    return { success: false, error: message };
   }
 }
 
-/**
- * MÉTODOS HTTP ESPECÍFICOS
- */
-
 export const apiClient = {
-  // GET
   get: <T,>(endpoint: string) =>
     request<T>(endpoint, { method: 'GET' }),
 
-  // POST
   post: <T,>(endpoint: string, body: any) =>
-    request<T>(endpoint, {
-      method: 'POST',
-      body: JSON.stringify(body),
-    }),
+    request<T>(endpoint, { method: 'POST', body: JSON.stringify(body) }),
 
-  // POST multipart/form-data (subida de archivos)
   postForm: <T,>(endpoint: string, formData: FormData) =>
-    request<T>(endpoint, {
-      method: 'POST',
-      body: formData,
-    }),
+    request<T>(endpoint, { method: 'POST', body: formData }),
 
-  // PATCH
   patch: <T,>(endpoint: string, body: any) =>
-    request<T>(endpoint, {
-      method: 'PATCH',
-      body: JSON.stringify(body),
-    }),
+    request<T>(endpoint, { method: 'PATCH', body: JSON.stringify(body) }),
 
-  // PUT
   put: <T,>(endpoint: string, body: any) =>
-    request<T>(endpoint, {
-      method: 'PUT',
-      body: JSON.stringify(body),
-    }),
+    request<T>(endpoint, { method: 'PUT', body: JSON.stringify(body) }),
 
-  // DELETE
   delete: <T,>(endpoint: string) =>
     request<T>(endpoint, { method: 'DELETE' }),
 };
 
-/**
- * FUNCIONES ESPECÍFICAS DE ENDPOINTS
- */
-
-// ==================== AUTENTICACIÓN ====================
+// ── Tipos legacy expuestos para compatibilidad con hooks/componentes viejos ───
 
 export interface LoginPayload {
   correo_electronico: string;
@@ -136,35 +90,16 @@ export interface LoginPayload {
 
 export interface LoginResponse {
   access_token: string;
-  user: {
-    id: string;
-    email: string;
-    nombre: string;
-  };
+  user: { id: string; email: string; nombre: string };
 }
 
 export async function login(credentials: LoginPayload) {
-  const response = await apiClient.post<LoginResponse>(
-    '/api/v1/auth/login',
-    credentials
-  );
-
-  if (response.success && response.data) {
-    // Guardar token y usuario
-    localStorage.setItem('access_token', response.data.access_token);
-    localStorage.setItem('user', JSON.stringify(response.data.user));
-  }
-
-  return response;
+  return apiClient.post<LoginResponse>('/api/v1/auth/login', credentials);
 }
 
 export async function logout() {
-  await apiClient.post('/api/v1/auth/logout', {});
-  localStorage.removeItem('access_token');
-  localStorage.removeItem('user');
+  return apiClient.post('/api/v1/auth/logout', {});
 }
-
-// ==================== DENUNCIAS ====================
 
 export interface Denuncia {
   id: string;
@@ -187,35 +122,25 @@ export interface CrearDenunciaPayload {
   longitud: number;
 }
 
-// Crear denuncia
 export async function crearDenuncia(data: CrearDenunciaPayload) {
   return apiClient.post<Denuncia>('/api/v1/denuncias', data);
 }
 
-// Obtener todas las denuncias
 export async function obtenerDenuncias() {
   return apiClient.get<Denuncia[]>('/api/v1/denuncias');
 }
 
-// Obtener una denuncia específica
 export async function obtenerDenuncia(id: string) {
   return apiClient.get<Denuncia>(`/api/v1/denuncias/${id}`);
 }
 
-// Actualizar denuncia
-export async function actualizarDenuncia(
-  id: string,
-  data: Partial<CrearDenunciaPayload>
-) {
+export async function actualizarDenuncia(id: string, data: Partial<CrearDenunciaPayload>) {
   return apiClient.patch<Denuncia>(`/api/v1/denuncias/${id}`, data);
 }
 
-// Eliminar denuncia
 export async function eliminarDenuncia(id: string) {
   return apiClient.delete(`/api/v1/denuncias/${id}`);
 }
-
-// ==================== USUARIO ====================
 
 export interface Usuario {
   id: string;
@@ -224,17 +149,13 @@ export interface Usuario {
   rol: string;
 }
 
-// Obtener perfil del usuario actual
 export async function obtenerPerfil() {
   return apiClient.get<Usuario>('/api/v1/auth/perfil');
 }
 
-// Actualizar perfil
 export async function actualizarPerfil(data: Partial<Usuario>) {
   return apiClient.patch<Usuario>('/api/v1/auth/perfil', data);
 }
-
-// ==================== INDICADORES ====================
 
 export interface Indicador {
   id: string;
@@ -247,8 +168,6 @@ export interface Indicador {
 export async function obtenerIndicadores() {
   return apiClient.get<Indicador[]>('/api/v1/indicadores');
 }
-
-// ==================== ZONAS / TELEMETRÍA ====================
 
 export interface Zona {
   id: string;

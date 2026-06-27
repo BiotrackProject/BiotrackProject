@@ -51,6 +51,7 @@ const router: Router = Router();
  *         description: Demasiadas solicitudes.
  */
 router.post('/login', authLimiter, ctrl.login);
+router.post('/logout', ctrl.logout);
 
 /**
  * @openapi

@@ -12,12 +12,11 @@ interface JwtPayload {
 }
 
 export async function authenticate(req: Request, _res: Response, next: NextFunction): Promise<void> {
-  const header = req.headers['authorization'];
-  if (!header?.startsWith('Bearer ')) {
+  const token: string | undefined = req.cookies?.bt_session;
+  if (!token) {
     return next(new UnauthorizedError());
   }
 
-  const token = header.slice(7);
   let payload: JwtPayload;
   try {
     payload = jwt.verify(token, env.JWT_SECRET) as JwtPayload;

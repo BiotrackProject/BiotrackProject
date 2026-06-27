@@ -3,6 +3,7 @@ import path from 'node:path';
 import express, { type Express } from 'express';
 import helmet from 'helmet';
 import cors from 'cors';
+import cookieParser from 'cookie-parser';
 import { pinoHttp } from 'pino-http';
 import swaggerUi from 'swagger-ui-express';
 
@@ -41,13 +42,14 @@ app.use(
     origin: env.FRONTEND_URL,
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
+    allowedHeaders: ['Content-Type'],
   })
 );
 
 // ─── Parsers ─────────────────────────────────────────────────────────────────
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
 
 // ─── Logging HTTP ────────────────────────────────────────────────────────────
 app.use(pinoHttp({ logger }));
