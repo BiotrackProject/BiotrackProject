@@ -43,7 +43,7 @@ export default function BackofficeLayout() {
   }, [section, steps, startAutoTour])
 
   return (
-    <div className="flex min-h-screen bg-[linear-gradient(180deg,#eef2f7_0%,#f4f6f9_100%)]">
+    <div className="flex h-screen overflow-hidden bg-[linear-gradient(180deg,#eef2f7_0%,#f4f6f9_100%)]">
       <button
         onClick={() => setMobileNavOpen(true)}
         aria-label={t('sidebar.expand')}
@@ -53,7 +53,7 @@ export default function BackofficeLayout() {
       </button>
 
       <Sidebar mobileOpen={mobileNavOpen} setMobileOpen={setMobileNavOpen} />
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex-1 overflow-y-auto min-w-0 flex flex-col">
         <Outlet />
       </div>
       <ToastContainer />

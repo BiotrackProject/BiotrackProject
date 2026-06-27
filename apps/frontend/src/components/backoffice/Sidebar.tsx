@@ -70,7 +70,7 @@ export default function Sidebar({ mobileOpen = false, setMobileOpen = () => {} }
       <aside
         aria-label={t('sidebar.navLabel')}
         data-tour="backoffice-sidebar"
-        className={`fixed inset-y-0 left-0 z-40 flex min-h-screen w-[252px] shrink-0 flex-col bg-primary transition-[transform,width] duration-[280ms] ease-out lg:static lg:z-auto lg:translate-x-0 lg:transition-[width] ${
+        className={`fixed inset-y-0 left-0 z-40 flex min-h-screen w-[252px] shrink-0 flex-col bg-primary transition-[transform,width] duration-[280ms] ease-out lg:static lg:z-auto lg:translate-x-0 lg:h-full lg:transition-[width] ${
           open ? 'lg:w-[252px]' : 'lg:w-[76px]'
         } ${mobileOpen ? 'translate-x-0' : '-translate-x-full'} `}
       >
