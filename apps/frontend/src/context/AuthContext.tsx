@@ -1,8 +1,7 @@
-import { createContext, useCallback, useContext, useMemo, useState } from 'react'
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
-
-const TOKEN_KEY = 'biotrack_token'
-const USER_KEY  = 'biotrack_user'
+import { getPerfil } from '../services/authService'
+import { logout as apiLogout } from '../services/authService'
 
 export interface AuthUser {
   id: string
@@ -13,61 +12,56 @@ export interface AuthUser {
 
 interface AuthContextValue {
   user: AuthUser | null
-  token: string | null
   isAuthenticated: boolean
-  setAuth: (token: string, user: AuthUser) => void
+  isLoading: boolean
+  setAuth: (user: AuthUser) => void
   updateUser: (partial: Partial<AuthUser>) => void
-  logout: () => void
+  logout: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null)
 
-function readStoredUser(): AuthUser | null {
-  try {
-    const raw = localStorage.getItem(USER_KEY)
-    return raw ? (JSON.parse(raw) as AuthUser) : null
-  } catch {
-    return null
-  }
-}
-
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [token, setToken] = useState<string | null>(() => localStorage.getItem(TOKEN_KEY))
-  const [user, setUser]   = useState<AuthUser | null>(readStoredUser)
+  const [user, setUser]       = useState<AuthUser | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
 
-  const setAuth = useCallback((newToken: string, newUser: AuthUser) => {
-    localStorage.setItem(TOKEN_KEY, newToken)
-    localStorage.setItem(USER_KEY, JSON.stringify(newUser))
-    setToken(newToken)
+  // Al montar: verifica si existe una sesión activa consultando el perfil.
+  // El browser envía la cookie bt_session automáticamente si existe.
+  useEffect(() => {
+    getPerfil()
+      .then((res) => {
+        if (res.success && res.data) {
+          setUser({
+            id: res.data.IDUsuario,
+            nombre_completo: res.data.nombre_completo,
+            rol: res.data.rol.nombre,
+            debe_cambiar_contrasena: res.data.debe_cambiar_contrasena ?? false,
+          })
+        }
+      })
+      .catch(() => {})
+      .finally(() => setIsLoading(false))
+  }, [])
+
+  const setAuth = useCallback((newUser: AuthUser) => {
     setUser(newUser)
   }, [])
 
   const updateUser = useCallback((partial: Partial<AuthUser>) => {
-    setUser(prev => {
-      if (!prev) return prev
-      const next = { ...prev, ...partial }
-      localStorage.setItem(USER_KEY, JSON.stringify(next))
-      return next
-    })
+    setUser((prev) => (prev ? { ...prev, ...partial } : prev))
   }, [])
 
-  const logout = useCallback(() => {
-    localStorage.removeItem(TOKEN_KEY)
-    localStorage.removeItem(USER_KEY)
-    setToken(null)
+  const logout = useCallback(async () => {
+    await apiLogout().catch(() => {}) // borra la cookie server-side
     setUser(null)
   }, [])
 
   const value = useMemo<AuthContextValue>(
-    () => ({ user, token, isAuthenticated: !!token, setAuth, updateUser, logout }),
-    [user, token, setAuth, updateUser, logout],
+    () => ({ user, isAuthenticated: !!user, isLoading, setAuth, updateUser, logout }),
+    [user, isLoading, setAuth, updateUser, logout],
   )
 
-  return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
-  )
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }
 
 export function useAuth() {
@@ -75,5 +69,3 @@ export function useAuth() {
   if (!ctx) throw new Error('useAuth debe usarse dentro de AuthProvider')
   return ctx
 }
-
-export { TOKEN_KEY }

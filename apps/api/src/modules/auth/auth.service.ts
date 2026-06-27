@@ -186,6 +186,7 @@ export async function getPerfilPropio(usuarioId: string) {
       institucion: true,
       Estado: true,
       Fecha_creacion: true,
+      debe_cambiar_contrasena: true,
       rol: { select: { id: true, nombre: true } },
     },
   });
