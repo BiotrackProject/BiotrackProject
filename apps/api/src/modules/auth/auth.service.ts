@@ -5,6 +5,7 @@ import prisma from '../../config/database.js';
 import { env } from '../../config/env.js';
 import { sendRegistroRecibido, sendCodigoRecuperacion } from '../../shared/utils/ses.js';
 import { sha256 } from '../../shared/utils/crypto.js';
+import logger from '../../shared/utils/logger.js';
 import { logAuditoria } from '../../middleware/auditLog.js';
 import { segundosBloqueo, registrarFallo, limpiarIntentos } from './auth.lockout.js';
 import {
@@ -64,7 +65,10 @@ export async function registrarSolicitud(datos: RegistroInput, ip: string | unde
     },
   });
 
-  await sendRegistroRecibido({ nombre: datos.nombre_completo, correo: datos.correo_electronico });
+  // El correo de confirmación es una notificación; no revertimos el registro si falla.
+  sendRegistroRecibido({ nombre: datos.nombre_completo, correo: datos.correo_electronico }).catch(
+    (err) => logger.error({ err, correo: datos.correo_electronico }, 'Error al notificar solicitud de registro'),
+  );
 
   await logAuditoria({
     accion: 'REGISTRO_SOLICITADO',
