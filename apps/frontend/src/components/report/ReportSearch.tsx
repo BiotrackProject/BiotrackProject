@@ -1,6 +1,5 @@
 import { FormEvent, useEffect, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
-import { useTranslation } from 'react-i18next'
 import { Search, X, AlertCircle, FileSearch } from 'lucide-react'
 import isotipoGris from '../../assets/images/isotipogris.png'
 import StatusBadge from '../ui/StatusBadge'
@@ -20,7 +19,6 @@ type SearchResult =
   | { status: 'error'; codigo: string; message: string }
 
 export default function ReportSearch() {
-  const { t } = useTranslation()
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
   const queryCodigo = (searchParams.get('codigo') ?? '').trim()

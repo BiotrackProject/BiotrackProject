@@ -5,8 +5,6 @@ import { denunciasService, filtrarEvidencias, EVIDENCIA_MAX_FILES, EVIDENCIA_MAX
 import { toast } from '../../utils/toast'
 import LocationPickerMap from '../map/LocationPickerMap'
 
-const URGENCY_LEVELS = ['Baja', 'Media', 'Alta', 'Riesgo inmediato']
-
 const EMPTY = {
   location: '', activityType: '', datetime: '',
   urgency: '', description: '', evidence: [] as File[],
@@ -49,14 +47,6 @@ export default function ReportForm() {
   const [sent, setSent]     = useState(false)
   const [trackingId, setTrackingId] = useState('')
   const [submitting, setSubmitting] = useState(false)
-
-  const ACTIVITY_TYPES = [
-    { value: 'heavyMachinery', label: t('reportForm.activityTypes.heavyMachinery') },
-    { value: 'manual', label: t('reportForm.activityTypes.manual') },
-    { value: 'illegalTransport', label: t('reportForm.activityTypes.illegalTransport') },
-    { value: 'dumping', label: t('reportForm.activityTypes.dumping') },
-    { value: 'other', label: t('reportForm.activityTypes.other') },
-  ]
 
   const URGENCY_LEVELS = [
     { value: 'low', label: t('reportForm.urgencyLevels.low') },

@@ -11,17 +11,6 @@ import { toast } from '../../utils/toast'
 import { ESTADOS_DENUNCIA, ESTADO_LABEL } from '../../services/denunciasService'
 import { DR_CENTER } from '../../constants/mapConfig'
 
-const VIEW_TYPES = [
-  { value: 'all',    label: 'Todos' },
-  { value: 'report', label: 'Denuncias' },
-  { value: 'zone',   label: 'Zonas monitoreadas' },
-]
-
-const COLOR_MODES = [
-  { value: 'status', label: 'Por estado' },
-  { value: 'risk',   label: 'Por urgencia' },
-]
-
 /** Niveles de urgencia reales (nivel_urgencia del backend). */
 const URGENCIA_NIVELES = ['Baja', 'Media', 'Alta', 'Riesgo inmediato']
 
