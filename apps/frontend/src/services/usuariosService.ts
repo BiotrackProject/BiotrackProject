@@ -27,7 +27,9 @@ export interface SolicitudRegistro {
   cargo: string | null
   institucion: string | null
   estado: 'Pendiente_Aprobacion' | 'Aprobada' | 'Rechazada' | 'Pendiente_Info'
+  comentario_admin?: string | null
   created_at: string
+  updated_at?: string
 }
 
 export interface NuevoUsuarioForm {
@@ -82,8 +84,9 @@ export const usuariosService = {
     return res.data
   },
 
-  async getSolicitudes(): Promise<SolicitudRegistro[]> {
-    const res = await apiClient.get<SolicitudRegistro[]>('/api/v1/admin/solicitudes')
+  async getSolicitudes(estado?: string): Promise<SolicitudRegistro[]> {
+    const qs = estado ? `?estado=${encodeURIComponent(estado)}` : ''
+    const res = await apiClient.get<SolicitudRegistro[]>(`/api/v1/admin/solicitudes${qs}`)
     if (!res.success || !res.data) throw new Error(res.error ?? 'Error al obtener solicitudes')
     return res.data
   },

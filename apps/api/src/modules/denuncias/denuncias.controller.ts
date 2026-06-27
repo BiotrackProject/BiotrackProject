@@ -1,5 +1,6 @@
 import type { Request, Response } from 'express';
 import * as denunciasService from './denuncias.service.js';
+import { buildEvidencias } from './denuncias.upload.js';
 import {
   crearDenunciaPublicaSchema,
   filtrosDenunciasSchema,
@@ -8,7 +9,8 @@ import {
 
 export async function crearDenunciaPublica(req: Request, res: Response): Promise<void> {
   const datos = crearDenunciaPublicaSchema.parse(req.body);
-  const resultado = await denunciasService.crearDenunciaPublica(datos, req.ip);
+  const evidencias = await buildEvidencias(req.files as Express.Multer.File[] | undefined, req);
+  const resultado = await denunciasService.crearDenunciaPublica(datos, evidencias, req.ip);
   res.status(201).json(resultado);
 }
 
@@ -21,6 +23,11 @@ export async function getSeguimiento(req: Request, res: Response): Promise<void>
 export async function listarDenuncias(req: Request, res: Response): Promise<void> {
   const filtros = filtrosDenunciasSchema.parse(req.query);
   const resultado = await denunciasService.listarDenuncias(filtros);
+  res.json(resultado);
+}
+
+export async function getDenunciasMapa(_req: Request, res: Response): Promise<void> {
+  const resultado = await denunciasService.listarDenunciasMapa();
   res.json(resultado);
 }
 

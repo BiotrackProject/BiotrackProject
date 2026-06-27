@@ -1,7 +1,8 @@
-import { act, fireEvent, render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
-import { describe, it, expect, vi } from 'vitest'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
 import ForgotPasswordPage from './ForgotPasswordPage'
+import { forgotPassword } from '../../services/authService'
 
 const mockNavigate = vi.fn()
 
@@ -11,6 +12,14 @@ vi.mock('react-router-dom', async () => {
     ...actual,
     useNavigate: () => mockNavigate,
   }
+})
+
+vi.mock('../../services/authService', () => ({
+  forgotPassword: vi.fn(),
+}))
+
+beforeEach(() => {
+  vi.clearAllMocks()
 })
 
 describe('ForgotPasswordPage', () => {
@@ -27,8 +36,8 @@ describe('ForgotPasswordPage', () => {
     expect(screen.getByRole('link', { name: 'Volver a inicio de sesión' })).toBeInTheDocument()
   })
 
-  it('navigates to verification when the email is valid', () => {
-    vi.useFakeTimers()
+  it('navigates to verification when the email is valid', async () => {
+    vi.mocked(forgotPassword).mockResolvedValue({ success: true, data: { mensaje: 'ok' } })
 
     render(
       <MemoryRouter>
@@ -41,14 +50,34 @@ describe('ForgotPasswordPage', () => {
     })
     fireEvent.click(screen.getByRole('button', { name: 'Enviar código' }))
 
-    act(() => {
-      vi.runAllTimers()
+    await waitFor(() => {
+      expect(forgotPassword).toHaveBeenCalledWith('user@biotrack.com')
+      expect(mockNavigate).toHaveBeenCalledWith('/recuperar-cuenta/verificar', {
+        state: { email: 'user@biotrack.com' },
+      })
+    })
+  })
+
+  it('shows an error when the request fails (e.g. rate limited)', async () => {
+    vi.mocked(forgotPassword).mockResolvedValue({
+      success: false,
+      error: 'Ya enviamos un código recientemente. Espera 120 segundos antes de solicitar otro.',
     })
 
-    expect(mockNavigate).toHaveBeenCalledWith('/recuperar-cuenta/verificar', {
-      state: { email: 'user@biotrack.com' },
-    })
+    render(
+      <MemoryRouter>
+        <ForgotPasswordPage />
+      </MemoryRouter>,
+    )
 
-    vi.useRealTimers()
+    fireEvent.change(screen.getByLabelText('Correo Electrónico'), {
+      target: { value: 'user@biotrack.com' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Enviar código' }))
+
+    await waitFor(() => {
+      expect(screen.getByText(/Espera 120 segundos/)).toBeInTheDocument()
+    })
+    expect(mockNavigate).not.toHaveBeenCalled()
   })
 })

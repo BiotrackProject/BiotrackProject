@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import ImagePanel from '../../components/auth/ImagePanel'
 import { validateCode } from '../../utils/validation'
+import { verifyCode, forgotPassword } from '../../services/authService'
 
 import recoverBg from '../../assets/images/recover-bg.jpg'
 
@@ -37,19 +38,27 @@ export default function VerifyCodePage() {
     const err = validateCode(code)
     if (err) { setError(err); return }
     setLoading(true)
-    // TODO: conectar con el backend — POST /api/auth/verify-code
-    setTimeout(() => {
-      setLoading(false)
-      // navigate('/recuperar-cuenta/nueva-contrasena')
-      navigate('/login')
-    }, 800)
+    const res = await verifyCode(email, code.trim())
+    setLoading(false)
+    if (!res.success || !res.data?.token) {
+      setError(res.error ?? 'Código inválido o expirado.')
+      return
+    }
+    navigate('/recuperar-cuenta/nueva-contrasena', {
+      state: { email, token: res.data.token },
+    })
   }
 
   async function handleResend() {
-    // TODO: conectar con el backend — POST /api/auth/forgot-password (reenviar)
+    setResendMsg('')
+    setError(null)
+    const res = await forgotPassword(email)
+    if (!res.success) {
+      setError(res.error ?? 'No se pudo reenviar el código.')
+      return
+    }
     setResendMsg('Código reenviado. Revisa tu correo electrónico.')
     setCode('')
-    setError(null)
   }
 
   return (

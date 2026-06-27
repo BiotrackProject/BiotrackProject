@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Search, SlidersHorizontal, Plus, Download, ChevronLeft, ChevronRight, Map } from 'lucide-react'
 import BackofficeTopbar from '../../components/backoffice/BackofficeTopbar'
@@ -6,14 +6,18 @@ import LoadingSpinner from '../../components/ui/LoadingSpinner'
 import { denunciasService, ESTADOS_DENUNCIA, ESTADO_LABEL, ESTADO_STYLES } from '../../services/denunciasService'
 import type { Denuncia, EstadoDenuncia } from '../../services/denunciasService'
 import { toast } from '../../utils/toast'
+import { useDebounce } from '../../hooks/useDebounce'
+import { useQuery } from '@tanstack/react-query'
 
-const PAGE_SIZE_OPTIONS = [5, 10, 20]
+// Debe coincidir con POR_PAGINA_PERMITIDOS del backend (shared/utils/pagination.ts);
+// un valor no permitido hace que el backend caiga a 25 y rompe la paginación.
+const PAGE_SIZE_OPTIONS = [10, 25, 50]
 
 function exportCSV(data: Denuncia[]) {
   const headers = ['Código', 'Descripción', 'Tipo', 'Fecha', 'Estado']
   const rows = data.map((d) => [
     d.codigo_seguimiento,
-    `"${d.Descripcion.replace(/"/g, "'")}"`,
+    `"${(d.Descripcion ?? '').replace(/"/g, "'")}"`,
     d.tipo_actividad,
     new Date(d.Fecha_denuncia).toLocaleDateString('es-DO'),
     d.Estado,
@@ -30,35 +34,31 @@ function exportCSV(data: Denuncia[]) {
 
 export default function DenunciasPage() {
   const navigate = useNavigate()
-  const [denuncias, setDenuncias] = useState<Denuncia[]>([])
-  const [total, setTotal] = useState(0)
-  const [loading, setLoading] = useState(true)
   const [query, setQuery] = useState('')
+  const debouncedQuery = useDebounce(query)
   const [filterOpen, setFilterOpen] = useState(false)
   const [filterEstado, setFilterEstado] = useState<EstadoDenuncia | ''>('')
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(10)
 
-  const load = useCallback(async () => {
-    setLoading(true)
-    try {
-      const res = await denunciasService.getAll({
-        q: query || undefined,
+  const { isPending, isError, data } = useQuery({
+    queryKey: ['denuncias', { q: debouncedQuery, estado: filterEstado, page, pageSize }],
+    queryFn: () =>
+      denunciasService.getAll({
+        q: debouncedQuery || undefined,
         estado: filterEstado || undefined,
         pagina: page,
         por_pagina: pageSize,
-      })
-      setDenuncias(res.data)
-      setTotal(res.paginacion.total)
-    } catch {
-      toast.error('Error al cargar las denuncias')
-    } finally {
-      setLoading(false)
-    }
-  }, [query, filterEstado, page, pageSize])
+      }),
+  })
 
-  useEffect(() => { load() }, [load])
+  useEffect(() => {
+    if (isError) toast.error('Error al cargar las denuncias')
+  }, [isError])
 
+  const denuncias: Denuncia[] = data?.data ?? []
+  const total = data?.paginacion?.total ?? 0
+  const loading = isPending
   const totalPages = Math.max(1, Math.ceil(total / pageSize))
 
   return (
@@ -173,7 +173,7 @@ export default function DenunciasPage() {
                 <table className="w-full min-w-[860px] text-sm">
                   <thead className="bg-[#F0F2F5]">
                     <tr>
-                      {['Código', 'Descripción\nde actividad', 'Tipo', 'Fecha de\nincidente', 'Estado de la\nDenuncia', 'Acciones'].map((h) => (
+                      {['Código', 'Descripción\nde actividad', 'Tipo', 'Fecha de\nregistro', 'Estado de la\nDenuncia', 'Acciones'].map((h) => (
                         <th key={h} className="px-5 py-3 text-left text-xs font-semibold text-gray-500 whitespace-pre-line">{h}</th>
                       ))}
                     </tr>

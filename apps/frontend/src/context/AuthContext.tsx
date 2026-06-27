@@ -1,4 +1,4 @@
-import { createContext, useContext, useState } from 'react'
+import { createContext, useCallback, useContext, useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
 
 const TOKEN_KEY = 'biotrack_token'
@@ -8,6 +8,7 @@ export interface AuthUser {
   id: string
   nombre_completo: string
   rol: string
+  debe_cambiar_contrasena?: boolean
 }
 
 interface AuthContextValue {
@@ -15,6 +16,7 @@ interface AuthContextValue {
   token: string | null
   isAuthenticated: boolean
   setAuth: (token: string, user: AuthUser) => void
+  updateUser: (partial: Partial<AuthUser>) => void
   logout: () => void
 }
 
@@ -33,22 +35,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [token, setToken] = useState<string | null>(() => localStorage.getItem(TOKEN_KEY))
   const [user, setUser]   = useState<AuthUser | null>(readStoredUser)
 
-  function setAuth(newToken: string, newUser: AuthUser) {
+  const setAuth = useCallback((newToken: string, newUser: AuthUser) => {
     localStorage.setItem(TOKEN_KEY, newToken)
     localStorage.setItem(USER_KEY, JSON.stringify(newUser))
     setToken(newToken)
     setUser(newUser)
-  }
+  }, [])
 
-  function logout() {
+  const updateUser = useCallback((partial: Partial<AuthUser>) => {
+    setUser(prev => {
+      if (!prev) return prev
+      const next = { ...prev, ...partial }
+      localStorage.setItem(USER_KEY, JSON.stringify(next))
+      return next
+    })
+  }, [])
+
+  const logout = useCallback(() => {
     localStorage.removeItem(TOKEN_KEY)
     localStorage.removeItem(USER_KEY)
     setToken(null)
     setUser(null)
-  }
+  }, [])
+
+  const value = useMemo<AuthContextValue>(
+    () => ({ user, token, isAuthenticated: !!token, setAuth, updateUser, logout }),
+    [user, token, setAuth, updateUser, logout],
+  )
 
   return (
-    <AuthContext.Provider value={{ user, token, isAuthenticated: !!token, setAuth, logout }}>
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   )

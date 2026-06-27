@@ -7,6 +7,12 @@ function PrivateRoute({ children }: { children: ReactElement }) {
   return isAuthenticated ? children : <Navigate to="/login" replace />
 }
 
+// Bloquea el acceso al panel mientras el usuario tenga un cambio de contraseña pendiente.
+function RequirePasswordChange({ children }: { children: ReactElement }) {
+  const { user } = useAuth()
+  return user?.debe_cambiar_contrasena ? <Navigate to="/cambiar-contrasena" replace /> : children
+}
+
 // Rutas solo para no autenticados: si ya hay sesión redirige al dashboard
 function PublicOnlyRoute({ children }: { children: ReactElement }) {
   const { isAuthenticated } = useAuth()
@@ -17,6 +23,8 @@ const LoginPage            = lazy(() => import('../pages/auth/LoginPage'))
 const RegisterPage         = lazy(() => import('../pages/auth/RegisterPage'))
 const ForgotPasswordPage   = lazy(() => import('../pages/auth/ForgotPasswordPage'))
 const VerifyCodePage       = lazy(() => import('../pages/auth/VerifyCodePage'))
+const NuevaContrasenaPage  = lazy(() => import('../pages/auth/NuevaContrasenaPage'))
+const CambiarContrasenaPage = lazy(() => import('../pages/auth/CambiarContrasenaPage'))
 const LandingPage          = lazy(() => import('../pages/LandingPage'))
 const ReportPage           = lazy(() => import('../pages/ReportPage'))
 const SearchReportsPage    = lazy(() => import('../pages/SearchReportsPage'))
@@ -32,6 +40,7 @@ const PlanificarMonitoreoPage = lazy(() => import('../pages/backoffice/Planifica
 const AccionesCorrectivasPage = lazy(() => import('../pages/backoffice/AccionesCorrectivasPage'))
 const DetalleAccionPage    = lazy(() => import('../pages/backoffice/DetalleAccionPage'))
 const UsuariosPage         = lazy(() => import('../pages/backoffice/configuracion/UsuariosPage'))
+const SolicitudesPage      = lazy(() => import('../pages/backoffice/configuracion/SolicitudesPage'))
 const SistemaPage          = lazy(() => import('../pages/backoffice/configuracion/SistemaPage'))
 const PerfilPage           = lazy(() => import('../pages/backoffice/PerfilPage'))
 const NotificacionesPage   = lazy(() => import('../pages/backoffice/NotificacionesPage'))
@@ -51,12 +60,14 @@ const router = createBrowserRouter([
   { path: '/registro',                   element: <PublicOnlyRoute>{withSuspense(RegisterPage)}</PublicOnlyRoute> },
   { path: '/recuperar-cuenta',           element: <PublicOnlyRoute>{withSuspense(ForgotPasswordPage)}</PublicOnlyRoute> },
   { path: '/recuperar-cuenta/verificar', element: <PublicOnlyRoute>{withSuspense(VerifyCodePage)}</PublicOnlyRoute> },
+  { path: '/recuperar-cuenta/nueva-contrasena', element: <PublicOnlyRoute>{withSuspense(NuevaContrasenaPage)}</PublicOnlyRoute> },
+  { path: '/cambiar-contrasena',         element: <PrivateRoute>{withSuspense(CambiarContrasenaPage)}</PrivateRoute> },
   { path: '/reporte/nuevo',              element: withSuspense(ReportPage) },
   { path: '/reportes',                   element: withSuspense(SearchReportsPage) },
   { path: '/reportes/:id',               element: withSuspense(ReportDetailPage) },
   {
     path: '/admin',
-    element: <PrivateRoute>{withSuspense(BackofficeLayout)}</PrivateRoute>,
+    element: <PrivateRoute><RequirePasswordChange>{withSuspense(BackofficeLayout)}</RequirePasswordChange></PrivateRoute>,
     children: [
       { path: 'dashboard',                 element: withSuspense(DashboardPage) },
       { path: 'denuncias',                 element: withSuspense(DenunciasPage) },
@@ -68,6 +79,7 @@ const router = createBrowserRouter([
       { path: 'acciones',                  element: withSuspense(AccionesCorrectivasPage) },
       { path: 'acciones/:id',              element: withSuspense(DetalleAccionPage) },
       { path: 'configuracion/usuarios',    element: withSuspense(UsuariosPage) },
+      { path: 'configuracion/solicitudes', element: withSuspense(SolicitudesPage) },
       { path: 'configuracion/sistema',     element: withSuspense(SistemaPage) },
       { path: 'perfil',                    element: withSuspense(PerfilPage) },
       { path: 'notificaciones',            element: withSuspense(NotificacionesPage) },

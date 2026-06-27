@@ -107,7 +107,7 @@ export const CITIZEN_SEARCH_TOUR_STEPS = [
   {
     element:  '[data-tour="citizen-search-area"]',
     title:    'Buscar reportes',
-    intro:    'Ingresa el número de reporte, provincia o descripción para encontrar casos específicos. Puedes filtrar por estado de la denuncia.',
+    intro:    'Ingresa el código de seguimiento que recibiste al registrar tu denuncia para consultar su estado y progreso.',
     position: 'bottom',
   },
   {

@@ -1,25 +1,26 @@
 {
-  "tasks": {
-    "dev": {
-      "cache": false,
-      "persistent": true,
-      "dependsOn": []
+    "tasks": {
+        "dev": {
+            "cache": false,
+            "persistent": true,
+            "dependsOn": []
+        },
+        "build": {
+            "outputs": ["dist/**", "build/**"],
+            "cache": true,
+            "dependsOn": ["^build"]
+        },
+        "db:migrate": {
+            "cache": false
+        },
+        "db:seed": {
+            "cache": false,
+            "dependsOn": ["db:migrate"]
+        },
+        "typecheck": {
+            "cache": true,
+            "outputs": []
+        }
     },
-    "build": {
-      "outputs": ["dist/**", "build/**"],
-      "cache": true,
-      "dependsOn": ["^build"]
-    },
-    "db:migrate": {
-      "cache": false
-    },
-    "db:seed": {
-      "cache": false,
-      "dependsOn": ["db:migrate"]
-    },
-    "typecheck": {
-      "cache": true,
-      "outputs": []
-    }
-  }
+    "ui": "tui"
 }

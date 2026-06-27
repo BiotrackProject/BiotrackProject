@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { useState, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { SlidersHorizontal, Layers, Search, Navigation } from 'lucide-react'
@@ -8,10 +7,7 @@ import StatusBadge from '../../components/ui/StatusBadge'
 import LoadingSpinner from '../../components/ui/LoadingSpinner'
 import { locationService } from '../../services/locationService'
 import { toast } from '../../utils/toast'
-import {
-  DENUNCIA_ESTADOS, ACCION_ESTADOS,
-  RIESGO_NIVELES,
-} from '../../constants/statuses'
+import { ESTADOS_DENUNCIA, ESTADO_LABEL } from '../../services/denunciasService'
 import { DR_CENTER } from '../../constants/mapConfig'
 
 const VIEW_TYPES = [
@@ -22,8 +18,11 @@ const VIEW_TYPES = [
 
 const COLOR_MODES = [
   { value: 'status', label: 'Por estado' },
-  { value: 'risk',   label: 'Por riesgo' },
+  { value: 'risk',   label: 'Por urgencia' },
 ]
+
+/** Niveles de urgencia reales (nivel_urgencia del backend). */
+const URGENCIA_NIVELES = ['Baja', 'Media', 'Alta', 'Riesgo inmediato']
 
 export default function MapaDenunciasPage() {
   const navigate = useNavigate()
@@ -59,9 +58,10 @@ export default function MapaDenunciasPage() {
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase()
       items = items.filter((l) =>
-        l.provincia?.toLowerCase().includes(q) ||
-        l.municipio?.toLowerCase().includes(q) ||
+        l.titulo?.toLowerCase().includes(q) ||
+        l.subtitulo?.toLowerCase().includes(q) ||
         l.descripcion?.toLowerCase().includes(q) ||
+        l.codigo?.toLowerCase().includes(q) ||
         l.denunciaId?.includes(q)
       )
     }
@@ -129,7 +129,8 @@ export default function MapaDenunciasPage() {
             <div className="relative">
               <input
                 type="text"
-                placeholder="Buscar provincia, municipio..."
+                aria-label="Buscar marcadores"
+                placeholder="Buscar código, ubicación, descripción..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full rounded-xl border border-gray-200 py-2 pl-9 pr-3 text-sm text-gray-700 placeholder:text-gray-400 outline-none focus:border-primary focus:ring-1 focus:ring-primary/20"
@@ -152,7 +153,7 @@ export default function MapaDenunciasPage() {
 
             {/* View type */}
             <div>
-              <label className="text-xs font-semibold text-gray-600 mb-1.5 block">Tipo</label>
+              <p className="text-xs font-semibold text-gray-600 mb-1.5">Tipo</p>
               <div className="flex flex-col gap-1">
                 {VIEW_TYPES.map((v) => (
                   <button
@@ -168,36 +169,38 @@ export default function MapaDenunciasPage() {
 
             {/* Estado */}
             <div>
-              <label className="text-xs font-semibold text-gray-600 mb-1.5 block">Estado</label>
+              <label htmlFor="filter-estado" className="text-xs font-semibold text-gray-600 mb-1.5 block">Estado</label>
               <select
+                id="filter-estado"
                 value={filterEstado}
                 onChange={(e) => setFilterEstado(e.target.value)}
                 className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:border-primary text-gray-700"
               >
                 <option value="">Todos los estados</option>
-                {DENUNCIA_ESTADOS.map((e) => <option key={e} value={e}>{e}</option>)}
+                {ESTADOS_DENUNCIA.map((e) => <option key={e} value={e}>{ESTADO_LABEL[e]}</option>)}
               </select>
             </div>
 
-            {/* Riesgo */}
+            {/* Urgencia */}
             <div>
-              <label className="text-xs font-semibold text-gray-600 mb-1.5 block">Nivel de riesgo</label>
+              <label htmlFor="filter-urgencia" className="text-xs font-semibold text-gray-600 mb-1.5 block">Nivel de urgencia</label>
               <select
+                id="filter-urgencia"
                 value={filterRiesgo}
                 onChange={(e) => setFilterRiesgo(e.target.value)}
                 className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:border-primary text-gray-700"
               >
                 <option value="">Todos los niveles</option>
-                {RIESGO_NIVELES.map((r) => <option key={r} value={r}>{r}</option>)}
+                {URGENCIA_NIVELES.map((r) => <option key={r} value={r}>{r}</option>)}
               </select>
             </div>
 
             {/* Color mode */}
             <div>
-              <label className="text-xs font-semibold text-gray-600 mb-1.5 flex items-center gap-1.5 block">
+              <p className="text-xs font-semibold text-gray-600 mb-1.5 flex items-center gap-1.5">
                 <Layers className="h-3.5 w-3.5" />
                 Colorear por
-              </label>
+              </p>
               <div className="flex gap-2">
                 {COLOR_MODES.map((m) => (
                   <button
@@ -237,8 +240,8 @@ export default function MapaDenunciasPage() {
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
-                      <p className="text-xs font-bold text-primary truncate">{loc.provincia}</p>
-                      <p className="text-xs text-gray-500 truncate">{loc.municipio}</p>
+                      <p className="text-xs font-bold text-primary truncate">{loc.titulo}</p>
+                      <p className="text-xs text-gray-500 truncate">{loc.subtitulo}</p>
                       <p className="text-[11px] text-gray-400 mt-0.5 truncate">{loc.descripcion}</p>
                     </div>
                     <StatusBadge status={loc.estado} className="shrink-0 text-[10px] px-2 py-0.5" />
@@ -284,13 +287,13 @@ export default function MapaDenunciasPage() {
               <p className="text-xs font-bold text-primary uppercase tracking-wide mb-1">
                 {selectedLocation.markerType === 'zone' ? 'Zona monitoreada' : 'Denuncia'}
               </p>
-              <p className="text-sm font-semibold text-gray-800 mb-0.5">{selectedLocation.provincia}</p>
-              <p className="text-xs text-gray-500 mb-2">{selectedLocation.municipio} · {selectedLocation.sector}</p>
+              <p className="text-sm font-semibold text-gray-800 mb-0.5">{selectedLocation.titulo}</p>
+              <p className="text-xs text-gray-500 mb-2">{selectedLocation.subtitulo}</p>
               <p className="text-xs text-gray-600 leading-relaxed mb-3 line-clamp-2">{selectedLocation.descripcion}</p>
               <div className="flex gap-2 mb-3">
                 <StatusBadge status={selectedLocation.estado} />
                 {selectedLocation.nivelRiesgo && (
-                  <span className="text-xs font-semibold text-gray-500">Riesgo: {selectedLocation.nivelRiesgo}</span>
+                  <span className="text-xs font-semibold text-gray-500">Urgencia: {selectedLocation.nivelRiesgo}</span>
                 )}
               </div>
               <button
