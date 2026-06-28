@@ -8,6 +8,18 @@ export const crearAccionSchema = z.object({
   resumen_publico: z.string().max(500).optional(),
   Presupuesto: z.coerce.number().positive().optional(),
   denunciaIds: z.array(z.number().int().positive()).max(20).optional(),
+  zonaIds: z.array(z.string().uuid()).max(20).optional(),
+});
+
+/**
+ * Parámetros de exportación (RF-5.3). Llegan por query string, por eso
+ * `incluir_evidencias` se coacciona desde string ("true"/"false").
+ */
+export const exportarAccionSchema = z.object({
+  formato: z.enum(['PDF', 'XLSX']),
+  incluir_evidencias: z
+    .preprocess((v) => v === true || v === 'true', z.boolean())
+    .default(false),
 });
 
 export const actualizarAccionSchema = crearAccionSchema.partial();
@@ -25,3 +37,4 @@ export type CrearAccionInput = z.infer<typeof crearAccionSchema>;
 export type ActualizarAccionInput = z.infer<typeof actualizarAccionSchema>;
 export type CambiarEstadoAccionInput = z.infer<typeof cambiarEstadoAccionSchema>;
 export type PublicarAccionInput = z.infer<typeof publicarAccionSchema>;
+export type ExportarAccionInput = z.infer<typeof exportarAccionSchema>;

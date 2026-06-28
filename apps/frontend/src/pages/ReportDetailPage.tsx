@@ -107,7 +107,10 @@ function ReportDetail({ reporte }: Readonly<{ reporte: DenunciaSeguimiento }>) {
       }))
     : [{ key: 'actual', estado: reporte.Estado, fecha, comentario: null }]
 
+  const acciones = reporte.acciones ?? []
+
   return (
+    <div className="flex flex-col gap-6">
     <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
       <article className="rounded-2xl bg-white p-7 shadow-sm">
         <div className="flex flex-wrap items-center justify-between gap-2">
@@ -170,6 +173,46 @@ function ReportDetail({ reporte }: Readonly<{ reporte: DenunciaSeguimiento }>) {
           Volver al listado
         </Link>
       </aside>
+    </div>
+
+      {/* Acciones correctivas publicadas (RF-5.2) */}
+      {acciones.length > 0 && (
+        <article className="rounded-2xl bg-white p-7 shadow-sm">
+          <h2 className="text-xl font-black text-primary">Acciones correctivas</h2>
+          <p className="mt-2 text-sm text-gray-600">
+            Respuestas institucionales publicadas en relación con este reporte.
+          </p>
+          <ul className="mt-5 space-y-3">
+            {acciones.map((a) => {
+              const fecha = a.FechaImplementacion ?? a.FechaPlanificacion
+              return (
+                <li key={a.IDAccion} className="rounded-xl border border-gray-100 p-4">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <h3 className="text-sm font-bold text-gray-800">{a.titulo}</h3>
+                    <span className="rounded-full bg-surface px-3 py-1 text-xs font-semibold text-gray-600">
+                      {a.Estado.replace(/_/g, ' ')}
+                    </span>
+                  </div>
+                  {a.resumen_publico && (
+                    <p className="mt-2 text-sm leading-relaxed text-gray-600">{a.resumen_publico}</p>
+                  )}
+                  <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
+                    <span className="text-xs text-gray-400">
+                      {fecha ? `Fecha de ejecución: ${new Date(fecha).toLocaleDateString('es-DO')}` : 'Fecha por definir'}
+                    </span>
+                    <Link
+                      to={`/reportes/accion/${a.IDAccion}`}
+                      className="text-xs font-semibold text-primary hover:underline"
+                    >
+                      Ver reporte completo
+                    </Link>
+                  </div>
+                </li>
+              )
+            })}
+          </ul>
+        </article>
+      )}
     </div>
   )
 }

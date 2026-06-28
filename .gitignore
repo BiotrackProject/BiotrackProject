@@ -148,3 +148,6 @@ vite.config.ts.timestamp-*
 
 # Turborepo
 .turbo/
+
+# Archivos subidos en runtime (evidencias de denuncias/acciones)
+apps/api/uploads/

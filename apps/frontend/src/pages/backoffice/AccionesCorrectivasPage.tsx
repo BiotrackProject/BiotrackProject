@@ -2,7 +2,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
-  Search, SlidersHorizontal, Download,
+  Search, SlidersHorizontal, Download, Plus,
   ChevronLeft, ChevronRight, Eye, CheckCircle,
 } from 'lucide-react'
 import BackofficeTopbar from '../../components/backoffice/BackofficeTopbar'
@@ -91,13 +91,22 @@ export default function AccionesCorrectivasPage() {
       <BackofficeTopbar
         title="Acciones Correctivas"
         actions={
-          <button
-            onClick={() => exportCSV(filtered)}
-            className="flex items-center gap-1.5 rounded-lg border border-emerald-500 px-3 py-2 text-xs font-semibold text-emerald-600 transition-colors hover:bg-emerald-50 sm:px-4 sm:text-sm"
-          >
-            <Download className="h-4 w-4" />
-            Exportar
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => navigate('/admin/acciones/nueva')}
+              className="flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-xs font-semibold text-white transition-colors hover:bg-primary/90 sm:px-4 sm:text-sm"
+            >
+              <Plus className="h-4 w-4" />
+              Nueva acción
+            </button>
+            <button
+              onClick={() => exportCSV(filtered)}
+              className="flex items-center gap-1.5 rounded-lg border border-emerald-500 px-3 py-2 text-xs font-semibold text-emerald-600 transition-colors hover:bg-emerald-50 sm:px-4 sm:text-sm"
+            >
+              <Download className="h-4 w-4" />
+              Exportar
+            </button>
+          </div>
         }
       />
 

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { Download, FileText, User, Calendar, ClipboardList } from 'lucide-react'
+import { Download, FileText, User, Calendar, ClipboardList, Paperclip, Globe, Lock } from 'lucide-react'
 import BackofficeTopbar from '../../components/backoffice/BackofficeTopbar'
 import LoadingSpinner from '../../components/ui/LoadingSpinner'
 import Modal from '../../components/ui/Modal'
@@ -39,6 +39,10 @@ export default function DetalleAccionPage() {
   const [statusModal, setStatusModal] = useState(false)
   const [nuevoEstado, setNuevoEstado] = useState<EstadoAccion>('Planificada')
   const [saving, setSaving] = useState(false)
+  const [exporting, setExporting] = useState(false)
+  const [publishModal, setPublishModal] = useState(false)
+  const [resumenPublico, setResumenPublico] = useState('')
+  const [publishing, setPublishing] = useState(false)
 
   useEffect(() => {
     accionesService.getById(id!)
@@ -61,24 +65,52 @@ export default function DetalleAccionPage() {
     }
   }
 
-  function exportAccion() {
+  async function handleExport(formato: 'PDF' | 'XLSX') {
     if (!accion) return
-    const lines = [
-      `Acción Correctiva: ${accion.IDAccion}`,
-      `Título: ${accion.titulo}`,
-      `Estado: ${ESTADO_ACCION_LABEL[accion.Estado]}`,
-      `Fecha planificada: ${accion.FechaPlanificacion ? new Date(accion.FechaPlanificacion).toLocaleDateString('es-DO') : 'N/A'}`,
-      `Fecha implementación: ${accion.FechaImplementacion ? new Date(accion.FechaImplementacion).toLocaleDateString('es-DO') : 'N/A'}`,
-      `Responsable: ${accion.responsable?.nombre_completo ?? 'N/A'}`,
-      `Descripción: ${accion.descripcion_accion ?? 'N/A'}`,
-      `Resultado: ${accion.Resultado ?? 'N/A'}`,
-    ]
-    const blob = new Blob([lines.join('\n')], { type: 'text/plain' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url; a.download = `accion_${accion.IDAccion.slice(-8)}.txt`; a.click()
-    URL.revokeObjectURL(url)
-    toast.info('Exportación iniciada')
+    setExporting(true)
+    try {
+      await accionesService.exportar(accion.IDAccion, formato, formato === 'PDF')
+      toast.success(`Reporte ${formato} descargado`)
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'Error al exportar')
+    } finally {
+      setExporting(false)
+    }
+  }
+
+  async function handlePublishToggle() {
+    if (!accion) return
+    if (accion.visibilidad === 'Publico') {
+      try {
+        const updated = await accionesService.despublicar(accion.IDAccion)
+        setAccion({ ...accion, visibilidad: updated.visibilidad })
+        toast.success('Reporte despublicado')
+      } catch (err: unknown) {
+        toast.error(err instanceof Error ? err.message : 'Error al despublicar')
+      }
+      return
+    }
+    setResumenPublico(accion.resumen_publico ?? '')
+    setPublishModal(true)
+  }
+
+  async function handleConfirmPublish() {
+    if (!accion) return
+    if (resumenPublico.trim().length < 10) {
+      toast.error('El resumen público debe tener al menos 10 caracteres.')
+      return
+    }
+    setPublishing(true)
+    try {
+      const updated = await accionesService.publicar(accion.IDAccion, resumenPublico.trim())
+      setAccion({ ...accion, visibilidad: updated.visibilidad, resumen_publico: updated.resumen_publico })
+      toast.success('Reporte publicado')
+      setPublishModal(false)
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'Error al publicar')
+    } finally {
+      setPublishing(false)
+    }
   }
 
   if (loading) {
@@ -109,7 +141,7 @@ export default function DetalleAccionPage() {
         title="Detalle de Acción Correctiva"
         backTo="/admin/acciones"
         actions={
-          <div data-tour="backoffice-accion-status" className="flex items-center gap-2">
+          <div data-tour="backoffice-accion-status" className="flex flex-wrap items-center gap-2">
             <button
               onClick={() => setStatusModal(true)}
               className="flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary/90 transition-colors"
@@ -117,11 +149,31 @@ export default function DetalleAccionPage() {
               Cambiar Estado
             </button>
             <button
-              onClick={exportAccion}
-              className="flex items-center gap-1.5 rounded-lg border border-emerald-500 px-4 py-2 text-sm font-semibold text-emerald-600 hover:bg-emerald-50 transition-colors"
+              onClick={handlePublishToggle}
+              className={`flex items-center gap-1.5 rounded-lg border px-4 py-2 text-sm font-semibold transition-colors ${
+                accion.visibilidad === 'Publico'
+                  ? 'border-amber-500 text-amber-600 hover:bg-amber-50'
+                  : 'border-sky-500 text-sky-600 hover:bg-sky-50'
+              }`}
+            >
+              {accion.visibilidad === 'Publico' ? <Lock className="h-4 w-4" /> : <Globe className="h-4 w-4" />}
+              {accion.visibilidad === 'Publico' ? 'Despublicar' : 'Publicar'}
+            </button>
+            <button
+              onClick={() => handleExport('PDF')}
+              disabled={exporting}
+              className="flex items-center gap-1.5 rounded-lg border border-emerald-500 px-4 py-2 text-sm font-semibold text-emerald-600 hover:bg-emerald-50 transition-colors disabled:opacity-50"
             >
               <Download className="h-4 w-4" />
-              Exportar
+              PDF
+            </button>
+            <button
+              onClick={() => handleExport('XLSX')}
+              disabled={exporting}
+              className="flex items-center gap-1.5 rounded-lg border border-emerald-500 px-4 py-2 text-sm font-semibold text-emerald-600 hover:bg-emerald-50 transition-colors disabled:opacity-50"
+            >
+              <Download className="h-4 w-4" />
+              XLSX
             </button>
           </div>
         }
@@ -196,6 +248,30 @@ export default function DetalleAccionPage() {
             </div>
           </InfoCard>
         )}
+
+        {/* Evidencias */}
+        {(accion.Evidencia_Accion?.length ?? 0) > 0 && (
+          <InfoCard title="Evidencias" icon={Paperclip}>
+            <div className="flex flex-col gap-2">
+              {accion.Evidencia_Accion!.map((ev) => (
+                <a
+                  key={ev.IDEvidencia}
+                  href={ev.archivo_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-between rounded-lg border border-gray-100 px-4 py-2.5 hover:bg-gray-50"
+                >
+                  <span className="flex items-center gap-2 text-sm text-gray-700">
+                    <FileText className="h-4 w-4 text-gray-400" />
+                    {ev.TipoArchivo}
+                    {ev.tamano_bytes ? <span className="text-xs text-gray-400">· {(ev.tamano_bytes / 1024 / 1024).toFixed(2)} MB</span> : null}
+                  </span>
+                  <span className="text-xs font-semibold text-primary">Abrir</span>
+                </a>
+              ))}
+            </div>
+          </InfoCard>
+        )}
       </main>
 
       {/* Status change modal */}
@@ -220,6 +296,32 @@ export default function DetalleAccionPage() {
                 <option key={e} value={e}>{ESTADO_ACCION_LABEL[e]}</option>
               ))}
             </select>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Publish modal */}
+      <Modal
+        open={publishModal}
+        onClose={() => setPublishModal(false)}
+        title="Publicar reporte"
+        confirmLabel="Publicar"
+        onConfirm={handleConfirmPublish}
+        loading={publishing}
+      >
+        <div className="flex flex-col gap-4">
+          <p className="text-sm text-gray-600">
+            El reporte será accesible públicamente sin necesidad de iniciar sesión. No se exponen datos personales.
+          </p>
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs font-semibold text-gray-600">Resumen público (10–500 caracteres)</label>
+            <textarea
+              value={resumenPublico}
+              onChange={(e) => setResumenPublico(e.target.value)}
+              maxLength={500}
+              className="min-h-[100px] rounded-lg border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary/20"
+              placeholder="Versión simplificada para el público general"
+            />
           </div>
         </div>
       </Modal>

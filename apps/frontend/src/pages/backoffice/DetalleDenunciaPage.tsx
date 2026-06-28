@@ -241,20 +241,32 @@ export default function DetalleDenunciaPage() {
           )}
         </InfoCard>
 
-        {/* Acción correctiva link */}
-        {(estado === 'Verificada' || estado === 'En_Investigacion') && (
-          <div className="bg-cyan-50 border border-cyan-200 rounded-2xl px-6 py-4 flex items-center justify-between">
-            <p className="text-sm text-cyan-700 font-medium">
-              Esta denuncia tiene acciones correctivas asociadas.
-            </p>
-            <button
-              onClick={() => navigate('/admin/acciones')}
-              className="rounded-lg bg-cyan-600 px-4 py-2 text-sm font-semibold text-white hover:bg-cyan-700 transition-colors"
-            >
-              Ver acciones
-            </button>
-          </div>
-        )}
+        {/* Acciones correctivas vinculadas (RF-5.1) */}
+        <InfoCard title="Acciones Correctivas Vinculadas">
+          {!denuncia.acciones || denuncia.acciones.length === 0 ? (
+            <p className="text-sm text-gray-400">No hay acciones correctivas vinculadas a esta denuncia.</p>
+          ) : (
+            <div className="flex flex-col gap-2">
+              {denuncia.acciones.map((a) => (
+                <div key={a.IDAccion} className="flex items-center justify-between rounded-lg border border-gray-100 px-4 py-2.5">
+                  <div>
+                    <p className="text-sm font-semibold text-primary">{a.titulo}</p>
+                    <p className="text-xs text-gray-400">
+                      {a.Estado.replace(/_/g, ' ')}
+                      {a.FechaPlanificacion ? ` · ${new Date(a.FechaPlanificacion).toLocaleDateString('es-DO')}` : ''}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => navigate(`/admin/acciones/${a.IDAccion}`)}
+                    className="text-xs font-semibold text-primary hover:underline"
+                  >
+                    Ver acción
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </InfoCard>
       </main>
 
       {/* Status change confirmation */}
