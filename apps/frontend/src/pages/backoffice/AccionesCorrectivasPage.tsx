@@ -15,7 +15,7 @@ import type { Accion, EstadoAccion } from '../../services/accionesService'
 import { toast } from '../../utils/toast'
 
 const PAGE_SIZE_OPTIONS = [5, 10, 20]
-const COLUMNS = ['ID', 'Título', 'Fecha Planificada', 'Estado', 'Responsable', 'Acciones']
+const COLUMN_KEYS = ['colId', 'colTitle', 'colPlannedDate', 'colStatus', 'colResponsible', 'colActions']
 
 function exportCSV(data: Accion[]) {
   const headers = ['IDAccion', 'Título', 'Estado', 'Fecha Planificación', 'Responsable']
@@ -53,7 +53,7 @@ export default function AccionesCorrectivasPage() {
   useEffect(() => {
     accionesService.getAll()
       .then((res) => setAcciones(res.data))
-      .catch(() => toast.error('Error al cargar las acciones'))
+      .catch(() => toast.error(t('acciones.loadError')))
       .finally(() => setLoading(false))
   }, [])
 
@@ -82,7 +82,7 @@ export default function AccionesCorrectivasPage() {
       toast.success(t('acciones.statusUpdated', { status: t('estados.' + nuevoEstado) }))
       setStatusModal({ open: false, accion: null })
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Error al cambiar estado')
+      toast.error(err instanceof Error ? err.message : t('acciones.statusUpdateError'))
     } finally {
       setSaving(false)
     }
@@ -99,7 +99,7 @@ export default function AccionesCorrectivasPage() {
               className="flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-xs font-semibold text-white transition-colors hover:bg-primary/90 sm:px-4 sm:text-sm"
             >
               <Plus className="h-4 w-4" />
-              Nueva acción
+              {t('acciones.new')}
             </button>
             <button
               onClick={() => exportCSV(filtered)}
@@ -186,8 +186,8 @@ export default function AccionesCorrectivasPage() {
                 <table className="w-full min-w-[860px] text-sm">
                   <thead className="bg-[#F0F2F5]">
                     <tr>
-                      {COLUMNS.map((h) => (
-                        <th key={h} className="px-5 py-3 text-left text-xs font-semibold text-gray-500">{h}</th>
+                      {COLUMN_KEYS.map((k) => (
+                        <th key={k} className="px-5 py-3 text-left text-xs font-semibold text-gray-500">{t('acciones.' + k)}</th>
                       ))}
                     </tr>
                   </thead>

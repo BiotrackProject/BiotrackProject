@@ -245,14 +245,14 @@ export default function DetalleDenunciaPage() {
         {(() => {
           if (denuncia.acciones && denuncia.acciones.length > 0) {
             return (
-              <InfoCard title="Acciones Correctivas Vinculadas">
+              <InfoCard title={t('detalleDenuncia.linkedActions')}>
                 <div className="flex flex-col gap-2">
                   {denuncia.acciones.map((a) => (
                     <div key={a.IDAccion} className="flex items-center justify-between rounded-lg border border-gray-100 px-4 py-2.5">
                       <div>
                         <p className="text-sm font-semibold text-primary">{a.titulo}</p>
                         <p className="text-xs text-gray-400">
-                          {a.Estado.replace(/_/g, ' ')}
+                          {t('estados.' + a.Estado)}
                           {a.FechaPlanificacion ? ` · ${new Date(a.FechaPlanificacion).toLocaleDateString('es-DO')}` : ''}
                         </p>
                       </div>
@@ -260,7 +260,7 @@ export default function DetalleDenunciaPage() {
                         onClick={() => navigate(`/admin/acciones/${a.IDAccion}`)}
                         className="text-xs font-semibold text-primary hover:underline"
                       >
-                        Ver acción
+                        {t('detalleDenuncia.viewAction')}
                       </button>
                     </div>
                   ))}

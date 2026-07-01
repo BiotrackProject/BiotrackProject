@@ -72,9 +72,9 @@ export default function DetalleAccionPage() {
     setExporting(true)
     try {
       await accionesService.exportar(accion.IDAccion, formato, formato === 'PDF')
-      toast.success(`Reporte ${formato} descargado`)
+      toast.success(t('acciones.exportSuccess', { format: formato }))
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Error al exportar')
+      toast.error(err instanceof Error ? err.message : t('acciones.exportError'))
     } finally {
       setExporting(false)
     }
@@ -86,9 +86,9 @@ export default function DetalleAccionPage() {
       try {
         const updated = await accionesService.despublicar(accion.IDAccion)
         setAccion({ ...accion, visibilidad: updated.visibilidad })
-        toast.success('Reporte despublicado')
+        toast.success(t('acciones.unpublished'))
       } catch (err: unknown) {
-        toast.error(err instanceof Error ? err.message : 'Error al despublicar')
+        toast.error(err instanceof Error ? err.message : t('acciones.unpublishError'))
       }
       return
     }
@@ -99,17 +99,17 @@ export default function DetalleAccionPage() {
   async function handleConfirmPublish() {
     if (!accion) return
     if (resumenPublico.trim().length < 10) {
-      toast.error('El resumen público debe tener al menos 10 caracteres.')
+      toast.error(t('acciones.publishSummaryMin'))
       return
     }
     setPublishing(true)
     try {
       const updated = await accionesService.publicar(accion.IDAccion, resumenPublico.trim())
       setAccion({ ...accion, visibilidad: updated.visibilidad, resumen_publico: updated.resumen_publico })
-      toast.success('Reporte publicado')
+      toast.success(t('acciones.published'))
       setPublishModal(false)
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Error al publicar')
+      toast.error(err instanceof Error ? err.message : t('acciones.publishError'))
     } finally {
       setPublishing(false)
     }
@@ -159,7 +159,7 @@ export default function DetalleAccionPage() {
               }`}
             >
               {accion.visibilidad === 'Publico' ? <Lock className="h-4 w-4" /> : <Globe className="h-4 w-4" />}
-              {accion.visibilidad === 'Publico' ? 'Despublicar' : 'Publicar'}
+              {accion.visibilidad === 'Publico' ? t('acciones.unpublish') : t('acciones.publish')}
             </button>
             <button
               onClick={() => handleExport('PDF')}
@@ -237,7 +237,7 @@ export default function DetalleAccionPage() {
                 <div key={d.IDDenuncia} className="flex items-center justify-between rounded-lg border border-gray-100 px-4 py-2.5">
                   <div>
                     <p className="text-sm font-semibold text-primary">{d.codigo_seguimiento}</p>
-                    <p className="text-xs text-gray-400">{d.tipo_actividad.replace(/_/g, ' ')} · {d.Estado}</p>
+                    <p className="text-xs text-gray-400">{t('tipos.' + d.tipo_actividad)} · {t('estados.' + d.Estado)}</p>
                   </div>
                   <button
                     onClick={() => navigate(`/admin/denuncias/${d.IDDenuncia}`)}
@@ -253,7 +253,7 @@ export default function DetalleAccionPage() {
 
         {/* Evidencias */}
         {(accion.Evidencia_Accion?.length ?? 0) > 0 && (
-          <InfoCard title="Evidencias" icon={Paperclip}>
+          <InfoCard title={t('acciones.evidence')} icon={Paperclip}>
             <div className="flex flex-col gap-2">
               {accion.Evidencia_Accion!.map((ev) => (
                 <a
@@ -268,7 +268,7 @@ export default function DetalleAccionPage() {
                     {ev.TipoArchivo}
                     {ev.tamano_bytes ? <span className="text-xs text-gray-400">· {(ev.tamano_bytes / 1024 / 1024).toFixed(2)} MB</span> : null}
                   </span>
-                  <span className="text-xs font-semibold text-primary">Abrir</span>
+                  <span className="text-xs font-semibold text-primary">{t('acciones.open')}</span>
                 </a>
               ))}
             </div>
@@ -306,23 +306,23 @@ export default function DetalleAccionPage() {
       <Modal
         open={publishModal}
         onClose={() => setPublishModal(false)}
-        title="Publicar reporte"
-        confirmLabel="Publicar"
+        title={t('acciones.publishModalTitle')}
+        confirmLabel={t('acciones.publish')}
         onConfirm={handleConfirmPublish}
         loading={publishing}
       >
         <div className="flex flex-col gap-4">
           <p className="text-sm text-gray-600">
-            El reporte será accesible públicamente sin necesidad de iniciar sesión. No se exponen datos personales.
+            {t('acciones.publishModalMsg')}
           </p>
           <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-semibold text-gray-600">Resumen público (10–500 caracteres)</label>
+            <label className="text-xs font-semibold text-gray-600">{t('acciones.publicSummaryLabel')}</label>
             <textarea
               value={resumenPublico}
               onChange={(e) => setResumenPublico(e.target.value)}
               maxLength={500}
               className="min-h-[100px] rounded-lg border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary/20"
-              placeholder="Versión simplificada para el público general"
+              placeholder={t('acciones.publicSummaryPlaceholder')}
             />
           </div>
         </div>

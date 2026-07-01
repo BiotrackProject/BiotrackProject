@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import { Save, Upload, X, FileText, Search, Link2 } from 'lucide-react'
 import BackofficeTopbar from '../../components/backoffice/BackofficeTopbar'
@@ -8,7 +9,7 @@ import {
   EVIDENCIA_ACCION_MAX_FILES,
   EVIDENCIA_ACCION_MAX_SIZE_MB,
 } from '../../services/accionesService'
-import { denunciasService, ESTADO_LABEL, ESTADO_STYLES, TIPO_LABEL } from '../../services/denunciasService'
+import { denunciasService, ESTADO_STYLES } from '../../services/denunciasService'
 import type { Denuncia } from '../../services/denunciasService'
 import { toast } from '../../utils/toast'
 
@@ -18,6 +19,7 @@ const inputClass =
   'w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary/20'
 
 export default function CrearAccionPage() {
+  const { t } = useTranslation()
   const navigate = useNavigate()
 
   const [titulo, setTitulo] = useState('')
@@ -46,10 +48,10 @@ export default function CrearAccionPage() {
     if (!q) return denuncias
     return denuncias.filter((d) =>
       d.codigo_seguimiento.toLowerCase().includes(q) ||
-      (TIPO_LABEL[d.tipo_actividad] ?? d.tipo_actividad).toLowerCase().includes(q) ||
+      t('tipos.' + d.tipo_actividad).toLowerCase().includes(q) ||
       (d.detalle_ubicacion ?? '').toLowerCase().includes(q)
     )
-  }, [denuncias, denunciaQuery])
+  }, [denuncias, denunciaQuery, t])
 
   const denunciasSeleccionadas = useMemo(
     () => denunciaSel.map((id) => denuncias.find((d) => d.IDDenuncia === id)).filter(Boolean) as Denuncia[],
@@ -67,7 +69,7 @@ export default function CrearAccionPage() {
     setDenunciaSel((prev) => {
       if (prev.includes(id)) return prev.filter((x) => x !== id)
       if (prev.length >= MAX_DENUNCIAS_VINCULADAS) {
-        toast.error(`Máximo ${MAX_DENUNCIAS_VINCULADAS} denuncias vinculadas.`)
+        toast.error(t('crearAccion.maxLinked', { max: MAX_DENUNCIAS_VINCULADAS }))
         return prev
       }
       return [...prev, id]
@@ -75,12 +77,12 @@ export default function CrearAccionPage() {
   }
 
   function validar(): string | null {
-    if (titulo.trim().length < 5) return 'El título debe tener al menos 5 caracteres.'
-    if (titulo.length > 200) return 'El título no puede superar 200 caracteres.'
+    if (titulo.trim().length < 5) return t('crearAccion.validation.titleMin')
+    if (titulo.length > 200) return t('crearAccion.validation.titleMax')
     if (descripcion && (descripcion.length < 10 || descripcion.length > 3000))
-      return 'La descripción debe tener entre 10 y 3000 caracteres.'
+      return t('crearAccion.validation.descRange')
     if (resumenPublico && resumenPublico.length > 500)
-      return 'El resumen público no puede superar 500 caracteres.'
+      return t('crearAccion.validation.summaryMax')
     return null
   }
 
@@ -101,10 +103,10 @@ export default function CrearAccionPage() {
         denunciaIds: denunciaSel.length ? denunciaSel : undefined,
         evidencias,
       })
-      toast.success('Acción correctiva registrada')
+      toast.success(t('crearAccion.created'))
       navigate(`/admin/acciones/${accion.IDAccion}`)
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Error al registrar la acción')
+      toast.error(err instanceof Error ? err.message : t('crearAccion.createError'))
     } finally {
       setSaving(false)
     }
@@ -112,48 +114,48 @@ export default function CrearAccionPage() {
 
   return (
     <>
-      <BackofficeTopbar title="Nueva Acción Correctiva" backTo="/admin/acciones" />
+      <BackofficeTopbar title={t('crearAccion.title')} backTo="/admin/acciones" />
 
       <main className="p-4 sm:p-6 lg:p-8">
         <form onSubmit={handleSubmit} className="mx-auto flex max-w-3xl flex-col gap-5">
 
           {/* Datos generales */}
           <section className="flex flex-col gap-4 rounded-2xl bg-white p-6 shadow-sm">
-            <h3 className="text-sm font-bold text-primary">Datos Generales</h3>
+            <h3 className="text-sm font-bold text-primary">{t('crearAccion.generalData')}</h3>
 
             <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-semibold text-gray-600">Título *</label>
+              <label className="text-xs font-semibold text-gray-600">{t('crearAccion.titleLabel')}</label>
               <input className={inputClass} value={titulo} maxLength={200}
-                onChange={(e) => setTitulo(e.target.value)} placeholder="Título de la acción correctiva" />
+                onChange={(e) => setTitulo(e.target.value)} placeholder={t('crearAccion.titlePlaceholder')} />
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-semibold text-gray-600">Descripción</label>
+              <label className="text-xs font-semibold text-gray-600">{t('crearAccion.descLabel')}</label>
               <textarea className={`${inputClass} min-h-[110px]`} value={descripcion} maxLength={3000}
-                onChange={(e) => setDescripcion(e.target.value)} placeholder="Mín. 30 caracteres recomendados" />
+                onChange={(e) => setDescripcion(e.target.value)} placeholder={t('crearAccion.descPlaceholder')} />
             </div>
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-semibold text-gray-600">Fecha de planificación</label>
+                <label className="text-xs font-semibold text-gray-600">{t('crearAccion.plannedDateLabel')}</label>
                 <input type="date" className={inputClass} value={fechaPlan} onChange={(e) => setFechaPlan(e.target.value)} />
               </div>
               <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-semibold text-gray-600">Fecha de implementación</label>
+                <label className="text-xs font-semibold text-gray-600">{t('crearAccion.implementationDateLabel')}</label>
                 <input type="date" className={inputClass} value={fechaImpl} onChange={(e) => setFechaImpl(e.target.value)} />
               </div>
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-semibold text-gray-600">Presupuesto (RD$)</label>
+              <label className="text-xs font-semibold text-gray-600">{t('crearAccion.budgetLabel')}</label>
               <input type="number" min="0" step="0.01" className={inputClass} value={presupuesto}
                 onChange={(e) => setPresupuesto(e.target.value)} placeholder="0.00" />
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-semibold text-gray-600">Resumen público (máx. 500)</label>
+              <label className="text-xs font-semibold text-gray-600">{t('crearAccion.publicSummaryLabel')}</label>
               <textarea className={`${inputClass} min-h-[70px]`} value={resumenPublico} maxLength={500}
-                onChange={(e) => setResumenPublico(e.target.value)} placeholder="Versión simplificada para el público (opcional)" />
+                onChange={(e) => setResumenPublico(e.target.value)} placeholder={t('crearAccion.publicSummaryPlaceholder')} />
             </div>
           </section>
 
@@ -161,12 +163,12 @@ export default function CrearAccionPage() {
           <section className="flex flex-col gap-4 rounded-2xl bg-white p-6 shadow-sm">
             <div className="flex items-center gap-2">
               <Link2 className="h-4 w-4 text-primary" />
-              <h3 className="text-sm font-bold text-primary">Denuncias vinculadas</h3>
+              <h3 className="text-sm font-bold text-primary">{t('crearAccion.linkedComplaints')}</h3>
             </div>
 
             <div className="flex flex-col gap-3">
               <div className="flex items-center justify-between">
-                <p className="text-xs text-gray-500">Vincula las denuncias que originan esta acción correctiva.</p>
+                <p className="text-xs text-gray-500">{t('crearAccion.linkedComplaintsHint')}</p>
                 <span className={`text-xs font-semibold ${denunciaSel.length >= MAX_DENUNCIAS_VINCULADAS ? 'text-amber-600' : 'text-gray-400'}`}>
                   {denunciaSel.length}/{MAX_DENUNCIAS_VINCULADAS}
                 </span>
@@ -179,7 +181,7 @@ export default function CrearAccionPage() {
                     <span key={d.IDDenuncia} className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 py-1 pl-2.5 pr-1.5 text-xs font-semibold text-primary">
                       {d.codigo_seguimiento}
                       <button type="button" onClick={() => toggleDenuncia(d.IDDenuncia)}
-                        className="flex h-4 w-4 items-center justify-center rounded-full hover:bg-primary/20" aria-label={`Quitar ${d.codigo_seguimiento}`}>
+                        className="flex h-4 w-4 items-center justify-center rounded-full hover:bg-primary/20" aria-label={t('crearAccion.removeChip', { code: d.codigo_seguimiento })}>
                         <X className="h-3 w-3" />
                       </button>
                     </span>
@@ -193,7 +195,7 @@ export default function CrearAccionPage() {
                   type="text"
                   value={denunciaQuery}
                   onChange={(e) => setDenunciaQuery(e.target.value)}
-                  placeholder="Buscar por código, tipo o ubicación..."
+                  placeholder={t('crearAccion.searchPlaceholder')}
                   className={`${inputClass} pr-9`}
                 />
                 <Search className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
@@ -201,11 +203,11 @@ export default function CrearAccionPage() {
 
               {/* Lista de denuncias */}
               {loadingDenuncias ? (
-                <p className="px-1 py-3 text-xs text-gray-400">Cargando denuncias...</p>
+                <p className="px-1 py-3 text-xs text-gray-400">{t('crearAccion.loadingComplaints')}</p>
               ) : denuncias.length === 0 ? (
-                <p className="px-1 py-3 text-xs text-gray-400">No hay denuncias disponibles para vincular.</p>
+                <p className="px-1 py-3 text-xs text-gray-400">{t('crearAccion.noComplaints')}</p>
               ) : denunciasFiltradas.length === 0 ? (
-                <p className="px-1 py-3 text-xs text-gray-400">Sin resultados para "{denunciaQuery}".</p>
+                <p className="px-1 py-3 text-xs text-gray-400">{t('crearAccion.noSearchResults', { query: denunciaQuery })}</p>
               ) : (
                 <div className="max-h-64 divide-y divide-gray-50 overflow-y-auto rounded-lg border border-gray-100">
                   {denunciasFiltradas.map((d) => {
@@ -229,11 +231,11 @@ export default function CrearAccionPage() {
                           <div className="flex flex-wrap items-center gap-2">
                             <span className="font-mono text-sm font-bold text-primary">{d.codigo_seguimiento}</span>
                             <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${ESTADO_STYLES[d.Estado]}`}>
-                              {ESTADO_LABEL[d.Estado]}
+                              {t('estados.' + d.Estado)}
                             </span>
                           </div>
                           <p className="mt-0.5 truncate text-xs text-gray-500">
-                            {TIPO_LABEL[d.tipo_actividad] ?? d.tipo_actividad}
+                            {t('tipos.' + d.tipo_actividad)}
                             {d.detalle_ubicacion ? ` · ${d.detalle_ubicacion}` : ''}
                           </p>
                         </div>
@@ -249,13 +251,13 @@ export default function CrearAccionPage() {
 
           {/* Evidencias */}
           <section className="flex flex-col gap-4 rounded-2xl bg-white p-6 shadow-sm">
-            <h3 className="text-sm font-bold text-primary">Evidencias</h3>
+            <h3 className="text-sm font-bold text-primary">{t('crearAccion.evidence')}</h3>
             <p className="text-xs text-gray-400">
-              Máx. {EVIDENCIA_ACCION_MAX_FILES} archivos · {EVIDENCIA_ACCION_MAX_SIZE_MB} MB c/u · PDF, JPG, PNG, DOCX
+              {t('crearAccion.evidenceHint', { files: EVIDENCIA_ACCION_MAX_FILES, size: EVIDENCIA_ACCION_MAX_SIZE_MB })}
             </p>
             <label className="flex cursor-pointer items-center justify-center gap-2 rounded-lg border-2 border-dashed border-gray-200 py-6 text-sm text-gray-500 hover:border-primary hover:text-primary">
               <Upload className="h-4 w-4" />
-              Seleccionar archivos
+              {t('crearAccion.selectFiles')}
               <input type="file" multiple accept=".pdf,.jpg,.jpeg,.png,.docx" className="hidden"
                 onChange={(e) => handleFiles(e.target.files)} />
             </label>
@@ -279,12 +281,12 @@ export default function CrearAccionPage() {
           <div className="flex justify-end gap-2">
             <button type="button" onClick={() => navigate('/admin/acciones')}
               className="rounded-lg border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-600 hover:bg-gray-50">
-              Cancelar
+              {t('crearAccion.cancel')}
             </button>
             <button type="submit" disabled={saving}
               className="flex items-center gap-1.5 rounded-lg bg-primary px-5 py-2 text-sm font-semibold text-white hover:bg-primary/90 disabled:opacity-50">
               <Save className="h-4 w-4" />
-              {saving ? 'Guardando...' : 'Registrar acción'}
+              {saving ? t('crearAccion.saving') : t('crearAccion.submit')}
             </button>
           </div>
         </form>

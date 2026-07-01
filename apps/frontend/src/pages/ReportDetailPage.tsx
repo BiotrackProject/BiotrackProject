@@ -93,6 +93,7 @@ export default function ReportDetailPage() {
 }
 
 function ReportDetail({ reporte }: Readonly<{ reporte: DenunciaSeguimiento }>) {
+  const { t } = useTranslation()
   const fecha = new Date(reporte.Fecha_denuncia).toLocaleDateString('es-DO')
   const fechaIncidente = reporte.fecha_incidente
     ? new Date(reporte.fecha_incidente).toLocaleDateString('es-DO')
@@ -180,9 +181,9 @@ function ReportDetail({ reporte }: Readonly<{ reporte: DenunciaSeguimiento }>) {
       {/* Acciones correctivas publicadas (RF-5.2) */}
       {acciones.length > 0 && (
         <article className="rounded-2xl bg-white p-7 shadow-sm">
-          <h2 className="text-xl font-black text-primary">Acciones correctivas</h2>
+          <h2 className="text-xl font-black text-primary">{t('reportDetail.accionesTitle')}</h2>
           <p className="mt-2 text-sm text-gray-600">
-            Respuestas institucionales publicadas en relación con este reporte.
+            {t('reportDetail.accionesDesc')}
           </p>
           <ul className="mt-5 space-y-3">
             {acciones.map((a) => {
@@ -192,7 +193,7 @@ function ReportDetail({ reporte }: Readonly<{ reporte: DenunciaSeguimiento }>) {
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <h3 className="text-sm font-bold text-gray-800">{a.titulo}</h3>
                     <span className="rounded-full bg-surface px-3 py-1 text-xs font-semibold text-gray-600">
-                      {a.Estado.replace(/_/g, ' ')}
+                      {t('estados.' + a.Estado)}
                     </span>
                   </div>
                   {a.resumen_publico && (
@@ -200,13 +201,13 @@ function ReportDetail({ reporte }: Readonly<{ reporte: DenunciaSeguimiento }>) {
                   )}
                   <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
                     <span className="text-xs text-gray-400">
-                      {fecha ? `Fecha de ejecución: ${new Date(fecha).toLocaleDateString('es-DO')}` : 'Fecha por definir'}
+                      {fecha ? t('reportDetail.executionDate', { date: new Date(fecha).toLocaleDateString('es-DO') }) : t('reportDetail.dateTbd')}
                     </span>
                     <Link
                       to={`/reportes/accion/${a.IDAccion}`}
                       className="text-xs font-semibold text-primary hover:underline"
                     >
-                      Ver reporte completo
+                      {t('reportDetail.viewFullReport')}
                     </Link>
                   </div>
                 </li>
