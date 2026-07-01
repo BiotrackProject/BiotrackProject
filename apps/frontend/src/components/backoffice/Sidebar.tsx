@@ -40,8 +40,9 @@ export default function Sidebar({ mobileOpen = false, setMobileOpen = () => {} }
   ]
 
   const CONFIG_LINKS = [
-    { to: '/admin/configuracion/usuarios', label: t('sidebar.configUsuarios') },
-    { to: '/admin/configuracion/sistema',  label: t('sidebar.configSistema') },
+    { to: '/admin/configuracion/usuarios',    label: t('sidebar.configUsuarios') },
+    { to: '/admin/configuracion/solicitudes', label: t('sidebar.configSolicitudes') },
+    { to: '/admin/configuracion/sistema',     label: t('sidebar.configSistema') },
   ]
 
   const initials = user
