@@ -1,6 +1,7 @@
 // @ts-nocheck
 import { useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { useForm, useStore } from '@tanstack/react-form'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { UploadCloud, X, CheckCircle } from 'lucide-react'
@@ -110,6 +111,7 @@ function buildContacto(v) {
 }
 
 export default function RealizarDenunciaPage() {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const fileInputRef = useRef(null)
@@ -183,7 +185,7 @@ export default function RealizarDenunciaPage() {
   if (submitted) {
     return (
       <>
-        <BackofficeTopbar title="Realizar Denuncia" backTo="/admin/denuncias" />
+        <BackofficeTopbar title={t('realizarDenuncia.title')} backTo="/admin/denuncias" />
         <main className="flex flex-col items-center justify-center p-16 gap-4">
           <CheckCircle className="h-16 w-16 text-emerald-500" />
           <h2 className="text-xl font-bold text-primary">Denuncia creada exitosamente</h2>
@@ -198,7 +200,7 @@ export default function RealizarDenunciaPage() {
             onClick={() => navigate('/admin/denuncias')}
             className="mt-4 rounded-full bg-primary px-6 py-2.5 text-sm font-semibold text-white hover:bg-primary/90 transition-colors"
           >
-            Ver Denuncias
+            {t('realizarDenuncia.viewDenuncias')}
           </button>
         </main>
       </>
@@ -207,7 +209,7 @@ export default function RealizarDenunciaPage() {
 
   return (
     <>
-      <BackofficeTopbar title="Realizar Denuncia" backTo="/admin/denuncias" />
+      <BackofficeTopbar title={t('realizarDenuncia.title')} backTo="/admin/denuncias" />
 
       <form
         onSubmit={(e) => {
@@ -220,7 +222,7 @@ export default function RealizarDenunciaPage() {
         <main className="p-8 flex flex-col gap-5">
         {/* Información del Denunciante */}
         <div data-tour="backoffice-denuncia-form-personal">
-          <SectionCard title="Información del Denunciante">
+          <SectionCard title={t('realizarDenuncia.personalInfo')}>
             <div className="grid grid-cols-3 gap-4">
             <div className="col-span-3">
               <form.Field name="anonimo">
@@ -300,7 +302,7 @@ export default function RealizarDenunciaPage() {
 
         {/* Ubicación del Incidente */}
         <div data-tour="backoffice-denuncia-form-location">
-          <SectionCard title="Ubicación del Incidente">
+          <SectionCard title={t('realizarDenuncia.locationInfo')}>
             <div className="grid grid-cols-3 gap-4">
             <div>
               <Label required>Fecha del incidente</Label>
@@ -362,7 +364,7 @@ export default function RealizarDenunciaPage() {
         </div>
 
         {/* Detalles del Incidente */}
-        <SectionCard title="Detalles del Incidente">
+        <SectionCard title={t('realizarDenuncia.incidentDetails')}>
           <div className="grid grid-cols-3 gap-6">
             <div className="col-span-3">
               <Label required>Tipo de actividad</Label>
@@ -374,7 +376,7 @@ export default function RealizarDenunciaPage() {
                     error={field.state.meta.errors[0]}
                   >
                     <option value="">Seleccione el tipo de actividad</option>
-                    {TIPOS_ACTIVIDAD.map((t) => <option key={t} value={t}>{TIPO_LABEL[t]}</option>)}
+                    {TIPOS_ACTIVIDAD.map((tipo) => <option key={tipo} value={tipo}>{TIPO_LABEL[tipo]}</option>)}
                   </Select>
                 )}
               </form.Field>
@@ -441,7 +443,7 @@ export default function RealizarDenunciaPage() {
 
         {/* Adjuntar Evidencias */}
         <div data-tour="backoffice-denuncia-form-evidence">
-          <SectionCard title="Adjuntar Evidencias">
+          <SectionCard title={t('realizarDenuncia.evidenceTitle')}>
             <div
             onDragOver={(e) => { e.preventDefault(); setDragging(true) }}
             onDragLeave={() => setDragging(false)}
@@ -451,8 +453,8 @@ export default function RealizarDenunciaPage() {
               ${dragging ? 'border-primary bg-primary/5' : 'border-gray-200 bg-[#F8F9FB] hover:border-primary/50'}`}
           >
             <UploadCloud className="h-10 w-10 text-primary/70" />
-            <p className="text-sm font-medium text-gray-600">Haga clic para cargar o arrastre y suelte</p>
-            <p className="text-xs text-gray-400">Solo es permitido subir archivos ({FILE_TYPES.join(', ')})</p>
+            <p className="text-sm font-medium text-gray-600">{t('realizarDenuncia.evidenceDropText')}</p>
+            <p className="text-xs text-gray-400">{t('realizarDenuncia.evidenceAllowed', { types: FILE_TYPES.join(', ') })}</p>
             <input
               ref={fileInputRef}
               type="file"
@@ -503,7 +505,7 @@ export default function RealizarDenunciaPage() {
               onClick={() => navigate('/admin/denuncias')}
               className="rounded-full border border-gray-300 bg-white px-6 py-2.5 text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-colors"
             >
-              Volver atrás
+              {t('realizarDenuncia.back')}
             </button>
             <form.Subscribe selector={(s) => s.isSubmitting}>
               {(isSubmitting) => (

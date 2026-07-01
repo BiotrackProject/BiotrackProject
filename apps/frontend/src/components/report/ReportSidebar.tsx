@@ -1,17 +1,20 @@
+import { useTranslation } from 'react-i18next'
 import isotipoGris from '../../assets/images/isotipogris.png'
 
-const GUIDE = [
-  { label: 'Campo obligatorio', field: 'Ubicación' },
-  { label: 'Recomendado',       field: 'Evidencia' },
-  { label: 'Opcional',          field: 'Contacto'  },
-]
-
 export default function ReportSidebar() {
+  const { t } = useTranslation()
+
+  const GUIDE = [
+    { label: t('reportSidebar.required'), field: t('reportSidebar.fieldLocation') },
+    { label: t('reportSidebar.recommended'), field: t('reportSidebar.fieldEvidence') },
+    { label: t('reportSidebar.optional'), field: t('reportSidebar.fieldContact') },
+  ]
+
   return (
     <div className="flex flex-col gap-4">
       {/* Guía rápida */}
       <div className="rounded-2xl bg-white p-6 shadow-sm">
-        <h3 className="mb-4 text-lg font-black text-primary">Guía rápida</h3>
+        <h3 className="mb-4 text-lg font-black text-primary">{t('reportSidebar.guideTitle')}</h3>
 
         <div className="flex flex-col gap-3">
           {GUIDE.map(({ label, field }) => (
@@ -25,22 +28,19 @@ export default function ReportSidebar() {
         {/* Protección de datos */}
         <div className="mt-4 rounded-xl border border-red-100 bg-red-50 p-4">
           <p className="mb-1 text-sm font-bold text-action">
-            Protección de datos
+            {t('reportSidebar.dataProtectionTitle')}
           </p>
           <p className="text-xs leading-relaxed text-gray-600">
-            Tu información personal es tratada con estricta confidencialidad.
-            BIOTRACK gestiona los datos bajo controles de seguridad institucional
-            y no los comparte con terceros.
+            {t('reportSidebar.dataProtectionDesc')}
           </p>
         </div>
       </div>
 
       {/* Estado del reporte */}
       <div className="rounded-2xl bg-white p-6 shadow-sm">
-        <h3 className="mb-2 text-lg font-black text-primary">Estado del reporte</h3>
+        <h3 className="mb-2 text-lg font-black text-primary">{t('reportSidebar.statusTitle')}</h3>
         <p className="text-xs leading-relaxed text-gray-500">
-          Al registrarse, el reporte puede pasar por estados como "Recibido",
-          "En verificación", "En seguimiento" y "Cerrado".
+          {t('reportSidebar.statusDesc')}
         </p>
       </div>
 

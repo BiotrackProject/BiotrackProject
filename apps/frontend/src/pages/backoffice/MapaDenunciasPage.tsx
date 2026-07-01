@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { SlidersHorizontal, Layers, Search, Navigation } from 'lucide-react'
 import BackofficeTopbar from '../../components/backoffice/BackofficeTopbar'
 import BioTrackMap from '../../components/map/BioTrackMap'
@@ -10,22 +11,23 @@ import { toast } from '../../utils/toast'
 import { ESTADOS_DENUNCIA, ESTADO_LABEL } from '../../services/denunciasService'
 import { DR_CENTER } from '../../constants/mapConfig'
 
-const VIEW_TYPES = [
-  { value: 'all',    label: 'Todos' },
-  { value: 'report', label: 'Denuncias' },
-  { value: 'zone',   label: 'Zonas monitoreadas' },
-]
-
-const COLOR_MODES = [
-  { value: 'status', label: 'Por estado' },
-  { value: 'risk',   label: 'Por urgencia' },
-]
-
 /** Niveles de urgencia reales (nivel_urgencia del backend). */
 const URGENCIA_NIVELES = ['Baja', 'Media', 'Alta', 'Riesgo inmediato']
 
 export default function MapaDenunciasPage() {
+  const { t } = useTranslation()
   const navigate = useNavigate()
+
+  const VIEW_TYPES = [
+    { value: 'all',    label: t('mapa.viewAll') },
+    { value: 'report', label: t('mapa.viewReports') },
+    { value: 'zone',   label: t('mapa.viewZones') },
+  ]
+
+  const COLOR_MODES = [
+    { value: 'status', label: t('mapa.byStatus') },
+    { value: 'risk',   label: t('mapa.byRisk') },
+  ]
 
   const [locations, setLocations] = useState([])
   const [loading, setLoading]     = useState(true)
@@ -44,7 +46,7 @@ export default function MapaDenunciasPage() {
   useEffect(() => {
     locationService.getAllLocations()
       .then(setLocations)
-      .catch(() => setError('No se pudieron cargar las ubicaciones. Inténtalo de nuevo.'))
+      .catch(() => setError(t('mapa.loadError')))
       .finally(() => setLoading(false))
   }, [])
 
@@ -74,7 +76,7 @@ export default function MapaDenunciasPage() {
     try {
       const { lat, lng } = await locationService.getCurrentUserLocation()
       setMapCenter([lat, lng])
-      toast.success('Ubicación detectada correctamente')
+      toast.success(t('mapa.locationDetected'))
     } catch (err) {
       toast.error(err.message)
     } finally {
@@ -97,19 +99,19 @@ export default function MapaDenunciasPage() {
 
   if (loading) return (
     <>
-      <BackofficeTopbar title="Mapa de Denuncias" />
+      <BackofficeTopbar title={t('mapa.title')} />
       <LoadingSpinner fullPage />
     </>
   )
 
   if (error) return (
     <>
-      <BackofficeTopbar title="Mapa de Denuncias" />
+      <BackofficeTopbar title={t('mapa.title')} />
       <main className="p-8">
         <div className="rounded-2xl bg-red-50 border border-red-200 p-6 text-center">
           <p className="text-sm font-semibold text-red-700">{error}</p>
           <button onClick={() => window.location.reload()} className="mt-3 rounded-lg bg-action px-4 py-2 text-sm font-semibold text-white">
-            Reintentar
+            {t('mapa.retry')}
           </button>
         </div>
       </main>
@@ -118,7 +120,7 @@ export default function MapaDenunciasPage() {
 
   return (
     <>
-      <BackofficeTopbar title="Mapa de Denuncias" />
+      <BackofficeTopbar title={t('mapa.title')} />
 
       <main className="flex h-[calc(100vh-65px)] overflow-hidden">
 
@@ -143,10 +145,10 @@ export default function MapaDenunciasPage() {
           <div className="p-4 border-b border-gray-100 flex flex-col gap-3">
             <div className="flex items-center gap-1.5 text-xs font-bold text-gray-500 uppercase tracking-wide">
               <SlidersHorizontal className="h-3.5 w-3.5" />
-              Filtros
+              {t('mapa.filters')}
               {hasActiveFilters && (
                 <button onClick={clearFilters} className="ml-auto text-action hover:underline font-semibold">
-                  Limpiar
+                  {t('mapa.clear')}
                 </button>
               )}
             </div>
@@ -218,15 +220,15 @@ export default function MapaDenunciasPage() {
           {/* Results list */}
           <div className="p-3 border-b border-gray-100">
             <p className="text-xs font-semibold text-gray-400">
-              {filtered.length} marcador{filtered.length !== 1 ? 'es' : ''} visibles
+              {t('mapa.markersVisible', { count: filtered.length })}
             </p>
           </div>
 
           <div data-tour="backoffice-mapa-list" className="flex-1 overflow-y-auto divide-y divide-gray-50">
             {filtered.length === 0 ? (
               <div className="flex flex-col items-center py-10 px-4 text-center text-gray-400">
-                <p className="text-sm">Sin resultados</p>
-                <p className="text-xs mt-1">Ajusta los filtros</p>
+                <p className="text-sm">{t('mapa.noResults')}</p>
+                <p className="text-xs mt-1">{t('mapa.adjustFilters')}</p>
               </div>
             ) : (
               filtered.map((loc) => (
@@ -259,7 +261,7 @@ export default function MapaDenunciasPage() {
               className="w-full flex items-center justify-center gap-2 rounded-lg border border-gray-200 px-3 py-2 text-xs font-semibold text-gray-600 hover:bg-gray-50 disabled:opacity-50 transition-colors"
             >
               <Navigation className={`h-3.5 w-3.5 ${locating ? 'animate-spin' : ''}`} />
-              {locating ? 'Detectando...' : 'Mi ubicación actual'}
+              {locating ? t('mapa.detecting') : t('mapa.myLocation')}
             </button>
           </div>
         </aside>
@@ -285,7 +287,7 @@ export default function MapaDenunciasPage() {
                 ✕
               </button>
               <p className="text-xs font-bold text-primary uppercase tracking-wide mb-1">
-                {selectedLocation.markerType === 'zone' ? 'Zona monitoreada' : 'Denuncia'}
+                {selectedLocation.markerType === 'zone' ? t('mapa.zoneLabel') : t('mapa.reportLabel')}
               </p>
               <p className="text-sm font-semibold text-gray-800 mb-0.5">{selectedLocation.titulo}</p>
               <p className="text-xs text-gray-500 mb-2">{selectedLocation.subtitulo}</p>
@@ -304,7 +306,7 @@ export default function MapaDenunciasPage() {
                 )}
                 className="w-full rounded-lg bg-primary px-3 py-2 text-xs font-semibold text-white hover:bg-primary/90 transition-colors"
               >
-                Ver detalle completo →
+                {t('mapa.viewFullDetail')}
               </button>
             </div>
           )}

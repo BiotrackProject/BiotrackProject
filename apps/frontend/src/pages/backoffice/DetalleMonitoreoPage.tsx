@@ -1,12 +1,13 @@
 // @ts-nocheck
 import { useState, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useParams, useNavigate } from 'react-router-dom'
 import { Download, FileText, Map, BarChart2 } from 'lucide-react'
 import BackofficeTopbar from '../../components/backoffice/BackofficeTopbar'
 import Modal from '../../components/ui/Modal'
 import LoadingSpinner from '../../components/ui/LoadingSpinner'
 import { monitoreoService } from '../../services/monitoreoService'
-import { ESTADO_LABEL, ESTADO_STYLES, ESTADOS_DENUNCIA, TIPO_LABEL } from '../../services/denunciasService'
+import { ESTADO_STYLES, ESTADOS_DENUNCIA } from '../../services/denunciasService'
 import type { Denuncia, EstadoDenuncia } from '../../services/denunciasService'
 import { toast } from '../../utils/toast'
 
@@ -38,6 +39,7 @@ function InfoCard({ title, children }) {
 
 export default function DetalleMonitoreoPage() {
   const { id } = useParams()
+  const { t } = useTranslation()
   const navigate = useNavigate()
 
   const [denuncia, setDenuncia] = useState<Denuncia | null>(null)
@@ -72,10 +74,10 @@ export default function DetalleMonitoreoPage() {
     try {
       await monitoreoService.updateEstado(id, pendingEstado)
       setEstado(pendingEstado)
-      toast.success(`Estado actualizado a "${ESTADO_LABEL[pendingEstado]}"`)
+      toast.success(t('monitoreo.statusUpdated', { status: t('estados.' + pendingEstado) }))
       setStatusModal(false)
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Error al cambiar estado')
+      toast.error(err instanceof Error ? err.message : t('monitoreo.statusError'))
     } finally {
       setSavingEstado(false)
     }
@@ -84,7 +86,7 @@ export default function DetalleMonitoreoPage() {
   function guardarNota() {
     if (!nota.trim()) return
     setNotaGuardada(true)
-    toast.success('Nota guardada correctamente')
+    toast.success(t('monitoreo.noteSuccess'))
     setTimeout(() => setNotaGuardada(false), 2000)
   }
 
@@ -92,8 +94,8 @@ export default function DetalleMonitoreoPage() {
     if (!denuncia) return
     const lines = [
       `Código: ${denuncia.codigo_seguimiento}`,
-      `Estado: ${ESTADO_LABEL[estado]}`,
-      `Tipo: ${TIPO_LABEL[denuncia.tipo_actividad]}`,
+      `Estado: ${t('estados.' + estado)}`,
+      `Tipo: ${t('tipos.' + denuncia.tipo_actividad)}`,
       `Fecha: ${new Date(denuncia.Fecha_denuncia).toLocaleDateString('es-DO')}`,
       `Descripción: ${denuncia.Descripcion}`,
     ]
@@ -102,39 +104,39 @@ export default function DetalleMonitoreoPage() {
     const a = document.createElement('a')
     a.href = url; a.download = `monitoreo_${denuncia.codigo_seguimiento}.txt`; a.click()
     URL.revokeObjectURL(url)
-    toast.info('Exportación iniciada')
+    toast.info(t('monitoreo.exportStarted'))
   }
 
   if (loading) return (
     <>
-      <BackofficeTopbar title="Monitoreo de Zona" backTo="/admin/monitoreo" />
+      <BackofficeTopbar title={t('monitoreo.zoneTitle')} backTo="/admin/monitoreo" />
       <LoadingSpinner fullPage />
     </>
   )
 
   if (notFound || !denuncia) return (
     <>
-      <BackofficeTopbar title="Monitoreo de Zona" backTo="/admin/monitoreo" />
-      <main className="p-8"><p className="text-sm text-gray-400">Denuncia no encontrada.</p></main>
+      <BackofficeTopbar title={t('monitoreo.zoneTitle')} backTo="/admin/monitoreo" />
+      <main className="p-8"><p className="text-sm text-gray-400">{t('monitoreo.notFound')}</p></main>
     </>
   )
 
   return (
     <>
       <BackofficeTopbar
-        title="Monitoreo de Zona"
+        title={t('monitoreo.zoneTitle')}
         backTo="/admin/monitoreo"
         actions={
           <div data-tour="backoffice-topbar-actions" className="flex items-center gap-2">
             <div data-tour="backoffice-monitoreo-status" className="flex items-center gap-1.5 rounded-lg border border-gray-200 px-2 py-1">
-              <span className="text-xs font-semibold text-gray-500">Estado:</span>
+              <span className="text-xs font-semibold text-gray-500">{t('monitoreo.statusLabel')}</span>
               <select
                 value={estado}
                 onChange={(e) => openStatusModal(e.target.value as EstadoDenuncia)}
                 className="text-sm font-semibold text-primary bg-transparent outline-none cursor-pointer"
               >
                 {ESTADOS_DENUNCIA.map((e) => (
-                  <option key={e} value={e}>{ESTADO_LABEL[e]}</option>
+                  <option key={e} value={e}>{t('estados.' + e)}</option>
                 ))}
               </select>
             </div>
@@ -143,7 +145,7 @@ export default function DetalleMonitoreoPage() {
               className="flex items-center gap-1.5 rounded-lg border border-emerald-500 px-4 py-2 text-sm font-semibold text-emerald-600 hover:bg-emerald-50 transition-colors"
             >
               <Download className="h-4 w-4" />
-              Exportar
+              {t('common.export')}
             </button>
           </div>
         }
@@ -157,33 +159,33 @@ export default function DetalleMonitoreoPage() {
             <span className="text-base font-bold text-primary">{denuncia.codigo_seguimiento}</span>
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-sm font-semibold text-gray-500">Estado:</span>
+            <span className="text-sm font-semibold text-gray-500">{t('monitoreo.statusLabel')}</span>
             <span className={`rounded-full px-3 py-1 text-xs font-semibold ${ESTADO_STYLES[estado]}`}>
-              {ESTADO_LABEL[estado]}
+              {t('estados.' + estado)}
             </span>
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-sm font-semibold text-gray-500">Tipo:</span>
-            <span className="text-sm text-gray-600">{TIPO_LABEL[denuncia.tipo_actividad]}</span>
+            <span className="text-sm font-semibold text-gray-500">{t('monitoreo.typeLabel')}</span>
+            <span className="text-sm text-gray-600">{t('tipos.' + denuncia.tipo_actividad)}</span>
           </div>
         </div>
 
         {/* Two-column layout */}
         <div data-tour="backoffice-monitoreo-details" className="grid grid-cols-[1fr_1fr] gap-5">
           <div className="flex flex-col gap-5">
-            <InfoCard title="Información del Incidente">
+            <InfoCard title={t('monitoreo.incidentInfo')}>
               <div className="flex flex-col gap-2">
-                <InfoRow label="Código" value={denuncia.codigo_seguimiento} />
-                <InfoRow label="Fecha de incidente" value={new Date(denuncia.Fecha_denuncia).toLocaleDateString('es-DO')} />
-                <InfoRow label="Hora aproximada" value={denuncia.hora_aproximada} />
-                <InfoRow label="Tipo de actividad" value={TIPO_LABEL[denuncia.tipo_actividad]} />
+                <InfoRow label={t('monitoreo.codeLabel')} value={denuncia.codigo_seguimiento} />
+                <InfoRow label={t('monitoreo.incidentDate')} value={new Date(denuncia.Fecha_denuncia).toLocaleDateString('es-DO')} />
+                <InfoRow label={t('monitoreo.approxTime')} value={denuncia.hora_aproximada} />
+                <InfoRow label={t('monitoreo.activityType')} value={t('tipos.' + denuncia.tipo_actividad)} />
               </div>
             </InfoCard>
 
             {/* Evidencias */}
-            <InfoCard title="Evidencias Adjuntas">
+            <InfoCard title={t('monitoreo.evidenceTitle')}>
               {!denuncia.Evidencia_Denuncia || denuncia.Evidencia_Denuncia.length === 0 ? (
-                <p className="text-sm text-gray-400">Sin evidencias.</p>
+                <p className="text-sm text-gray-400">{t('monitoreo.noEvidence')}</p>
               ) : (
                 <div className="flex flex-wrap gap-5">
                   {denuncia.Evidencia_Denuncia.map((ev) => {
@@ -201,14 +203,14 @@ export default function DetalleMonitoreoPage() {
 
             {/* Historial */}
             {denuncia.historial && denuncia.historial.length > 0 && (
-              <InfoCard title="Historial de Estados">
+              <InfoCard title={t('monitoreo.historyTitle')}>
                 <div className="flex flex-col gap-2">
                   {denuncia.historial.map((h) => (
                     <div key={h.id} className="text-sm text-gray-600">
                       <div className="flex items-center gap-2">
-                        <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${ESTADO_STYLES[h.estado_anterior]}`}>{ESTADO_LABEL[h.estado_anterior]}</span>
+                        <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${ESTADO_STYLES[h.estado_anterior]}`}>{t('estados.' + h.estado_anterior)}</span>
                         <span className="text-gray-400">→</span>
-                        <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${ESTADO_STYLES[h.estado_nuevo]}`}>{ESTADO_LABEL[h.estado_nuevo]}</span>
+                        <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${ESTADO_STYLES[h.estado_nuevo]}`}>{t('estados.' + h.estado_nuevo)}</span>
                       </div>
                       <p className="text-xs text-gray-400 mt-0.5">{h.Usuario.nombre_completo} · {new Date(h.created_at).toLocaleString('es-DO')}</p>
                       {h.comentario && <p className="text-xs text-gray-500 italic">{h.comentario}</p>}
@@ -220,48 +222,48 @@ export default function DetalleMonitoreoPage() {
           </div>
 
           <div data-tour="backoffice-monitoreo-plans" className="flex flex-col gap-5">
-            <InfoCard title="Descripción de la Actividad">
+            <InfoCard title={t('monitoreo.activityDesc')}>
               <p className="text-sm text-gray-600 leading-relaxed">{denuncia.Descripcion}</p>
             </InfoCard>
 
             {/* Nota */}
             <div className="bg-white rounded-2xl p-5 shadow-sm">
-              <h3 className="text-sm font-bold text-primary mb-3">Añadir una nota</h3>
+              <h3 className="text-sm font-bold text-primary mb-3">{t('monitoreo.addNote')}</h3>
               <textarea
                 rows={4}
-                placeholder="Describir la zona afectada..."
+                placeholder={t('monitoreo.notePlaceholder')}
                 value={nota}
                 onChange={(e) => { setNota(e.target.value); setNotaGuardada(false) }}
                 className="w-full rounded-xl border border-gray-200 px-3.5 py-2.5 text-sm text-gray-700 placeholder:text-gray-400 outline-none resize-none focus:border-primary focus:ring-1 focus:ring-primary/20"
               />
-              {notaGuardada && <p className="text-xs text-emerald-600 mt-1">Nota guardada.</p>}
+              {notaGuardada && <p className="text-xs text-emerald-600 mt-1">{t('monitoreo.noteSaved')}</p>}
               <div className="flex justify-end gap-2 mt-3">
-                <button onClick={() => { setNota(''); setNotaGuardada(false) }} className="rounded-lg border border-gray-200 px-4 py-1.5 text-sm text-gray-600 hover:bg-gray-50 transition-colors">Borrar</button>
-                <button onClick={guardarNota} className="rounded-lg bg-primary px-4 py-1.5 text-sm font-semibold text-white hover:bg-primary/90 transition-colors">Guardar Nota</button>
+                <button onClick={() => { setNota(''); setNotaGuardada(false) }} className="rounded-lg border border-gray-200 px-4 py-1.5 text-sm text-gray-600 hover:bg-gray-50 transition-colors">{t('monitoreo.clearNote')}</button>
+                <button onClick={guardarNota} className="rounded-lg bg-primary px-4 py-1.5 text-sm font-semibold text-white hover:bg-primary/90 transition-colors">{t('monitoreo.saveNote')}</button>
               </div>
             </div>
 
             {/* Acciones rápidas */}
             <div className="bg-white rounded-2xl p-5 shadow-sm">
-              <h3 className="text-sm font-bold text-primary mb-3">Acciones</h3>
+              <h3 className="text-sm font-bold text-primary mb-3">{t('monitoreo.actionsTitle')}</h3>
               <div className="flex flex-wrap gap-3">
                 <button
                   onClick={() => setAnalisisModal(true)}
                   className="flex items-center gap-2 rounded-lg bg-orange-500 px-4 py-2 text-sm font-semibold text-white hover:bg-orange-600 transition-colors"
                 >
-                  <BarChart2 className="h-4 w-4" /> Análisis de Monitoreo
+                  <BarChart2 className="h-4 w-4" /> {t('monitoreo.analysisBtn')}
                 </button>
                 <button
                   onClick={() => setMapModal(true)}
                   className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary/90 transition-colors"
                 >
-                  <Map className="h-4 w-4" /> Ver en mapa
+                  <Map className="h-4 w-4" /> {t('monitoreo.viewMapBtn')}
                 </button>
                 <button
                   onClick={() => navigate('/admin/acciones')}
                   className="flex items-center gap-2 rounded-lg bg-emerald-500 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-600 transition-colors"
                 >
-                  Acción Correctiva
+                  {t('monitoreo.correctiveAction')}
                 </button>
               </div>
             </div>
@@ -273,24 +275,24 @@ export default function DetalleMonitoreoPage() {
       <Modal
         open={statusModal}
         onClose={() => setStatusModal(false)}
-        title="Cambiar Estado"
-        confirmLabel="Confirmar"
+        title={t('monitoreo.changeStatus')}
+        confirmLabel={t('monitoreo.confirmBtn')}
         onConfirm={confirmEstado}
         loading={savingEstado}
       >
-        <p>¿Confirmas cambiar el estado de <span className="font-semibold">{denuncia.codigo_seguimiento}</span> a <span className="font-semibold text-primary">{ESTADO_LABEL[pendingEstado]}</span>?</p>
+        <p>{t('detalleDenuncia.changeStatusMsg', { code: denuncia.codigo_seguimiento, status: t('estados.' + pendingEstado) })}</p>
       </Modal>
 
       {/* Análisis placeholder */}
-      <Modal open={analisisModal} onClose={() => setAnalisisModal(false)} title="Análisis de Monitoreo" confirmLabel="Cerrar" onConfirm={() => setAnalisisModal(false)}>
-        <p className="text-sm text-gray-500">El módulo de análisis estará disponible cuando el backend de zonas esté implementado.</p>
+      <Modal open={analisisModal} onClose={() => setAnalisisModal(false)} title={t('monitoreo.analysisTitle')} confirmLabel={t('monitoreo.closeBtn')} onConfirm={() => setAnalisisModal(false)}>
+        <p className="text-sm text-gray-500">{t('monitoreo.analysisPlaceholder')}</p>
       </Modal>
 
       {/* Mapa placeholder */}
-      <Modal open={mapModal} onClose={() => setMapModal(false)} title="Mapa de Zona" confirmLabel="Cerrar" onConfirm={() => setMapModal(false)}>
-        <p className="text-sm text-gray-500">Para ver la ubicación en el mapa, usa la vista de mapa general.</p>
+      <Modal open={mapModal} onClose={() => setMapModal(false)} title={t('monitoreo.mapTitle')} confirmLabel={t('monitoreo.closeBtn')} onConfirm={() => setMapModal(false)}>
+        <p className="text-sm text-gray-500">{t('monitoreo.mapPlaceholder')}</p>
         <button onClick={() => { setMapModal(false); navigate('/admin/mapa') }} className="mt-3 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary/90">
-          Ir al mapa
+          {t('monitoreo.goToMap')}
         </button>
       </Modal>
     </>

@@ -21,10 +21,33 @@ export interface DashboardStats {
   solicitudesPendientes: number
 }
 
+export interface ImpactoRow {
+  tipo_actividad: string
+  total: number
+}
+
+export interface FrecuenciaRow {
+  mes: string
+  año: number
+  total: number
+}
+
 export const dashboardService = {
   async getStats(): Promise<DashboardStats> {
     const res = await apiClient.get<DashboardStats>('/api/v1/indicadores/resumen')
     if (!res.success || !res.data) throw new Error(res.error ?? 'Error al obtener estadísticas')
+    return res.data
+  },
+
+  async getImpacto(): Promise<ImpactoRow[]> {
+    const res = await apiClient.get<ImpactoRow[]>('/api/v1/indicadores/impacto')
+    if (!res.success || !res.data) throw new Error(res.error ?? 'Error al obtener impacto')
+    return res.data
+  },
+
+  async getFrecuencia(): Promise<FrecuenciaRow[]> {
+    const res = await apiClient.get<FrecuenciaRow[]>('/api/v1/indicadores/frecuencia')
+    if (!res.success || !res.data) throw new Error(res.error ?? 'Error al obtener frecuencia')
     return res.data
   },
 }

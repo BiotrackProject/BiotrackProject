@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import { User, Mail, Phone, Building, Shield } from 'lucide-react'
 import BackofficeTopbar from '../../components/backoffice/BackofficeTopbar'
 import LoadingSpinner from '../../components/ui/LoadingSpinner'
@@ -37,6 +38,7 @@ function Field({ label, icon: Icon, value, onChange = null, type = 'text', readO
 }
 
 export default function PerfilPage() {
+  const { t } = useTranslation()
   const [perfil, setPerfil]   = useState<PerfilCompleto | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving]   = useState(false)
@@ -78,12 +80,12 @@ export default function PerfilPage() {
       if (res.success && res.data) {
         setPerfil(res.data.usuario as PerfilCompleto)
         setEditing(false)
-        toast.success('Perfil actualizado correctamente')
+        toast.success(t('perfil.updateSuccess'))
       } else {
-        toast.error(res.error ?? 'Error al guardar los cambios')
+        toast.error(res.error ?? t('perfil.updateError'))
       }
     } catch {
-      toast.error('Error al guardar los cambios')
+      toast.error(t('perfil.updateError'))
     } finally {
       setSaving(false)
     }
@@ -91,15 +93,15 @@ export default function PerfilPage() {
 
   if (loading) return (
     <>
-      <BackofficeTopbar title="Mi Perfil" backTo="/admin/dashboard" />
+      <BackofficeTopbar title={t('perfil.title')} backTo="/admin/dashboard" />
       <LoadingSpinner fullPage />
     </>
   )
 
   if (!perfil) return (
     <>
-      <BackofficeTopbar title="Mi Perfil" backTo="/admin/dashboard" />
-      <main className="p-8"><p className="text-sm text-gray-400">No se pudo cargar el perfil.</p></main>
+      <BackofficeTopbar title={t('perfil.title')} backTo="/admin/dashboard" />
+      <main className="p-8"><p className="text-sm text-gray-400">{t('perfil.noProfile')}</p></main>
     </>
   )
 
@@ -108,21 +110,21 @@ export default function PerfilPage() {
   return (
     <>
       <BackofficeTopbar
-        title="Mi Perfil"
+        title={t('perfil.title')}
         backTo="/admin/dashboard"
         actions={
           editing ? (
             <div data-tour="backoffice-perfil-actions" className="flex gap-2">
               <button onClick={handleCancel} className="rounded-lg border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-colors">
-                Cancelar
+                {t('perfil.cancelBtn')}
               </button>
               <button onClick={handleSave} disabled={saving} className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary/90 disabled:opacity-50 transition-colors">
-                {saving ? 'Guardando...' : 'Guardar cambios'}
+                {saving ? t('perfil.saving') : t('perfil.saveBtn')}
               </button>
             </div>
           ) : (
             <button onClick={handleEdit} className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary/90 transition-colors">
-              Editar perfil
+              {t('perfil.editBtn')}
             </button>
           )
         }
@@ -135,46 +137,46 @@ export default function PerfilPage() {
           </div>
           <div>
             <p className="text-lg font-bold text-gray-800">{perfil.nombre_completo}</p>
-            <p className="text-sm text-gray-400">{perfil.rol.nombre} · {perfil.cargo ?? 'Sin cargo'}</p>
-            <p className="text-xs text-gray-400 mt-0.5">{perfil.institucion ?? 'Sin institución'}</p>
+            <p className="text-sm text-gray-400">{perfil.rol.nombre} · {perfil.cargo ?? t('perfil.sinCargo')}</p>
+            <p className="text-xs text-gray-400 mt-0.5">{perfil.institucion ?? t('perfil.sinInstitucion')}</p>
           </div>
         </div>
 
         <div data-tour="backoffice-perfil-info" className="bg-white rounded-2xl p-6 shadow-sm flex flex-col gap-5">
-          <h3 className="text-sm font-bold text-primary">Información personal</h3>
+          <h3 className="text-sm font-bold text-primary">{t('perfil.personalInfo')}</h3>
           <div className="grid grid-cols-2 gap-4">
             <Field
-              label="Nombre completo"
+              label={t('perfil.nameLabel')}
               icon={User}
               value={editing ? form.nombre_completo : perfil.nombre_completo}
               onChange={editing ? (v: string) => setForm(p => ({ ...p, nombre_completo: v })) : null}
               readOnly={!editing}
             />
             <Field
-              label="Correo electrónico"
+              label={t('perfil.emailLabel')}
               icon={Mail}
               type="email"
               value={perfil.correo_electronico}
               readOnly
             />
             <Field
-              label="Teléfono"
+              label={t('perfil.phoneLabel')}
               icon={Phone}
               value={editing ? form.telefono : (perfil.telefono ?? '')}
               onChange={editing ? (v: string) => setForm(p => ({ ...p, telefono: v })) : null}
               readOnly={!editing}
             />
-            <Field label="Cargo" icon={Building} value={perfil.cargo ?? ''} readOnly />
+            <Field label={t('perfil.cargoLabel')} icon={Building} value={perfil.cargo ?? ''} readOnly />
           </div>
         </div>
 
         <div data-tour="backoffice-perfil-access" className="bg-white rounded-2xl p-6 shadow-sm flex flex-col gap-4">
-          <h3 className="text-sm font-bold text-primary">Acceso y permisos</h3>
+          <h3 className="text-sm font-bold text-primary">{t('perfil.accessTitle')}</h3>
           <div className="grid grid-cols-2 gap-4">
-            <Field label="Rol" icon={Shield} value={perfil.rol.nombre} readOnly />
-            <Field label="Institución" icon={Building} value={perfil.institucion ?? ''} readOnly />
+            <Field label={t('perfil.rolLabel')} icon={Shield} value={perfil.rol.nombre} readOnly />
+            <Field label={t('perfil.institucionLabel')} icon={Building} value={perfil.institucion ?? ''} readOnly />
           </div>
-          <p className="text-xs text-gray-400">Para cambios de rol o institución, contacta a un administrador.</p>
+          <p className="text-xs text-gray-400">{t('perfil.accessHint')}</p>
         </div>
       </main>
     </>

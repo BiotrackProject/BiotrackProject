@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Bell, User, ChevronLeft, LogOut, UserCircle } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { useAuth } from '../../context/AuthContext'
 
 import { ReactNode } from 'react'
@@ -14,13 +15,14 @@ interface BackofficeTopbarProps {
 export default function BackofficeTopbar({ title, backTo, actions }: BackofficeTopbarProps) {
   const navigate = useNavigate()
   const { logout } = useAuth()
+  const { t } = useTranslation()
   const [userMenuOpen, setUserMenuOpen] = useState(false)
   const menuRef = useRef(null)
 
   function handleLogout() {
     setUserMenuOpen(false)
     logout()
-    navigate('/login')
+    navigate('/')
   }
 
   useEffect(() => {
@@ -55,10 +57,10 @@ export default function BackofficeTopbar({ title, backTo, actions }: BackofficeT
         {/* Notifications */}
         <button
           onClick={() => navigate('/admin/notificaciones')}
-          aria-label="Abrir notificaciones"
+          aria-label={t('topbar.openNotifications')}
           data-tour="backoffice-notifications"
           className="relative rounded-full p-2 transition-[transform,background-color,color] duration-150 ease-out hover:bg-gray-100 active:scale-[0.95] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/35"
-          title="Notificaciones"
+          title={t('topbar.notifications')}
         >
           <Bell className="h-5 w-5 text-gray-500" />
           <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-action" />
@@ -68,7 +70,7 @@ export default function BackofficeTopbar({ title, backTo, actions }: BackofficeT
         <div className="relative" ref={menuRef}>
           <button
             onClick={() => setUserMenuOpen((v) => !v)}
-            aria-label="Abrir menú de usuario"
+            aria-label={t('topbar.openUserMenu')}
             aria-haspopup="menu"
             aria-expanded={userMenuOpen}
             data-tour="backoffice-profile-btn"
@@ -84,7 +86,7 @@ export default function BackofficeTopbar({ title, backTo, actions }: BackofficeT
                 className="flex w-full items-center gap-2.5 px-4 py-2.5 text-sm text-gray-600 transition-[transform,background-color,color] duration-150 ease-out hover:bg-gray-50 active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/35"
               >
                 <UserCircle className="h-4 w-4 text-gray-400" />
-                Mi perfil
+                {t('topbar.myProfile')}
               </button>
               <div className="border-t border-gray-100 my-1" />
               <button
@@ -92,7 +94,7 @@ export default function BackofficeTopbar({ title, backTo, actions }: BackofficeT
                 className="flex w-full items-center gap-2.5 px-4 py-2.5 text-sm text-action transition-[transform,background-color,color] duration-150 ease-out hover:bg-red-50 active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-action/35"
               >
                 <LogOut className="h-4 w-4" />
-                Cerrar Sesión
+                {t('topbar.logout')}
               </button>
             </div>
           )}

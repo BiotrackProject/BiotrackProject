@@ -1,5 +1,6 @@
 // @ts-nocheck
 import { useState, useEffect, useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import {
   Search, SlidersHorizontal, Download, Plus,
@@ -9,7 +10,7 @@ import BackofficeTopbar from '../../components/backoffice/BackofficeTopbar'
 import Modal from '../../components/ui/Modal'
 import EmptyState from '../../components/ui/EmptyState'
 import LoadingSpinner from '../../components/ui/LoadingSpinner'
-import { accionesService, ESTADOS_ACCION, ESTADO_ACCION_LABEL, ESTADO_ACCION_STYLES } from '../../services/accionesService'
+import { accionesService, ESTADOS_ACCION, ESTADO_ACCION_STYLES } from '../../services/accionesService'
 import type { Accion, EstadoAccion } from '../../services/accionesService'
 import { toast } from '../../utils/toast'
 
@@ -34,6 +35,7 @@ function exportCSV(data: Accion[]) {
 }
 
 export default function AccionesCorrectivasPage() {
+  const { t } = useTranslation()
   const navigate = useNavigate()
 
   const [acciones, setAcciones] = useState<Accion[]>([])
@@ -77,7 +79,7 @@ export default function AccionesCorrectivasPage() {
     try {
       const updated = await accionesService.cambiarEstado(statusModal.accion!.IDAccion, nuevoEstado)
       setAcciones((prev) => prev.map((a) => (a.IDAccion === updated.IDAccion ? updated : a)))
-      toast.success(`Estado actualizado a "${ESTADO_ACCION_LABEL[nuevoEstado]}"`)
+      toast.success(t('acciones.statusUpdated', { status: t('estados.' + nuevoEstado) }))
       setStatusModal({ open: false, accion: null })
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : 'Error al cambiar estado')
@@ -89,7 +91,7 @@ export default function AccionesCorrectivasPage() {
   return (
     <>
       <BackofficeTopbar
-        title="Acciones Correctivas"
+        title={t('acciones.title')}
         actions={
           <div className="flex items-center gap-2">
             <button
@@ -104,7 +106,7 @@ export default function AccionesCorrectivasPage() {
               className="flex items-center gap-1.5 rounded-lg border border-emerald-500 px-3 py-2 text-xs font-semibold text-emerald-600 transition-colors hover:bg-emerald-50 sm:px-4 sm:text-sm"
             >
               <Download className="h-4 w-4" />
-              Exportar
+              {t('common.export')}
             </button>
           </div>
         }
@@ -117,8 +119,8 @@ export default function AccionesCorrectivasPage() {
             <div className="relative w-full sm:flex-1 sm:max-w-md">
               <input
                 type="text"
-                aria-label="Buscar acción correctiva"
-                placeholder="Buscar acción..."
+                aria-label={t('acciones.searchLabel')}
+                placeholder={t('acciones.searchPlaceholder')}
                 value={query}
                 onChange={(e) => { setQuery(e.target.value); setPage(1) }}
                 className="w-full rounded-xl border border-gray-200 py-2.5 pl-4 pr-10 text-sm text-gray-700 placeholder:text-gray-400 outline-none focus:border-primary focus:ring-1 focus:ring-primary/20"
@@ -135,14 +137,14 @@ export default function AccionesCorrectivasPage() {
               </button>
               {filterOpen && (
                 <div className="absolute top-12 left-0 z-20 w-48 rounded-xl border border-gray-100 bg-white shadow-lg p-2">
-                  <p className="px-2 py-1 text-xs font-semibold text-gray-400 uppercase tracking-wide">Estado</p>
+                  <p className="px-2 py-1 text-xs font-semibold text-gray-400 uppercase tracking-wide">{t('denuncias.filterTitle')}</p>
                   {(['', ...ESTADOS_ACCION] as Array<EstadoAccion | ''>).map((e) => (
                     <button
                       key={e}
                       onClick={() => { setFilterEstado(e); setFilterOpen(false); setPage(1) }}
                       className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${filterEstado === e ? 'bg-primary/10 text-primary font-semibold' : 'text-gray-600 hover:bg-gray-50'}`}
                     >
-                      {e ? ESTADO_ACCION_LABEL[e] : 'Todos'}
+                      {e ? t('estados.' + e) : t('denuncias.filterAll')}
                     </button>
                   ))}
                 </div>
@@ -157,7 +159,7 @@ export default function AccionesCorrectivasPage() {
               {/* Mobile list */}
               <div data-tour="backoffice-acciones-list" className="divide-y divide-gray-100 lg:hidden">
                 {paginated.length === 0 ? (
-                  <div className="px-5 py-10 text-center text-sm text-gray-400">No se encontraron acciones.</div>
+                  <div className="px-5 py-10 text-center text-sm text-gray-400">{t('acciones.noResults')}</div>
                 ) : (
                   paginated.map((a) => (
                     <article key={a.IDAccion} className="space-y-3 px-4 py-4 sm:px-5">
@@ -167,12 +169,12 @@ export default function AccionesCorrectivasPage() {
                           <p className="mt-1 text-sm text-dark/85">{a.titulo}</p>
                         </div>
                         <span className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold ${ESTADO_ACCION_STYLES[a.Estado]}`}>
-                          {ESTADO_ACCION_LABEL[a.Estado]}
+                          {t('estados.' + a.Estado)}
                         </span>
                       </div>
                       <div className="flex flex-wrap items-center gap-2">
-                        <button onClick={() => navigate(`/admin/acciones/${a.IDAccion}`)} className="rounded-lg bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary hover:bg-primary/20">Ver detalle</button>
-                        <button onClick={() => openStatusModal(a)} className="rounded-lg bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700 hover:bg-emerald-100">Cambiar estado</button>
+                        <button onClick={() => navigate(`/admin/acciones/${a.IDAccion}`)} className="rounded-lg bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary hover:bg-primary/20">{t('common.viewDetail')}</button>
+                        <button onClick={() => openStatusModal(a)} className="rounded-lg bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700 hover:bg-emerald-100">{t('acciones.changeStatus')}</button>
                       </div>
                     </article>
                   ))
@@ -191,7 +193,7 @@ export default function AccionesCorrectivasPage() {
                   </thead>
                   <tbody className="divide-y divide-gray-100">
                     {paginated.length === 0 ? (
-                      <tr><td colSpan={6}><EmptyState title="Sin acciones" description="No se encontraron acciones con los filtros aplicados." /></td></tr>
+                      <tr><td colSpan={6}><EmptyState title={t('acciones.emptyTitle')} description={t('acciones.emptyDesc')} /></td></tr>
                     ) : (
                       paginated.map((a) => (
                         <tr key={a.IDAccion} className="hover:bg-blue-50/30 transition-colors cursor-pointer" onClick={() => navigate(`/admin/acciones/${a.IDAccion}`)}>
@@ -204,16 +206,16 @@ export default function AccionesCorrectivasPage() {
                           </td>
                           <td className="px-5 py-4">
                             <span className={`rounded-full px-3 py-1 text-xs font-semibold ${ESTADO_ACCION_STYLES[a.Estado]}`}>
-                              {ESTADO_ACCION_LABEL[a.Estado]}
+                              {t('estados.' + a.Estado)}
                             </span>
                           </td>
                           <td className="px-5 py-4 text-gray-600">{a.responsable?.nombre_completo ?? '—'}</td>
                           <td className="px-5 py-4" onClick={(e) => e.stopPropagation()}>
                             <div className="flex items-center gap-1.5">
-                              <button title="Ver detalle" onClick={() => navigate(`/admin/acciones/${a.IDAccion}`)} className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors">
+                              <button title={t('common.viewDetail')} onClick={() => navigate(`/admin/acciones/${a.IDAccion}`)} className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors">
                                 <Eye className="h-3.5 w-3.5" />
                               </button>
-                              <button title="Cambiar estado" onClick={() => openStatusModal(a)} className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-100 transition-colors">
+                              <button title={t('acciones.changeStatus')} onClick={() => openStatusModal(a)} className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-100 transition-colors">
                                 <CheckCircle className="h-3.5 w-3.5" />
                               </button>
                             </div>
@@ -231,7 +233,7 @@ export default function AccionesCorrectivasPage() {
           {!loading && filtered.length > 0 && (
             <div data-tour="backoffice-acciones-pagination" className="flex flex-wrap items-center justify-between gap-3 border-t border-gray-100 px-4 py-4 sm:px-5">
               <p className="order-2 w-full text-xs text-gray-400 sm:order-1 sm:w-auto">
-                Mostrando {(page - 1) * pageSize + 1} a {Math.min(page * pageSize, filtered.length)} de {filtered.length} entradas
+                {t('denuncias.showing', { from: (page - 1) * pageSize + 1, to: Math.min(page * pageSize, filtered.length), total: filtered.length })}
               </p>
               <div className="order-1 flex items-center gap-1 sm:order-2">
                 <button onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1} className="h-8 w-8 flex items-center justify-center rounded-lg border border-gray-200 text-gray-400 hover:bg-gray-50 disabled:opacity-30">
@@ -245,7 +247,7 @@ export default function AccionesCorrectivasPage() {
                 </button>
               </div>
               <div className="order-3 flex items-center gap-2 text-xs text-gray-500">
-                Registros por página
+                {t('denuncias.perPage')}
                 <select value={pageSize} onChange={(e) => { setPageSize(Number(e.target.value)); setPage(1) }} className="rounded-lg border border-gray-200 px-2 py-1 text-xs outline-none focus:border-primary">
                   {PAGE_SIZE_OPTIONS.map((n) => <option key={n} value={n}>{n}</option>)}
                 </select>
@@ -259,23 +261,23 @@ export default function AccionesCorrectivasPage() {
       <Modal
         open={statusModal.open}
         onClose={() => setStatusModal({ open: false, accion: null })}
-        title="Cambiar Estado de Acción"
-        confirmLabel="Guardar cambio"
+        title={t('acciones.changeStatusTitle')}
+        confirmLabel={t('acciones.changeStatusSave')}
         onConfirm={handleSaveEstado}
         loading={saving}
       >
         {statusModal.accion && (
           <div className="flex flex-col gap-4">
-            <p>Cambiando estado de la acción <span className="font-semibold text-gray-800">"{statusModal.accion.titulo}"</span>.</p>
+            <p>{t('acciones.changeStatusMsg', { title: statusModal.accion.titulo })}</p>
             <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-semibold text-gray-600">Nuevo estado</label>
+              <label className="text-xs font-semibold text-gray-600">{t('acciones.newStatusLabel')}</label>
               <select
                 value={nuevoEstado}
                 onChange={(e) => setNuevoEstado(e.target.value as EstadoAccion)}
                 className="rounded-lg border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary/20"
               >
                 {ESTADOS_ACCION.map((e) => (
-                  <option key={e} value={e}>{ESTADO_ACCION_LABEL[e]}</option>
+                  <option key={e} value={e}>{t('estados.' + e)}</option>
                 ))}
               </select>
             </div>

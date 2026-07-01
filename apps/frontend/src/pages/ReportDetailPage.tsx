@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Link, useParams } from 'react-router-dom'
 import Navbar from '../components/layout/Navbar'
 import Footer from '../components/layout/Footer'
@@ -18,6 +19,7 @@ type FetchState =
   | { status: 'error'; message: string }
 
 export default function ReportDetailPage() {
+  const { t } = useTranslation()
   const { id } = useParams()
   // Inicializador perezoso para no llamar setState síncronamente en el effect.
   const [state, setState] = useState<FetchState>(() => (id ? { status: 'loading' } : { status: 'notFound' }))
@@ -48,7 +50,7 @@ export default function ReportDetailPage() {
     <div className="min-h-screen flex flex-col bg-surface">
       <Navbar />
       <main id="main-content" className="flex-1">
-        <ReportHero category="Consulta" title={`Detalle de reporte ${id ?? ''}`} />
+        <ReportHero category={t('searchPage.category')} title={t('reportDetail.detailTitle', { id: id ?? '' })} />
 
         <section className="mx-auto max-w-5xl px-6 py-10">
           {state.status === 'loading' && (
@@ -71,13 +73,13 @@ export default function ReportDetailPage() {
                 to="/reportes"
                 className="mt-5 inline-flex rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary/90"
               >
-                Volver a reportes
+                {t('reportDetail.backToReports')}
               </Link>
               <Link
                 to="/reporte/nuevo"
                 className="ml-2 mt-5 inline-flex rounded-lg border border-primary px-4 py-2 text-sm font-semibold text-primary hover:bg-primary hover:text-white"
               >
-                Crear nuevo reporte
+                {t('reportDetail.newReport')}
               </Link>
             </div>
           )}

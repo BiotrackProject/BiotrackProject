@@ -8,6 +8,7 @@ import ProcessTrustSection from '../components/landing/ProcessTrustSection'
 import StatsSection from '../components/landing/StatsSection'
 import NewsCarousel from '../components/landing/NewsCarousel'
 import InfoLinksSection from '../components/landing/InfoLinksSection'
+import FaqSection from '../components/landing/FaqSection'
 import HelpSection from '../components/landing/HelpSection'
 
 export default function LandingPage() {
@@ -22,6 +23,7 @@ export default function LandingPage() {
         <ProcessTrustSection />
         <StatsSection />
         <NewsCarousel />
+        <FaqSection />
         <HelpSection />
         <InfoLinksSection />
       </main>

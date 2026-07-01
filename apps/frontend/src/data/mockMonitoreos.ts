@@ -7,7 +7,7 @@ export const MOCK_MONITOREO_DENUNCIAS = [
     provincia: 'La Romana',
     fecha: '14 ene 2025',
     estado: 'Monitorear',
-    anonimo: true,
+
     nombres: 'N/A', apellidos: 'N/A', correo: 'N/A', telefono: 'N/A',
     hora: '10:00 P.M.',
     municipio: 'San Rafael del Yuma',
@@ -32,7 +32,7 @@ export const MOCK_MONITOREO_DENUNCIAS = [
     provincia: 'Santo Domingo',
     fecha: '9 ene 2025',
     estado: 'En Monitoreo',
-    anonimo: true,
+
     nombres: 'N/A', apellidos: 'N/A', correo: 'N/A', telefono: 'N/A',
     hora: '3:00 P.M.',
     municipio: 'Santo Domingo Este',
@@ -56,7 +56,7 @@ export const MOCK_MONITOREO_DENUNCIAS = [
     provincia: 'La Altagracia',
     fecha: '3 ene 2025',
     estado: 'Declinada',
-    anonimo: false,
+
     nombres: 'María', apellidos: 'González', correo: 'mgonzalez@example.com', telefono: '829-333-7890',
     hora: '7:00 A.M.',
     municipio: 'Higüey',
@@ -76,7 +76,7 @@ export const MOCK_MONITOREO_DENUNCIAS = [
     provincia: 'Sánchez Ramírez',
     fecha: '1 ene 2025',
     estado: 'En Corrección',
-    anonimo: true,
+
     nombres: 'N/A', apellidos: 'N/A', correo: 'N/A', telefono: 'N/A',
     hora: '10:00 P.M.',
     municipio: 'Cotuí',

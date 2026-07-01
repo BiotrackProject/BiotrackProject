@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { ChevronLeft } from 'lucide-react'
 import surveyImg from '../../assets/images/survey.svg'
 
@@ -8,6 +9,7 @@ import surveyImg from '../../assets/images/survey.svg'
  */
 export default function ReportHero({ category = 'Reporte', title }) {
   const navigate = useNavigate()
+  const { t } = useTranslation()
 
   return (
     <section className="border-b border-primary/10 bg-gradient-to-b from-blue-50 to-white py-12 sm:py-14">
@@ -19,7 +21,7 @@ export default function ReportHero({ category = 'Reporte', title }) {
               className="inline-flex items-center gap-1 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-gray-600 shadow-sm transition-all duration-150 ease-out hover:bg-gray-50 active:scale-[0.98]"
             >
               <ChevronLeft className="h-4 w-4" />
-              Volver
+              {t('common.back')}
             </button>
             <p className="inline-flex rounded-full bg-primary/10 px-3 py-1 text-xs font-bold uppercase tracking-[0.14em] text-primary">
               {category}

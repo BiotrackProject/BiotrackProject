@@ -1,22 +1,7 @@
 import { useRef, useState, useEffect } from 'react'
 import { useCountUp } from '../../hooks/useCountUp'
+import { useTranslation } from 'react-i18next'
 import isotipoGris from '../../assets/images/isotipogris.png'
-
-// TODO: Replace hardcoded data with API call when backend is ready.
-// import { getStats } from '../../services/statsService'
-// useEffect(() => { getStats().then(setStats) }, [])
-const STATS = {
-  highlight: {
-    value: 56,
-    decimals: 0,
-    label: 'Zonas protegidas mediante reportes ciudadanos',
-  },
-  metrics: [
-    { value: 573, decimals: 0, suffix: '', label: 'Reportes ciudadanos' },
-    { value: 3.4, decimals: 1, suffix: 'h', label: 'Hora promedio de respuesta' },
-    { value: 128, decimals: 0, suffix: '', label: 'Zonas monitoreadas' },
-  ],
-}
 
 function StatValue({ target, decimals, suffix, started }) {
   const value = useCountUp(target, started, { decimals })
@@ -29,8 +14,25 @@ function StatValue({ target, decimals, suffix, started }) {
 }
 
 export default function StatsSection() {
+  const { t } = useTranslation()
   const [started, setStarted] = useState(false)
   const sectionRef = useRef(null)
+
+  // TODO: Replace hardcoded data with API call when backend is ready.
+  // import { getStats } from '../../services/statsService'
+  // useEffect(() => { getStats().then(setStats) }, [])
+  const STATS = {
+    highlight: {
+      value: 56,
+      decimals: 0,
+      label: t('stats.highlightLabel'),
+    },
+    metrics: [
+      { value: 573, decimals: 0, suffix: '', label: t('stats.metric1Label') },
+      { value: 3.4, decimals: 1, suffix: 'h', label: t('stats.metric2Label') },
+      { value: 128, decimals: 0, suffix: '', label: t('stats.metric3Label') },
+    ],
+  }
 
   useEffect(() => {
     const el = sectionRef.current
@@ -51,7 +53,7 @@ export default function StatsSection() {
       </div>
 
       <div className="relative mx-auto max-w-7xl px-6 text-center">
-        <p className="text-xs font-bold uppercase tracking-[0.16em] text-primary/70">Indicadores clave</p>
+        <p className="text-xs font-bold uppercase tracking-[0.16em] text-primary/70">{t('stats.sectionTag')}</p>
 
         <p className="mt-3 text-6xl font-black leading-none text-primary sm:text-7xl lg:text-8xl">
           <StatValue

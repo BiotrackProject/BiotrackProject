@@ -1,19 +1,24 @@
 // @ts-nocheck
 import { useState, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import { ChevronLeft, ChevronRight, FileWarning, MapPin, ClipboardCheck, Map } from 'lucide-react'
 import BackofficeTopbar from '../../components/backoffice/BackofficeTopbar'
 import LoadingSpinner from '../../components/ui/LoadingSpinner'
-import { dashboardService } from '../../services/dashboardService'
+import { dashboardService, type ImpactoRow, type FrecuenciaRow } from '../../services/dashboardService'
 import {
   PieChart, Pie, Cell, Tooltip, ResponsiveContainer,
   AreaChart, Area, XAxis, YAxis, CartesianGrid,
   BarChart, Bar, LabelList,
 } from 'recharts'
 
-// ── Chart data (stays as mock; replace with dashboardService.getChartData() later) ──
+// ── Chart colors ──────────────────────────────────────────────────────────────
 
-const IMPACT_DATA = [
+const CHART_COLORS = ['#22C55E', '#3B82F6', '#FBBF24', '#F97316', '#A855F7', '#EF4444', '#06B6D4', '#64748B']
+
+// ── Chart data fallbacks (shown while real data loads or if fetch fails) ──────
+
+const FALLBACK_IMPACT_DATA = [
   { name: 'Degradación ambiental',     value: 40, color: '#22C55E' },
   { name: 'Problemas de salud',         value: 25, color: '#3B82F6' },
   { name: 'Impacto económico',          value: 20, color: '#FBBF24' },
@@ -21,7 +26,7 @@ const IMPACT_DATA = [
   { name: 'Conflictos sociales',        value:  5, color: '#A855F7' },
 ]
 
-const FREQUENCY_MONTHS = [
+const FALLBACK_FREQUENCY_PAGES = [
   [
     { month: 'Enero',    value: 21 },
     { month: 'Febrero',  value: 19 },
@@ -37,6 +42,24 @@ const FREQUENCY_MONTHS = [
     { month: 'Octubre',   value: 17 },
   ],
 ]
+
+function toImpactData(rows: ImpactoRow[]) {
+  const total = rows.reduce((s, r) => s + r.total, 0)
+  if (total === 0) return FALLBACK_IMPACT_DATA
+  return rows.map((r, i) => ({
+    name: r.tipo_actividad.replace(/_/g, ' '),
+    value: Math.round((r.total / total) * 100),
+    color: CHART_COLORS[i % CHART_COLORS.length],
+  }))
+}
+
+function toFrequencyPages(rows: FrecuenciaRow[]) {
+  if (!rows.length) return FALLBACK_FREQUENCY_PAGES
+  const mapped = rows.map((r) => ({ month: r.mes, value: r.total }))
+  const pages: { month: string; value: number }[][] = []
+  for (let i = 0; i < mapped.length; i += 5) pages.push(mapped.slice(i, i + 5))
+  return pages
+}
 
 const ZONES_DATA = [
   { zone: 'Zona Oeste', value: 15000, color: '#3B82F6' },
@@ -73,12 +96,13 @@ function Card({ title, subtitle, action, children }) {
 }
 
 function VerTodasBtn({ onClick }) {
+  const { t } = useTranslation()
   return (
     <button
       onClick={onClick}
       className="shrink-0 rounded-full border border-action px-4 py-1.5 text-xs font-semibold text-action hover:bg-action hover:text-white transition-colors"
     >
-      Ver Todas
+      {t('dashboard.viewAll')}
     </button>
   )
 }
@@ -110,14 +134,15 @@ function KpiCard({ icon: Icon, label, value, color, sub, onClick }) {
 
 // ── Chart cards ───────────────────────────────────────────────────────────────
 
-function ImpactDonutCard() {
+function ImpactDonutCard({ data }) {
+  const { t } = useTranslation()
   return (
-    <Card title="Impacto de la extracción de arena en las comunidades locales">
+    <Card title={t('dashboard.impactTitle')}>
       <div className="flex items-center gap-6">
         <ResponsiveContainer width={180} height={180}>
           <PieChart>
-            <Pie data={IMPACT_DATA} cx="50%" cy="50%" innerRadius={55} outerRadius={85} dataKey="value" strokeWidth={2}>
-              {IMPACT_DATA.map((entry) => (
+            <Pie data={data} cx="50%" cy="50%" innerRadius={55} outerRadius={85} dataKey="value" strokeWidth={2}>
+              {data.map((entry) => (
                 <Cell key={entry.name} fill={entry.color} />
               ))}
             </Pie>
@@ -125,7 +150,7 @@ function ImpactDonutCard() {
           </PieChart>
         </ResponsiveContainer>
         <ul className="flex flex-col gap-2">
-          {IMPACT_DATA.map((d) => (
+          {data.map((d) => (
             <li key={d.name} className="flex items-center gap-2 text-xs text-gray-600">
               <span className="h-2.5 w-2.5 rounded-full shrink-0" style={{ background: d.color }} />
               {d.name}
@@ -137,21 +162,22 @@ function ImpactDonutCard() {
   )
 }
 
-function FrequencyLineCard() {
+function FrequencyLineCard({ pages }) {
+  const { t } = useTranslation()
   const [page, setPage] = useState(0)
-  const data = FREQUENCY_MONTHS[page]
-  const peakMonth = data.reduce((a, b) => (b.value > a.value ? b : a)).month
+  const data = pages[Math.min(page, pages.length - 1)] ?? []
+  const peakMonth = data.length ? data.reduce((a, b) => (b.value > a.value ? b : a)).month : ''
 
   return (
     <Card
-      title="Frecuencia de actividades ilegales"
-      subtitle={`${peakMonth} es el mes con mayores incidencias`}
+      title={t('dashboard.frequencyTitle')}
+      subtitle={peakMonth ? t('dashboard.frequencySubtitle', { month: peakMonth }) : undefined}
       action={
         <div className="flex items-center gap-1">
           <button onClick={() => setPage((p) => Math.max(0, p - 1))} disabled={page === 0} className="p-1 rounded-full border border-gray-200 text-gray-400 hover:bg-gray-50 disabled:opacity-30">
             <ChevronLeft className="h-4 w-4" />
           </button>
-          <button onClick={() => setPage((p) => Math.min(FREQUENCY_MONTHS.length - 1, p + 1))} disabled={page === FREQUENCY_MONTHS.length - 1} className="p-1 rounded-full border border-gray-200 text-gray-400 hover:bg-gray-50 disabled:opacity-30">
+          <button onClick={() => setPage((p) => Math.min(pages.length - 1, p + 1))} disabled={page === pages.length - 1} className="p-1 rounded-full border border-gray-200 text-gray-400 hover:bg-gray-50 disabled:opacity-30">
             <ChevronRight className="h-4 w-4" />
           </button>
         </div>
@@ -167,7 +193,7 @@ function FrequencyLineCard() {
           </defs>
           <CartesianGrid strokeDasharray="3 3" stroke="#F3F4F6" vertical={false} />
           <XAxis dataKey="month" tick={{ fontSize: 11, fill: '#9CA3AF' }} axisLine={false} tickLine={false} />
-          <YAxis tick={{ fontSize: 11, fill: '#9CA3AF' }} axisLine={false} tickLine={false} domain={[10, 24]} ticks={[10, 14, 17, 21, 24]} />
+          <YAxis tick={{ fontSize: 11, fill: '#9CA3AF' }} axisLine={false} tickLine={false} />
           <Tooltip contentStyle={{ borderRadius: 8, border: 'none', boxShadow: '0 2px 8px rgba(0,0,0,.1)', fontSize: 12 }} />
           <Area type="monotone" dataKey="value" stroke="#EF4444" strokeWidth={2} fill="url(#freqGrad)" dot={false} />
         </AreaChart>
@@ -177,8 +203,9 @@ function FrequencyLineCard() {
 }
 
 function ZonesBarCard({ onVerTodas }) {
+  const { t } = useTranslation()
   return (
-    <Card title="Zonas Monitoreadas" subtitle="Extracción de arena ilegal por provincia" action={<VerTodasBtn onClick={onVerTodas} />}>
+    <Card title={t('dashboard.zonesTitle')} subtitle={t('dashboard.zonesSubtitle')} action={<VerTodasBtn onClick={onVerTodas} />}>
       <ResponsiveContainer width="100%" height={220}>
         <BarChart layout="vertical" data={ZONES_DATA} margin={{ top: 0, right: 16, bottom: 0, left: 8 }} barSize={28}>
           <XAxis type="number" tick={{ fontSize: 11, fill: '#9CA3AF' }} axisLine={false} tickLine={false} tickFormatter={(v) => `${(v/1000).toFixed(0)}k`} domain={[0, 16000]} ticks={[0, 7000, 12000, 15000]} />
@@ -193,8 +220,9 @@ function ZonesBarCard({ onVerTodas }) {
 }
 
 function VolumeBarCard({ onVerTodas }) {
+  const { t } = useTranslation()
   return (
-    <Card title="Volumen de arena extraída" subtitle="Extracción de arena ilegal por provincia" action={<VerTodasBtn onClick={onVerTodas} />}>
+    <Card title={t('dashboard.volumeTitle')} subtitle={t('dashboard.volumeSubtitle')} action={<VerTodasBtn onClick={onVerTodas} />}>
       <ResponsiveContainer width="100%" height={260}>
         <BarChart layout="vertical" data={VOLUME_DATA} margin={{ top: 0, right: 16, bottom: 0, left: 8 }} barSize={16}>
           <XAxis type="number" tick={{ fontSize: 11, fill: '#9CA3AF' }} axisLine={false} tickLine={false} tickFormatter={(v) => `${v}m³`} domain={[0, 2200]} ticks={[0, 500, 900, 1000, 2000]} />
@@ -210,23 +238,28 @@ function VolumeBarCard({ onVerTodas }) {
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export default function DashboardPage() {
+  const { t } = useTranslation()
   const navigate = useNavigate()
-  const [stats, setStats]     = useState(null)
-  const [loading, setLoading] = useState(true)
+  const [stats, setStats]                   = useState(null)
+  const [loading, setLoading]               = useState(true)
+  const [impactData, setImpactData]         = useState(FALLBACK_IMPACT_DATA)
+  const [frequencyPages, setFrequencyPages] = useState(FALLBACK_FREQUENCY_PAGES)
 
   useEffect(() => {
     dashboardService.getStats().then(setStats).finally(() => setLoading(false))
+    dashboardService.getImpacto().then((rows) => setImpactData(toImpactData(rows))).catch(() => {})
+    dashboardService.getFrecuencia().then((rows) => setFrequencyPages(toFrequencyPages(rows))).catch(() => {})
   }, [])
 
   return (
     <>
-      <BackofficeTopbar title="Dashboard" />
+      <BackofficeTopbar title={t('dashboard.title')} />
       <main className="flex flex-col gap-5 p-4 sm:p-6 lg:p-8">
 
         <section className="rounded-2xl border border-primary/10 bg-[linear-gradient(145deg,rgba(19,53,108,0.08),rgba(255,255,255,0.72))] p-5 sm:p-6">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-primary/70">Resumen operativo</p>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-primary/70">{t('dashboard.summaryTag')}</p>
           <p className="mt-2 max-w-[62ch] text-sm leading-6 text-dark/80">
-            Prioriza denuncias en revisión y zonas con incidencias activas para acelerar el cierre de acciones correctivas.
+            {t('dashboard.summaryDesc')}
           </p>
         </section>
 
@@ -237,34 +270,34 @@ export default function DashboardPage() {
           <div data-tour="backoffice-dashboard-stats" className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
             <KpiCard
               icon={FileWarning}
-              label="Total Denuncias"
+              label={t('dashboard.totalDenuncias')}
               value={stats?.totalDenuncias ?? 0}
               color="bg-primary/10 text-primary"
-              sub={`${(stats?.por_estado?.Pendiente ?? 0) + (stats?.por_estado?.En_Investigacion ?? 0)} activas`}
+              sub={`${(stats?.por_estado?.Pendiente ?? 0) + (stats?.por_estado?.En_Investigacion ?? 0)} ${t('dashboard.activas')}`}
               onClick={() => navigate('/admin/denuncias')}
             />
             <KpiCard
               icon={FileWarning}
-              label="Pendientes"
+              label={t('dashboard.pendientes')}
               value={stats?.por_estado?.Pendiente ?? 0}
               color="bg-amber-50 text-amber-500"
-              sub="Sin asignar"
+              sub={t('dashboard.sinAsignar')}
               onClick={() => navigate('/admin/denuncias')}
             />
             <KpiCard
               icon={MapPin}
-              label="En Investigación"
+              label={t('dashboard.enInvestigacion')}
               value={stats?.por_estado?.En_Investigacion ?? 0}
               color="bg-teal-50 text-teal-600"
-              sub={`${stats?.por_estado?.Verificada ?? 0} verificadas`}
+              sub={`${stats?.por_estado?.Verificada ?? 0} ${t('dashboard.verificadas')}`}
               onClick={() => navigate('/admin/monitoreo')}
             />
             <KpiCard
               icon={ClipboardCheck}
-              label="Acciones Completadas"
+              label={t('dashboard.accionesCompletadas')}
               value={stats?.por_estado_accion?.Completada ?? 0}
               color="bg-emerald-50 text-emerald-600"
-              sub={`${stats?.por_estado_accion?.En_Ejecucion ?? 0} en ejecución`}
+              sub={`${stats?.por_estado_accion?.En_Ejecucion ?? 0} ${t('dashboard.enEjecucion')}`}
               onClick={() => navigate('/admin/acciones')}
             />
           </div>
@@ -281,17 +314,17 @@ export default function DashboardPage() {
               <Map className="h-5 w-5 text-primary" />
             </div>
             <div>
-              <p className="text-sm font-bold text-primary">Mapa de Denuncias</p>
-              <p className="text-xs text-gray-500">Ver todas las denuncias y zonas geolocalizadas en el mapa interactivo</p>
+              <p className="text-sm font-bold text-primary">{t('dashboard.mapTitle')}</p>
+              <p className="text-xs text-gray-500">{t('dashboard.mapDesc')}</p>
             </div>
           </div>
-          <span className="text-primary text-sm font-semibold shrink-0">Ver mapa →</span>
+          <span className="text-primary text-sm font-semibold shrink-0">{t('dashboard.viewMap')}</span>
         </button>
 
         {/* Charts */}
         <div data-tour="backoffice-dashboard-charts" className="grid grid-cols-1 gap-4 xl:grid-cols-2 xl:gap-6">
-          <ImpactDonutCard />
-          <FrequencyLineCard />
+          <ImpactDonutCard data={impactData} />
+          <FrequencyLineCard pages={frequencyPages} />
           <ZonesBarCard onVerTodas={() => navigate('/admin/monitoreo')} />
           <VolumeBarCard onVerTodas={() => navigate('/admin/denuncias')} />
         </div>

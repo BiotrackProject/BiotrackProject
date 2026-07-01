@@ -1,5 +1,6 @@
 // @ts-nocheck
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Save, Bell, Shield, Globe, Database } from 'lucide-react'
 import BackofficeTopbar from '../../../components/backoffice/BackofficeTopbar'
 
@@ -48,6 +49,7 @@ function FieldRow({ label, description, children }) {
 }
 
 export default function SistemaPage() {
+  const { t } = useTranslation()
   const [saved, setSaved] = useState(false)
 
   const [notif, setNotif] = useState({
@@ -79,14 +81,14 @@ export default function SistemaPage() {
   return (
     <>
       <BackofficeTopbar
-        title="Configuración del Sistema"
+        title={t('sistema.title')}
         actions={
           <button
             onClick={handleSave}
             className="flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary/90 transition-colors"
           >
             <Save className="h-4 w-4" />
-            {saved ? '¡Guardado!' : 'Guardar cambios'}
+            {saved ? t('sistema.saved') : t('sistema.save')}
           </button>
         }
       />
@@ -95,15 +97,15 @@ export default function SistemaPage() {
 
         {/* General */}
         <div data-tour="backoffice-sistema-general" className="rounded-2xl bg-white p-4 shadow-sm sm:p-6">
-          <SectionTitle icon={Globe} title="General" />
-          <FieldRow label="Nombre del sistema">
+          <SectionTitle icon={Globe} title={t('sistema.generalTitle')} />
+          <FieldRow label={t('sistema.systemName')}>
             <input
               value={general.nombreSistema}
               onChange={(e) => setGeneral((p) => ({ ...p, nombreSistema: e.target.value }))}
               className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 sm:w-48"
             />
           </FieldRow>
-          <FieldRow label="Zona horaria">
+          <FieldRow label={t('sistema.timezone')}>
             <select
               value={general.timezone}
               onChange={(e) => setGeneral((p) => ({ ...p, timezone: e.target.value }))}
@@ -114,7 +116,7 @@ export default function SistemaPage() {
               <option value="UTC">UTC</option>
             </select>
           </FieldRow>
-          <FieldRow label="Tamaño máximo de evidencia" description="Por archivo adjunto en denuncias">
+          <FieldRow label={t('sistema.maxEvidence')} description={t('sistema.maxEvidenceDesc')}>
             <select
               value={general.maxEvidenciaMB}
               onChange={(e) => setGeneral((p) => ({ ...p, maxEvidenciaMB: e.target.value }))}
@@ -129,49 +131,49 @@ export default function SistemaPage() {
 
         {/* Notificaciones */}
         <div data-tour="backoffice-sistema-notificaciones" className="rounded-2xl bg-white p-4 shadow-sm sm:p-6">
-          <SectionTitle icon={Bell} title="Notificaciones" />
+          <SectionTitle icon={Bell} title={t('sistema.notifTitle')} />
           <Toggle
             checked={notif.emailNuevaDenuncia}
             onChange={(v) => setNotif((p) => ({ ...p, emailNuevaDenuncia: v }))}
-            label="Email al recibir nueva denuncia"
-            description="Notifica a los analistas cuando llega una nueva denuncia"
+            label={t('sistema.notifNewDenuncia')}
+            description={t('sistema.notifNewDenunciaDesc')}
           />
           <Toggle
             checked={notif.emailCambioEstado}
             onChange={(v) => setNotif((p) => ({ ...p, emailCambioEstado: v }))}
-            label="Email al cambiar estado"
-            description="Notifica al denunciante cuando su caso cambia de estado"
+            label={t('sistema.notifStatusChange')}
+            description={t('sistema.notifStatusChangeDesc')}
           />
           <Toggle
             checked={notif.emailResumenSemanal}
             onChange={(v) => setNotif((p) => ({ ...p, emailResumenSemanal: v }))}
-            label="Resumen semanal por correo"
-            description="Informe ejecutivo enviado los lunes a administradores"
+            label={t('sistema.notifWeekly')}
+            description={t('sistema.notifWeeklyDesc')}
           />
           <Toggle
             checked={notif.smsAlertas}
             onChange={(v) => setNotif((p) => ({ ...p, smsAlertas: v }))}
-            label="Alertas críticas por SMS"
-            description="Solo para casos marcados como Crítico"
+            label={t('sistema.notifSms')}
+            description={t('sistema.notifSmsDesc')}
           />
         </div>
 
         {/* Seguridad */}
         <div data-tour="backoffice-sistema-seguridad" className="rounded-2xl bg-white p-4 shadow-sm sm:p-6">
-          <SectionTitle icon={Shield} title="Seguridad" />
+          <SectionTitle icon={Shield} title={t('sistema.securityTitle')} />
           <Toggle
             checked={seguridad.dobleAutenticacion}
             onChange={(v) => setSeguridad((p) => ({ ...p, dobleAutenticacion: v }))}
-            label="Doble autenticación (2FA)"
-            description="Requerida para todos los administradores"
+            label={t('sistema.security2fa')}
+            description={t('sistema.security2faDesc')}
           />
           <Toggle
             checked={seguridad.ipWhitelist}
             onChange={(v) => setSeguridad((p) => ({ ...p, ipWhitelist: v }))}
-            label="Lista blanca de IPs"
-            description="Restringe el acceso solo a IPs autorizadas"
+            label={t('sistema.securityIp')}
+            description={t('sistema.securityIpDesc')}
           />
-          <FieldRow label="Expiración de sesión inactiva">
+          <FieldRow label={t('sistema.securitySession')}>
             <select
               value={seguridad.sesionInactividad}
               onChange={(e) => setSeguridad((p) => ({ ...p, sesionInactividad: e.target.value }))}
@@ -186,15 +188,15 @@ export default function SistemaPage() {
 
         {/* Datos */}
         <div data-tour="backoffice-sistema-datos" className="rounded-2xl bg-white p-4 shadow-sm sm:p-6">
-          <SectionTitle icon={Database} title="Datos y Respaldo" />
-          <FieldRow label="Exportar todos los registros" description="Genera un CSV con todas las denuncias, monitoreos y acciones">
+          <SectionTitle icon={Database} title={t('sistema.dataTitle')} />
+          <FieldRow label={t('sistema.dataExport')} description={t('sistema.dataExportDesc')}>
             <button className="rounded-lg border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-colors">
-              Exportar
+              {t('sistema.dataExportBtn')}
             </button>
           </FieldRow>
-          <FieldRow label="Respaldo automático" description="Se ejecuta cada noche a las 2:00 AM">
+          <FieldRow label={t('sistema.dataBackup')} description={t('sistema.dataBackupDesc')}>
             <span className="text-xs font-semibold text-emerald-600 bg-emerald-50 border border-emerald-200 rounded-full px-3 py-1">
-              Activo
+              {t('sistema.dataBackupStatus')}
             </span>
           </FieldRow>
         </div>
