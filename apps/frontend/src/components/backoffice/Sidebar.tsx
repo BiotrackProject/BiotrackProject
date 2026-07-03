@@ -40,8 +40,9 @@ export default function Sidebar({ mobileOpen = false, setMobileOpen = () => {} }
   ]
 
   const CONFIG_LINKS = [
-    { to: '/admin/configuracion/usuarios', label: t('sidebar.configUsuarios') },
-    { to: '/admin/configuracion/sistema',  label: t('sidebar.configSistema') },
+    { to: '/admin/configuracion/usuarios',    label: t('sidebar.configUsuarios') },
+    { to: '/admin/configuracion/solicitudes', label: t('sidebar.configSolicitudes') },
+    { to: '/admin/configuracion/sistema',     label: t('sidebar.configSistema') },
   ]
 
   const initials = user
@@ -210,7 +211,7 @@ export default function Sidebar({ mobileOpen = false, setMobileOpen = () => {} }
             <div
               id="sidebar-config-links"
               className={`overflow-hidden transition-[max-height,opacity] duration-200 ease-out ${
-                configOpen ? 'max-h-24' : 'max-h-0'
+                configOpen ? 'max-h-36' : 'max-h-0'
               }`}
             >
               <div className="ml-14 flex flex-col gap-0.5 py-1">
