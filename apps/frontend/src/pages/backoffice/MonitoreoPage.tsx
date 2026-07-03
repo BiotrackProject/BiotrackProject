@@ -12,8 +12,7 @@ import type { Denuncia, EstadoDenuncia } from '../../services/denunciasService'
 const MONITOREO_ESTADOS: EstadoDenuncia[] = ['Pendiente', 'En_Investigacion', 'Verificada']
 const PAGE_SIZE_OPTIONS = [5, 10, 20]
 
-function exportCSV(data: Denuncia[]) {
-  const headers = ['Código', 'Descripción', 'Tipo', 'Fecha', 'Estado']
+function exportCSV(data: Denuncia[], headers: string[]) {
   const rows = data.map((d) => [
     d.codigo_seguimiento,
     `"${d.Descripcion.replace(/"/g, "'")}"`,
@@ -45,7 +44,7 @@ export default function MonitoreoPage() {
   useEffect(() => {
     monitoreoService.getDenuncias()
       .then(setDenuncias)
-      .catch(() => toast.error('Error al cargar los registros de monitoreo'))
+      .catch(() => toast.error(t('monitoreo.loadError')))
       .finally(() => setLoading(false))
   }, [])
 
@@ -75,7 +74,7 @@ export default function MonitoreoPage() {
               {t('denuncias.viewMap')}
             </button>
             <button
-              onClick={() => exportCSV(filtered)}
+              onClick={() => exportCSV(filtered, [t('monitoreo.colCode'), t('monitoreo.colDescription'), t('monitoreo.colType'), t('monitoreo.colDate'), t('monitoreo.colStatus')])}
               className="flex items-center gap-1.5 rounded-lg border border-emerald-500 px-3 py-2 text-xs font-semibold text-emerald-600 transition-colors hover:bg-emerald-50 sm:px-4 sm:text-sm"
             >
               <Download className="h-4 w-4" />

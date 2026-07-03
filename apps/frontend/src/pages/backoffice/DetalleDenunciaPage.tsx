@@ -71,7 +71,7 @@ export default function DetalleDenunciaPage() {
       const refreshed = await denunciasService.getById(id!)
       setDenuncia(refreshed)
       setEstado(refreshed.Estado)
-      toast.success(`Estado actualizado a "${ESTADO_LABEL[pendingEstado]}"`)
+      toast.success(t('detalleDenuncia.statusUpdated', { status: t('estados.' + pendingEstado) }))
       setStatusModal(false)
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : t('detalleDenuncia.statusError'))
@@ -83,11 +83,11 @@ export default function DetalleDenunciaPage() {
   function exportDenuncia() {
     if (!denuncia) return
     const lines = [
-      `Código: ${denuncia.codigo_seguimiento}`,
-      `Estado: ${t('estados.' + estado)}`,
-      `Fecha: ${new Date(denuncia.Fecha_denuncia).toLocaleDateString('es-DO')}`,
-      `Tipo: ${t('tipos.' + denuncia.tipo_actividad)}`,
-      `Descripción: ${denuncia.Descripcion}`,
+      `${t('detalleDenuncia.exportCode')} ${denuncia.codigo_seguimiento}`,
+      `${t('detalleDenuncia.exportStatus')} ${t('estados.' + estado)}`,
+      `${t('detalleDenuncia.exportDate')} ${new Date(denuncia.Fecha_denuncia).toLocaleDateString('es-DO')}`,
+      `${t('detalleDenuncia.exportType')} ${t('tipos.' + denuncia.tipo_actividad)}`,
+      `${t('detalleDenuncia.exportDescription')} ${denuncia.Descripcion}`,
     ]
     const blob = new Blob([lines.join('\n')], { type: 'text/plain' })
     const url = URL.createObjectURL(blob)
@@ -167,30 +167,30 @@ export default function DetalleDenunciaPage() {
         <div data-tour="backoffice-denuncia-details" className="grid grid-cols-2 gap-5">
           <InfoCard title={t('detalleDenuncia.incidentInfo')}>
             <div className="flex flex-col gap-2">
-              <InfoRow label="Tipo de actividad" value={TIPO_LABEL[denuncia.tipo_actividad]} />
+              <InfoRow label={t('detalleDenuncia.activityType')} value={TIPO_LABEL[denuncia.tipo_actividad]} />
               <InfoRow
-                label="Fecha de incidente"
+                label={t('detalleDenuncia.incidentDate')}
                 value={denuncia.fecha_incidente ? new Date(denuncia.fecha_incidente).toLocaleDateString('es-DO') : null}
               />
-              <InfoRow label="Hora aproximada" value={denuncia.hora_aproximada} />
-              <InfoRow label="Tipo de extracción" value={denuncia.tipo_extraccion} />
-              <InfoRow label="Personas involucradas" value={denuncia.numero_personas} />
-              <InfoRow label="Cantidad estimada de arena" value={denuncia.cantidad_arena} />
-              <InfoRow label="Nivel de urgencia" value={denuncia.nivel_urgencia} />
-              <InfoRow label="Código de seguimiento" value={denuncia.codigo_seguimiento} />
-              <InfoRow label="Fecha de registro" value={new Date(denuncia.Fecha_denuncia).toLocaleDateString('es-DO')} />
+              <InfoRow label={t('detalleDenuncia.approxTime')} value={denuncia.hora_aproximada} />
+              <InfoRow label={t('detalleDenuncia.tipoExtraccion')} value={denuncia.tipo_extraccion} />
+              <InfoRow label={t('detalleDenuncia.personasInvolucradas')} value={denuncia.numero_personas} />
+              <InfoRow label={t('detalleDenuncia.cantidadArena')} value={denuncia.cantidad_arena} />
+              <InfoRow label={t('detalleDenuncia.nivelUrgencia')} value={denuncia.nivel_urgencia} />
+              <InfoRow label={t('detalleDenuncia.trackingCode')} value={denuncia.codigo_seguimiento} />
+              <InfoRow label={t('detalleDenuncia.fechaRegistro')} value={new Date(denuncia.Fecha_denuncia).toLocaleDateString('es-DO')} />
             </div>
           </InfoCard>
 
-          <InfoCard title="Ubicación del Incidente">
+          <InfoCard title={t('detalleDenuncia.ubicacionTitle')}>
             <div className="flex flex-col gap-2">
-              <InfoRow label="Coordenadas GPS" value={denuncia.gps} />
-              <InfoRow label="Detalle de la ubicación" value={denuncia.detalle_ubicacion} />
+              <InfoRow label={t('detalleDenuncia.coordenadasGPS')} value={denuncia.gps} />
+              <InfoRow label={t('detalleDenuncia.detalleUbicacion')} value={denuncia.detalle_ubicacion} />
             </div>
           </InfoCard>
         </div>
 
-        <InfoCard title="Descripción de la Actividad">
+        <InfoCard title={t('detalleDenuncia.activityDesc')}>
           <p className="text-sm text-gray-600 leading-relaxed whitespace-pre-line">{denuncia.Descripcion}</p>
         </InfoCard>
 

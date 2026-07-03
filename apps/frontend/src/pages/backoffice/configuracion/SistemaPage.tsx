@@ -179,7 +179,7 @@ export default function SistemaPage() {
               onChange={(e) => setSeguridad((p) => ({ ...p, sesionInactividad: e.target.value }))}
               className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:border-primary sm:w-36"
             >
-              {[['15', '15 minutos'], ['30', '30 minutos'], ['60', '1 hora'], ['120', '2 horas']].map(([v, l]) => (
+              {[['15', t('sistema.session15min')], ['30', t('sistema.session30min')], ['60', t('sistema.session1hour')], ['120', t('sistema.session2hours')]].map(([v, l]) => (
                 <option key={v} value={v}>{l}</option>
               ))}
             </select>

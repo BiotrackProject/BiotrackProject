@@ -93,11 +93,11 @@ export default function DetalleMonitoreoPage() {
   function exportDenuncia() {
     if (!denuncia) return
     const lines = [
-      `Código: ${denuncia.codigo_seguimiento}`,
-      `Estado: ${t('estados.' + estado)}`,
-      `Tipo: ${t('tipos.' + denuncia.tipo_actividad)}`,
-      `Fecha: ${new Date(denuncia.Fecha_denuncia).toLocaleDateString('es-DO')}`,
-      `Descripción: ${denuncia.Descripcion}`,
+      `${t('detalleDenuncia.exportCode')} ${denuncia.codigo_seguimiento}`,
+      `${t('detalleDenuncia.exportStatus')} ${t('estados.' + estado)}`,
+      `${t('detalleDenuncia.exportType')} ${t('tipos.' + denuncia.tipo_actividad)}`,
+      `${t('detalleDenuncia.exportDate')} ${new Date(denuncia.Fecha_denuncia).toLocaleDateString('es-DO')}`,
+      `${t('detalleDenuncia.exportDescription')} ${denuncia.Descripcion}`,
     ]
     const blob = new Blob([lines.join('\n')], { type: 'text/plain' })
     const url = URL.createObjectURL(blob)
