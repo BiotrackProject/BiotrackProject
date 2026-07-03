@@ -15,7 +15,7 @@ interface BackofficeTopbarProps {
 export default function BackofficeTopbar({ title, backTo, actions }: BackofficeTopbarProps) {
   const navigate = useNavigate()
   const { logout } = useAuth()
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const [userMenuOpen, setUserMenuOpen] = useState(false)
   const menuRef = useRef(null)
 
@@ -53,6 +53,15 @@ export default function BackofficeTopbar({ title, backTo, actions }: BackofficeT
 
       <div className="ml-auto flex items-center gap-2 sm:gap-3">
         {actions}
+
+        {/* Language switcher */}
+        <button
+          onClick={() => i18n.changeLanguage(i18n.language === 'es' ? 'en' : 'es')}
+          aria-label={t('topbar.switchLanguage')}
+          className="rounded border border-gray-200 px-2.5 py-1.5 text-xs font-semibold text-gray-500 transition-colors hover:border-primary/40 hover:bg-primary/5 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/35"
+        >
+          {i18n.language === 'es' ? 'EN' : 'ES'}
+        </button>
 
         {/* Notifications */}
         <button

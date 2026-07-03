@@ -1,5 +1,6 @@
 // @ts-nocheck
 import { useState, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useNavigate, useParams } from 'react-router-dom'
 import { MapPin, CheckCircle } from 'lucide-react'
 import BackofficeTopbar from '../../components/backoffice/BackofficeTopbar'
@@ -8,9 +9,6 @@ import Modal from '../../components/ui/Modal'
 import { monitoreoService } from '../../services/monitoreoService'
 import { usuariosService, type Usuario } from '../../services/usuariosService'
 import { toast } from '../../utils/toast'
-const FRECUENCIAS = ['Diario', 'Semanal', 'Quincenal', 'Mensual']
-const DIAS = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom']
-const MEDIOS = ['Drones', 'Motor', 'Auto', 'Camioneta']
 
 function Label({ children, required }) {
   return (
@@ -34,13 +32,37 @@ function Input({ error, ...props }) {
 }
 
 export default function PlanificarMonitoreoPage() {
+  const { t } = useTranslation()
   const { id } = useParams()
   const navigate = useNavigate()
   const [submitted, setSubmitted]   = useState(false)
   const [mapOpen, setMapOpen]       = useState(false)
   const [saving, setSaving]         = useState(false)
-  const [mapPin, setMapPin]         = useState(null)   // { lat, lng } | null
+  const [mapPin, setMapPin]         = useState(null)
   const [usuarios, setUsuarios]     = useState<Usuario[]>([])
+
+  // Value is the API value (Spanish); label is what's shown to the user
+  const FRECUENCIAS = [
+    { value: 'Diario',    label: t('planificar.freqDaily') },
+    { value: 'Semanal',   label: t('planificar.freqWeekly') },
+    { value: 'Quincenal', label: t('planificar.freqBiweekly') },
+    { value: 'Mensual',   label: t('planificar.freqMonthly') },
+  ]
+  const DIAS = [
+    { value: 'Lun', label: t('planificar.dayMon') },
+    { value: 'Mar', label: t('planificar.dayTue') },
+    { value: 'Mié', label: t('planificar.dayWed') },
+    { value: 'Jue', label: t('planificar.dayThu') },
+    { value: 'Vie', label: t('planificar.dayFri') },
+    { value: 'Sáb', label: t('planificar.daySat') },
+    { value: 'Dom', label: t('planificar.daySun') },
+  ]
+  const MEDIOS = [
+    { value: 'Drones',    label: t('planificar.meanDrones') },
+    { value: 'Motor',     label: t('planificar.meanMotor') },
+    { value: 'Auto',      label: t('planificar.meanAuto') },
+    { value: 'Camioneta', label: t('planificar.meanTruck') },
+  ]
 
   useEffect(() => {
     usuariosService.getAll()
@@ -73,10 +95,10 @@ export default function PlanificarMonitoreoPage() {
 
   function validate() {
     const e = {}
-    if (!form.nombre.trim()) e.nombre = 'Requerido'
-    if (!form.fechaInicio) e.fechaInicio = 'Requerido'
-    if (!form.frecuencia) e.frecuencia = 'Requerido'
-    if (!form.responsable) e.responsable = 'Requerido'
+    if (!form.nombre.trim()) e.nombre = t('planificar.required')
+    if (!form.fechaInicio) e.fechaInicio = t('planificar.required')
+    if (!form.frecuencia) e.frecuencia = t('planificar.required')
+    if (!form.responsable) e.responsable = t('planificar.required')
     return e
   }
 
@@ -96,10 +118,10 @@ export default function PlanificarMonitoreoPage() {
         responsable: form.responsable,
         gps: mapPin ? `${mapPin.lat.toFixed(5)}, ${mapPin.lng.toFixed(5)}` : null,
       })
-      toast.success('Plan de monitoreo creado correctamente')
+      toast.success(t('planificar.createSuccess'))
       setSubmitted(true)
     } catch {
-      toast.error('Error al crear el plan de monitoreo. Inténtalo de nuevo.')
+      toast.error(t('planificar.createError'))
     } finally {
       setSaving(false)
     }
@@ -108,13 +130,13 @@ export default function PlanificarMonitoreoPage() {
   if (submitted) {
     return (
       <>
-        <BackofficeTopbar title="Planificación de Monitoreo" backTo={`/admin/monitoreo/${id}`} />
+        <BackofficeTopbar title={t('planificar.title')} backTo={`/admin/monitoreo/${id}`} />
         <main className="flex flex-col items-center justify-center p-16 gap-4">
           <CheckCircle className="h-16 w-16 text-emerald-500" />
-          <h2 className="text-xl font-bold text-primary">Monitoreo creado exitosamente</h2>
-          <p className="text-sm text-gray-500">El plan de monitoreo ha sido registrado.</p>
+          <h2 className="text-xl font-bold text-primary">{t('planificar.successTitle')}</h2>
+          <p className="text-sm text-gray-500">{t('planificar.successMsg')}</p>
           <button onClick={() => navigate(`/admin/monitoreo/${id}`)} className="mt-4 rounded-full bg-primary px-6 py-2.5 text-sm font-semibold text-white hover:bg-primary/90 transition-colors">
-            Ver Monitoreo
+            {t('planificar.viewMonitoreo')}
           </button>
         </main>
       </>
@@ -123,62 +145,60 @@ export default function PlanificarMonitoreoPage() {
 
   return (
     <>
-      <BackofficeTopbar title="Planificación de Monitoreo" backTo={`/admin/monitoreo/${id}`} />
+      <BackofficeTopbar title={t('planificar.title')} backTo={`/admin/monitoreo/${id}`} />
 
       <main className="p-8">
         <div data-tour="backoffice-plan-form" className="bg-white rounded-2xl p-6 shadow-sm">
-          <h2 className="text-sm font-bold text-gray-700 mb-6">Planificación del monitoreo</h2>
+          <h2 className="text-sm font-bold text-gray-700 mb-6">{t('planificar.formTitle')}</h2>
 
           <div className="grid grid-cols-3 gap-5 mb-5">
-            {/* Row 1 */}
             <div>
-              <Label>Nombre del monitoreo</Label>
-              <Input placeholder="Nombre del monitoreo" value={form.nombre} onChange={(e) => set('nombre', e.target.value)} error={errors.nombre} />
+              <Label>{t('planificar.nameLabel')}</Label>
+              <Input placeholder={t('planificar.namePlaceholder')} value={form.nombre} onChange={(e) => set('nombre', e.target.value)} error={errors.nombre} />
             </div>
             <div>
-              <Label required>Fecha de inicio de monitoreo</Label>
+              <Label required>{t('planificar.startDateLabel')}</Label>
               <Input type="date" value={form.fechaInicio} onChange={(e) => set('fechaInicio', e.target.value)} error={errors.fechaInicio} />
             </div>
             <div>
-              <Label>Hora de inicio de monitoreo</Label>
+              <Label>{t('planificar.startTimeLabel')}</Label>
               <Input type="time" value={form.horaInicio} onChange={(e) => set('horaInicio', e.target.value)} />
             </div>
           </div>
 
           <div className="grid grid-cols-3 gap-5 mb-5">
-            {/* Row 2 */}
             <div>
-              <Label required>Frecuencia de monitoreo</Label>
+              <Label required>{t('planificar.frequencyLabel')}</Label>
               <select
                 value={form.frecuencia}
                 onChange={(e) => set('frecuencia', e.target.value)}
                 className={`w-full rounded-xl border px-3.5 py-2.5 text-sm text-gray-700 outline-none bg-white transition-colors ${errors.frecuencia ? 'border-action' : 'border-gray-200 focus:border-primary focus:ring-1 focus:ring-primary'}`}
               >
-                <option value="">Seleccione una frecuencia</option>
-                {FRECUENCIAS.map((f) => <option key={f} value={f}>{f}</option>)}
+                <option value="">{t('planificar.frequencyPlaceholder')}</option>
+                {FRECUENCIAS.map((f) => <option key={f.value} value={f.value}>{f.label}</option>)}
               </select>
               {errors.frecuencia && <p className="mt-1 text-xs text-action">{errors.frecuencia}</p>}
             </div>
 
             <div>
-              <Label>Días de monitoreo semanal</Label>
+              <Label>{t('planificar.daysLabel')}</Label>
               <div className="flex flex-wrap gap-x-3 gap-y-2 mt-1">
                 {DIAS.map((d) => (
-                  <label key={d} className="flex items-center gap-1.5 cursor-pointer text-sm text-gray-600">
-                    <input type="checkbox" checked={form.diasSemanales.includes(d)} onChange={() => toggleArray('diasSemanales', d)} className="accent-primary w-4 h-4" />
-                    {d}
+                  <label key={d.value} className="flex items-center gap-1.5 cursor-pointer text-sm text-gray-600">
+                    <input type="checkbox" checked={form.diasSemanales.includes(d.value)} onChange={() => toggleArray('diasSemanales', d.value)} className="accent-primary w-4 h-4" />
+                    {d.label}
                   </label>
                 ))}
               </div>
             </div>
 
             <div>
-              <Label>Medios o herramientas</Label>
+              <Label>{t('planificar.meansLabel')}</Label>
               <div className="grid grid-cols-2 gap-x-3 gap-y-2 mt-1">
                 {MEDIOS.map((m) => (
-                  <label key={m} className="flex items-center gap-1.5 cursor-pointer text-sm text-gray-600">
-                    <input type="checkbox" checked={form.medios.includes(m)} onChange={() => toggleArray('medios', m)} className="accent-primary w-4 h-4" />
-                    {m}
+                  <label key={m.value} className="flex items-center gap-1.5 cursor-pointer text-sm text-gray-600">
+                    <input type="checkbox" checked={form.medios.includes(m.value)} onChange={() => toggleArray('medios', m.value)} className="accent-primary w-4 h-4" />
+                    {m.label}
                   </label>
                 ))}
               </div>
@@ -186,15 +206,14 @@ export default function PlanificarMonitoreoPage() {
           </div>
 
           <div className="grid grid-cols-3 gap-5 mb-8">
-            {/* Row 3 */}
             <div className="col-span-2">
-              <Label required>Responsable del monitoreo</Label>
+              <Label required>{t('planificar.responsibleLabel')}</Label>
               <select
                 value={form.responsable}
                 onChange={(e) => set('responsable', e.target.value)}
                 className={`w-full rounded-xl border px-3.5 py-2.5 text-sm text-gray-700 outline-none bg-white transition-colors ${errors.responsable ? 'border-action' : 'border-gray-200 focus:border-primary focus:ring-1 focus:ring-primary'}`}
               >
-                <option value="">Seleccione un responsable</option>
+                <option value="">{t('planificar.responsiblePlaceholder')}</option>
                 {usuarios.map((u) => (
                   <option key={u.IDUsuario} value={u.IDUsuario}>
                     {u.nombre_completo}{u.cargo ? ` — ${u.cargo}` : ''}
@@ -210,7 +229,7 @@ export default function PlanificarMonitoreoPage() {
                 className="w-full flex items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-white hover:bg-primary/90 transition-colors"
               >
                 <MapPin className="h-4 w-4" />
-                Definir Ruta en el Mapa
+                {t('planificar.defineRouteBtn')}
               </button>
             </div>
           </div>
@@ -218,32 +237,31 @@ export default function PlanificarMonitoreoPage() {
           {mapPin && (
             <div className="mb-5 flex items-center gap-2 rounded-xl bg-primary/10 px-4 py-2.5 text-sm text-primary border border-primary/20">
               <MapPin className="h-4 w-4 shrink-0" />
-              <span>Punto en mapa definido: <span className="font-mono text-xs">{mapPin.lat.toFixed(4)}, {mapPin.lng.toFixed(4)}</span></span>
-              <button onClick={() => setMapPin(null)} className="ml-auto text-xs text-action hover:underline">Quitar</button>
+              <span>{t('planificar.pinDefined')} <span className="font-mono text-xs">{mapPin.lat.toFixed(4)}, {mapPin.lng.toFixed(4)}</span></span>
+              <button onClick={() => setMapPin(null)} className="ml-auto text-xs text-action hover:underline">{t('planificar.removePin')}</button>
             </div>
           )}
 
           <div className="flex items-center justify-between">
             <button onClick={() => navigate(`/admin/monitoreo/${id}`)} className="rounded-lg border border-gray-300 bg-white px-8 py-2.5 text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-colors">
-              Volver atrás
+              {t('planificar.backBtn')}
             </button>
             <button onClick={handleSubmit} disabled={saving} className="rounded-lg bg-primary px-8 py-2.5 text-sm font-semibold text-white hover:bg-primary/90 disabled:opacity-50 transition-colors">
-              {saving ? 'Creando...' : 'Crear Monitoreo'}
+              {saving ? t('planificar.creating') : t('planificar.createBtn')}
             </button>
           </div>
         </div>
       </main>
 
-      {/* Map modal — Leaflet interactive picker */}
       <Modal
         open={mapOpen}
         onClose={() => setMapOpen(false)}
-        title="Definir Ruta en el Mapa"
-        confirmLabel={mapPin ? 'Confirmar ubicación' : 'Cerrar sin seleccionar'}
+        title={t('planificar.mapModalTitle')}
+        confirmLabel={mapPin ? t('planificar.mapConfirm') : t('planificar.mapClose')}
         onConfirm={() => setMapOpen(false)}
       >
         <p className="text-xs text-gray-500 mb-3">
-          Haz clic en el mapa para marcar el punto de inicio de la ruta de monitoreo.
+          {t('planificar.mapInstruction')}
         </p>
         <LocationPickerMap
           lat={mapPin?.lat}

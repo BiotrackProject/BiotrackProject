@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Search, Check, X as XIcon, UserCheck } from 'lucide-react'
 import BackofficeTopbar from '../../../components/backoffice/BackofficeTopbar'
 import Modal from '../../../components/ui/Modal'
@@ -7,22 +8,6 @@ import LoadingSpinner from '../../../components/ui/LoadingSpinner'
 import { usuariosService } from '../../../services/usuariosService'
 import type { SolicitudRegistro, Rol } from '../../../services/usuariosService'
 import { toast } from '../../../utils/toast'
-
-const COLUMNS = ['Solicitante', 'Correo', 'Cargo / Institución', 'Estado', 'Fecha', 'Acciones']
-
-const ESTADO_TABS = [
-  { key: 'Pendientes', label: 'Pendientes' },
-  { key: 'Aprobada', label: 'Aprobadas' },
-  { key: 'Rechazada', label: 'Rechazadas' },
-  { key: '', label: 'Todas' },
-]
-
-const ESTADO_LABEL: Record<string, string> = {
-  Pendiente_Aprobacion: 'Pendiente',
-  Pendiente_Info: 'Pendiente info',
-  Aprobada: 'Aprobada',
-  Rechazada: 'Rechazada',
-}
 
 const ESTADO_STYLES: Record<string, string> = {
   Pendiente_Aprobacion: 'bg-amber-50 text-amber-600 border border-amber-200',
@@ -45,6 +30,13 @@ function formatFecha(iso: string | null) {
 }
 
 function EstadoBadge({ estado }: Readonly<{ estado: string }>) {
+  const { t } = useTranslation()
+  const ESTADO_LABEL: Record<string, string> = {
+    Pendiente_Aprobacion: t('solicitudes.statusPending'),
+    Pendiente_Info: t('solicitudes.statusPendingInfo'),
+    Aprobada: t('solicitudes.statusApproved'),
+    Rechazada: t('solicitudes.statusRejected'),
+  }
   const style = ESTADO_STYLES[estado] ?? 'bg-gray-100 text-gray-500 border border-gray-200'
   return (
     <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${style}`}>
@@ -60,12 +52,29 @@ function fieldCls(err?: string) {
 const EMPTY_APROBAR = { rol_id: '', contrasena: '', comentario: '' }
 
 export default function SolicitudesPage() {
+  const { t } = useTranslation()
   const [solicitudes, setSolicitudes] = useState<SolicitudRegistro[]>([])
   const [roles, setRoles] = useState<Rol[]>([])
   const [loading, setLoading] = useState(true)
   const [query, setQuery] = useState('')
   const [tab, setTab] = useState('Pendientes')
   const [saving, setSaving] = useState(false)
+
+  const COLUMNS = [
+    t('solicitudes.colApplicant'),
+    t('solicitudes.colEmail'),
+    t('solicitudes.colPosition'),
+    t('solicitudes.colStatus'),
+    t('solicitudes.colDate'),
+    t('solicitudes.colActions'),
+  ]
+
+  const ESTADO_TABS = [
+    { key: 'Pendientes', label: t('solicitudes.tabPending') },
+    { key: 'Aprobada',   label: t('solicitudes.tabApproved') },
+    { key: 'Rechazada',  label: t('solicitudes.tabRejected') },
+    { key: '',           label: t('solicitudes.tabAll') },
+  ]
 
   // Aprobar modal
   const [aprobarModal, setAprobarModal] = useState<{ open: boolean; solicitud: SolicitudRegistro | null }>({ open: false, solicitud: null })
@@ -79,9 +88,9 @@ export default function SolicitudesPage() {
   useEffect(() => {
     Promise.all([usuariosService.getSolicitudes(), usuariosService.getRoles()])
       .then(([s, r]) => { setSolicitudes(s); setRoles(r) })
-      .catch(() => toast.error('Error al cargar solicitudes'))
+      .catch(() => toast.error(t('solicitudes.loadError')))
       .finally(() => setLoading(false))
-  }, [])
+  }, [t])
 
   const counts = useMemo(() => ({
     Pendientes: solicitudes.filter((s) => isPendiente(s.estado)).length,
@@ -113,8 +122,8 @@ export default function SolicitudesPage() {
 
   function validateAprobar() {
     const errs: Record<string, string> = {}
-    if (!aprobarForm.rol_id) errs.rol_id = 'Selecciona un rol'
-    if (!aprobarForm.contrasena.trim() || aprobarForm.contrasena.length < 8) errs.contrasena = 'Mínimo 8 caracteres'
+    if (!aprobarForm.rol_id) errs.rol_id = t('solicitudes.validationRole')
+    if (!aprobarForm.contrasena.trim() || aprobarForm.contrasena.length < 8) errs.contrasena = t('solicitudes.validationPassword')
     setAprobarErrors(errs)
     return Object.keys(errs).length === 0
   }
@@ -132,10 +141,10 @@ export default function SolicitudesPage() {
         comentario: aprobarForm.comentario || undefined,
       })
       setSolicitudes((prev) => prev.map((s) => s.id === solicitud.id ? { ...s, estado: 'Aprobada', comentario_admin: aprobarForm.comentario || null } : s))
-      toast.success(`Solicitud de ${solicitud.nombre_completo} aprobada. Se le envió la contraseña por correo.`)
+      toast.success(t('solicitudes.approvedMsg', { name: solicitud.nombre_completo }))
       setAprobarModal({ open: false, solicitud: null })
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Error al aprobar solicitud')
+      toast.error(err instanceof Error ? err.message : t('solicitudes.approveError'))
     } finally {
       setSaving(false)
     }
@@ -156,10 +165,10 @@ export default function SolicitudesPage() {
         comentario: rechazarComentario || undefined,
       })
       setSolicitudes((prev) => prev.map((s) => s.id === solicitud.id ? { ...s, estado: 'Rechazada', comentario_admin: rechazarComentario || null } : s))
-      toast.success(`Solicitud de ${solicitud.nombre_completo} rechazada`)
+      toast.success(t('solicitudes.rejectedMsg', { name: solicitud.nombre_completo }))
       setRechazarModal({ open: false, solicitud: null })
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Error al rechazar solicitud')
+      toast.error(err instanceof Error ? err.message : t('solicitudes.rejectError'))
     } finally {
       setSaving(false)
     }
@@ -167,7 +176,7 @@ export default function SolicitudesPage() {
 
   return (
     <>
-      <BackofficeTopbar title="Solicitudes de Registro" />
+      <BackofficeTopbar title={t('solicitudes.title')} />
 
       <main className="p-4 sm:p-6 lg:p-8">
         <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
@@ -176,8 +185,8 @@ export default function SolicitudesPage() {
             <div className="relative w-full sm:max-w-md">
               <input
                 type="text"
-                aria-label="Buscar solicitud"
-                placeholder="Buscar por nombre o correo..."
+                aria-label={t('solicitudes.searchLabel')}
+                placeholder={t('solicitudes.searchPlaceholder')}
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 className="w-full rounded-xl border border-gray-200 py-2.5 pl-4 pr-10 text-sm text-gray-700 placeholder:text-gray-400 outline-none focus:border-primary focus:ring-1 focus:ring-primary/20"
@@ -186,19 +195,19 @@ export default function SolicitudesPage() {
             </div>
             {/* Tabs por estado */}
             <div className="flex flex-wrap gap-2">
-              {ESTADO_TABS.map((t) => (
+              {ESTADO_TABS.map((tabItem) => (
                 <button
-                  key={t.key}
-                  onClick={() => setTab(t.key)}
+                  key={tabItem.key}
+                  onClick={() => setTab(tabItem.key)}
                   className={`inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold transition-colors ${
-                    tab === t.key
+                    tab === tabItem.key
                       ? 'bg-primary text-white'
                       : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
                   }`}
                 >
-                  {t.label}
-                  <span className={`rounded-full px-1.5 text-[10px] ${tab === t.key ? 'bg-white/20' : 'bg-white'}`}>
-                    {counts[t.key] ?? 0}
+                  {tabItem.label}
+                  <span className={`rounded-full px-1.5 text-[10px] ${tab === tabItem.key ? 'bg-white/20' : 'bg-white'}`}>
+                    {counts[tabItem.key] ?? 0}
                   </span>
                 </button>
               ))}
@@ -212,7 +221,7 @@ export default function SolicitudesPage() {
               {/* Mobile list */}
               <div className="divide-y divide-gray-100 lg:hidden">
                 {filtered.length === 0 ? (
-                  <EmptyState title="Sin solicitudes" description="No se encontraron solicitudes con ese criterio." />
+                  <EmptyState title={t('solicitudes.emptyTitle')} description={t('solicitudes.emptyDesc')} />
                 ) : filtered.map((s) => (
                   <article key={s.id} className="space-y-3 px-4 py-4 sm:px-5">
                     <div className="flex items-start justify-between gap-3">
@@ -232,13 +241,13 @@ export default function SolicitudesPage() {
                           onClick={() => openAprobar(s)}
                           className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700 hover:bg-emerald-100"
                         >
-                          <Check className="h-3.5 w-3.5" /> Aprobar
+                          <Check className="h-3.5 w-3.5" /> {t('solicitudes.approveBtn')}
                         </button>
                         <button
                           onClick={() => openRechazar(s)}
                           className="inline-flex items-center gap-1.5 rounded-lg bg-red-50 px-3 py-1.5 text-xs font-semibold text-action hover:bg-red-100"
                         >
-                          <XIcon className="h-3.5 w-3.5" /> Rechazar
+                          <XIcon className="h-3.5 w-3.5" /> {t('solicitudes.rejectBtn')}
                         </button>
                       </div>
                     )}
@@ -258,7 +267,7 @@ export default function SolicitudesPage() {
                   </thead>
                   <tbody className="divide-y divide-gray-100">
                     {filtered.length === 0 ? (
-                      <tr><td colSpan={6}><EmptyState title="Sin solicitudes" description="No se encontraron solicitudes con ese criterio." /></td></tr>
+                      <tr><td colSpan={6}><EmptyState title={t('solicitudes.emptyTitle')} description={t('solicitudes.emptyDesc')} /></td></tr>
                     ) : filtered.map((s) => (
                       <tr key={s.id} className="hover:bg-blue-50/30 transition-colors">
                         <td className="px-5 py-4">
@@ -277,22 +286,22 @@ export default function SolicitudesPage() {
                           {isPendiente(s.estado) ? (
                             <div className="flex items-center gap-2">
                               <button
-                                title="Aprobar"
+                                title={t('solicitudes.approveBtn')}
                                 onClick={() => openAprobar(s)}
                                 className="flex h-8 items-center justify-center gap-1.5 rounded-lg bg-emerald-50 px-3 text-xs font-semibold text-emerald-700 hover:bg-emerald-100 transition-colors"
                               >
-                                <Check className="h-4 w-4" /> Aprobar
+                                <Check className="h-4 w-4" /> {t('solicitudes.approveBtn')}
                               </button>
                               <button
-                                title="Rechazar"
+                                title={t('solicitudes.rejectBtn')}
                                 onClick={() => openRechazar(s)}
                                 className="flex h-8 items-center justify-center gap-1.5 rounded-lg bg-red-50 px-3 text-xs font-semibold text-action hover:bg-red-100 transition-colors"
                               >
-                                <XIcon className="h-4 w-4" /> Rechazar
+                                <XIcon className="h-4 w-4" /> {t('solicitudes.rejectBtn')}
                               </button>
                             </div>
                           ) : (
-                            <span className="text-xs text-gray-400">{s.comentario_admin || 'Revisada'}</span>
+                            <span className="text-xs text-gray-400">{s.comentario_admin || t('solicitudes.reviewed')}</span>
                           )}
                         </td>
                       </tr>
@@ -309,8 +318,8 @@ export default function SolicitudesPage() {
       <Modal
         open={aprobarModal.open}
         onClose={() => setAprobarModal({ open: false, solicitud: null })}
-        title="Aprobar solicitud"
-        confirmLabel="Aprobar y crear cuenta"
+        title={t('solicitudes.approveTitle')}
+        confirmLabel={t('solicitudes.approveConfirm')}
         onConfirm={handleAprobar}
         loading={saving}
       >
@@ -319,41 +328,41 @@ export default function SolicitudesPage() {
             <div className="flex items-center gap-2.5 rounded-lg bg-emerald-50 px-3 py-2.5 text-emerald-700">
               <UserCheck className="h-4 w-4 shrink-0" />
               <p className="text-xs">
-                Se creará una cuenta para{' '}
-                <span className="font-semibold">{aprobarModal.solicitud.nombre_completo}</span>{' '}
-                ({aprobarModal.solicitud.correo_electronico}). Recibirá esta contraseña por
-                correo y deberá cambiarla en su primer inicio de sesión.
+                {t('solicitudes.approveInfo', {
+                  name: aprobarModal.solicitud.nombre_completo,
+                  email: aprobarModal.solicitud.correo_electronico,
+                })}
               </p>
             </div>
             <div className="flex flex-col gap-1">
-              <label htmlFor="aprobar-rol" className="text-xs font-semibold text-gray-600">Rol asignado *</label>
+              <label htmlFor="aprobar-rol" className="text-xs font-semibold text-gray-600">{t('solicitudes.roleLabel')}</label>
               <select
                 id="aprobar-rol"
                 value={aprobarForm.rol_id}
                 onChange={(e) => setAprobarForm((p) => ({ ...p, rol_id: e.target.value }))}
                 className={`rounded-lg border px-3 py-2.5 text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 ${aprobarErrors.rol_id ? 'border-action' : 'border-gray-200'}`}
               >
-                <option value="">Selecciona un rol</option>
+                <option value="">{t('solicitudes.rolePlaceholder')}</option>
                 {roles.map((r) => <option key={r.id} value={r.id}>{r.nombre}</option>)}
               </select>
               {aprobarErrors.rol_id && <p className="text-xs text-action">{aprobarErrors.rol_id}</p>}
             </div>
             <div className="flex flex-col gap-1">
-              <label htmlFor="aprobar-contrasena" className="text-xs font-semibold text-gray-600">Contraseña temporal *</label>
+              <label htmlFor="aprobar-contrasena" className="text-xs font-semibold text-gray-600">{t('solicitudes.passwordLabel')}</label>
               <input
                 id="aprobar-contrasena"
                 type="password"
                 value={aprobarForm.contrasena}
                 onChange={(e) => setAprobarForm((p) => ({ ...p, contrasena: e.target.value }))}
                 className={fieldCls(aprobarErrors.contrasena)}
-                placeholder="Mínimo 8 caracteres"
+                placeholder={t('solicitudes.passwordPlaceholder')}
               />
               {aprobarErrors.contrasena
                 ? <p className="text-xs text-action">{aprobarErrors.contrasena}</p>
-                : <p className="text-xs text-gray-400">Se enviará por correo; el usuario la cambiará al iniciar sesión.</p>}
+                : <p className="text-xs text-gray-400">{t('solicitudes.passwordEmailHint')}</p>}
             </div>
             <div className="flex flex-col gap-1">
-              <label htmlFor="aprobar-comentario" className="text-xs font-semibold text-gray-600">Comentario (opcional)</label>
+              <label htmlFor="aprobar-comentario" className="text-xs font-semibold text-gray-600">{t('solicitudes.commentLabel')}</label>
               <textarea
                 id="aprobar-comentario"
                 value={aprobarForm.comentario}
@@ -361,7 +370,7 @@ export default function SolicitudesPage() {
                 rows={2}
                 maxLength={300}
                 className={fieldCls()}
-                placeholder="Nota interna o mensaje de bienvenida"
+                placeholder={t('solicitudes.commentPlaceholder')}
               />
             </div>
           </div>
@@ -372,21 +381,19 @@ export default function SolicitudesPage() {
       <Modal
         open={rechazarModal.open}
         onClose={() => setRechazarModal({ open: false, solicitud: null })}
-        title="Rechazar solicitud"
+        title={t('solicitudes.rejectTitle')}
         variant="danger"
-        confirmLabel="Sí, rechazar"
+        confirmLabel={t('solicitudes.rejectConfirm')}
         onConfirm={handleRechazar}
         loading={saving}
       >
         {rechazarModal.solicitud && (
           <div className="flex flex-col gap-4">
             <p>
-              ¿Confirmas rechazar la solicitud de{' '}
-              <span className="font-semibold text-gray-800">{rechazarModal.solicitud.nombre_completo}</span>?
-              Se le notificará por correo.
+              {t('solicitudes.rejectMsg', { name: rechazarModal.solicitud.nombre_completo })}
             </p>
             <div className="flex flex-col gap-1">
-              <label htmlFor="rechazar-motivo" className="text-xs font-semibold text-gray-600">Motivo (opcional)</label>
+              <label htmlFor="rechazar-motivo" className="text-xs font-semibold text-gray-600">{t('solicitudes.reasonLabel')}</label>
               <textarea
                 id="rechazar-motivo"
                 value={rechazarComentario}
@@ -394,7 +401,7 @@ export default function SolicitudesPage() {
                 rows={3}
                 maxLength={300}
                 className={fieldCls()}
-                placeholder="Indica el motivo del rechazo"
+                placeholder={t('solicitudes.reasonPlaceholder')}
               />
             </div>
           </div>

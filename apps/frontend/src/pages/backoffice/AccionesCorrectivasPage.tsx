@@ -15,10 +15,8 @@ import type { Accion, EstadoAccion } from '../../services/accionesService'
 import { toast } from '../../utils/toast'
 
 const PAGE_SIZE_OPTIONS = [5, 10, 20]
-const COLUMNS = ['ID', 'Título', 'Fecha Planificada', 'Estado', 'Responsable', 'Acciones']
 
-function exportCSV(data: Accion[]) {
-  const headers = ['IDAccion', 'Título', 'Estado', 'Fecha Planificación', 'Responsable']
+function exportCSV(data: Accion[], headers: string[]) {
   const rows = data.map((a) => [
     a.IDAccion,
     `"${(a.titulo ?? '').replace(/"/g, "'")}"`,
@@ -38,6 +36,15 @@ export default function AccionesCorrectivasPage() {
   const { t } = useTranslation()
   const navigate = useNavigate()
 
+  const COLUMNS = [
+    t('acciones.colId'),
+    t('acciones.colTitle'),
+    t('acciones.colPlannedDate'),
+    t('acciones.colStatus'),
+    t('acciones.colResponsible'),
+    t('acciones.colActions'),
+  ]
+
   const [acciones, setAcciones] = useState<Accion[]>([])
   const [loading, setLoading] = useState(true)
   const [query, setQuery] = useState('')
@@ -53,7 +60,7 @@ export default function AccionesCorrectivasPage() {
   useEffect(() => {
     accionesService.getAll()
       .then((res) => setAcciones(res.data))
-      .catch(() => toast.error('Error al cargar las acciones'))
+      .catch(() => toast.error(t('acciones.loadError')))
       .finally(() => setLoading(false))
   }, [])
 
@@ -82,7 +89,7 @@ export default function AccionesCorrectivasPage() {
       toast.success(t('acciones.statusUpdated', { status: t('estados.' + nuevoEstado) }))
       setStatusModal({ open: false, accion: null })
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Error al cambiar estado')
+      toast.error(err instanceof Error ? err.message : t('acciones.statusUpdateError'))
     } finally {
       setSaving(false)
     }
@@ -94,7 +101,7 @@ export default function AccionesCorrectivasPage() {
         title={t('acciones.title')}
         actions={
           <button
-            onClick={() => exportCSV(filtered)}
+            onClick={() => exportCSV(filtered, [t('acciones.exportIdLabel'), t('acciones.exportTitleLabel'), t('acciones.exportStatusLabel'), t('acciones.exportDateLabel'), t('acciones.exportResponsibleLabel')])}
             className="flex items-center gap-1.5 rounded-lg border border-emerald-500 px-3 py-2 text-xs font-semibold text-emerald-600 transition-colors hover:bg-emerald-50 sm:px-4 sm:text-sm"
           >
             <Download className="h-4 w-4" />

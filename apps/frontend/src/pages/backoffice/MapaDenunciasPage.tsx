@@ -11,8 +11,13 @@ import { toast } from '../../utils/toast'
 import { ESTADOS_DENUNCIA, ESTADO_LABEL } from '../../services/denunciasService'
 import { DR_CENTER } from '../../constants/mapConfig'
 
-/** Niveles de urgencia reales (nivel_urgencia del backend). */
-const URGENCIA_NIVELES = ['Baja', 'Media', 'Alta', 'Riesgo inmediato']
+/** Backend urgency values paired with i18n keys. */
+const URGENCIA_OPTIONS = [
+  { value: 'Baja',            key: 'mapa.urgencyBaja' },
+  { value: 'Media',           key: 'mapa.urgencyMedia' },
+  { value: 'Alta',            key: 'mapa.urgencyAlta' },
+  { value: 'Riesgo inmediato', key: 'mapa.urgencyInmediato' },
+]
 
 export default function MapaDenunciasPage() {
   const { t } = useTranslation()
@@ -131,8 +136,8 @@ export default function MapaDenunciasPage() {
             <div className="relative">
               <input
                 type="text"
-                aria-label="Buscar marcadores"
-                placeholder="Buscar código, ubicación, descripción..."
+                aria-label={t('mapa.searchLabel')}
+                placeholder={t('mapa.searchPlaceholder')}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full rounded-xl border border-gray-200 py-2 pl-9 pr-3 text-sm text-gray-700 placeholder:text-gray-400 outline-none focus:border-primary focus:ring-1 focus:ring-primary/20"
@@ -155,7 +160,7 @@ export default function MapaDenunciasPage() {
 
             {/* View type */}
             <div>
-              <p className="text-xs font-semibold text-gray-600 mb-1.5">Tipo</p>
+              <p className="text-xs font-semibold text-gray-600 mb-1.5">{t('mapa.typeLabel')}</p>
               <div className="flex flex-col gap-1">
                 {VIEW_TYPES.map((v) => (
                   <button
@@ -171,29 +176,29 @@ export default function MapaDenunciasPage() {
 
             {/* Estado */}
             <div>
-              <label htmlFor="filter-estado" className="text-xs font-semibold text-gray-600 mb-1.5 block">Estado</label>
+              <label htmlFor="filter-estado" className="text-xs font-semibold text-gray-600 mb-1.5 block">{t('mapa.statusLabel')}</label>
               <select
                 id="filter-estado"
                 value={filterEstado}
                 onChange={(e) => setFilterEstado(e.target.value)}
                 className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:border-primary text-gray-700"
               >
-                <option value="">Todos los estados</option>
-                {ESTADOS_DENUNCIA.map((e) => <option key={e} value={e}>{ESTADO_LABEL[e]}</option>)}
+                <option value="">{t('mapa.allStatuses')}</option>
+                {ESTADOS_DENUNCIA.map((e) => <option key={e} value={e}>{t('estados.' + e)}</option>)}
               </select>
             </div>
 
             {/* Urgencia */}
             <div>
-              <label htmlFor="filter-urgencia" className="text-xs font-semibold text-gray-600 mb-1.5 block">Nivel de urgencia</label>
+              <label htmlFor="filter-urgencia" className="text-xs font-semibold text-gray-600 mb-1.5 block">{t('mapa.riskLabel')}</label>
               <select
                 id="filter-urgencia"
                 value={filterRiesgo}
                 onChange={(e) => setFilterRiesgo(e.target.value)}
                 className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:border-primary text-gray-700"
               >
-                <option value="">Todos los niveles</option>
-                {URGENCIA_NIVELES.map((r) => <option key={r} value={r}>{r}</option>)}
+                <option value="">{t('mapa.allRiskLevels')}</option>
+                {URGENCIA_OPTIONS.map(({ value, key }) => <option key={value} value={value}>{t(key)}</option>)}
               </select>
             </div>
 
@@ -201,7 +206,7 @@ export default function MapaDenunciasPage() {
             <div>
               <p className="text-xs font-semibold text-gray-600 mb-1.5 flex items-center gap-1.5">
                 <Layers className="h-3.5 w-3.5" />
-                Colorear por
+                {t('mapa.colorByLabel')}
               </p>
               <div className="flex gap-2">
                 {COLOR_MODES.map((m) => (
@@ -295,7 +300,7 @@ export default function MapaDenunciasPage() {
               <div className="flex gap-2 mb-3">
                 <StatusBadge status={selectedLocation.estado} />
                 {selectedLocation.nivelRiesgo && (
-                  <span className="text-xs font-semibold text-gray-500">Urgencia: {selectedLocation.nivelRiesgo}</span>
+                  <span className="text-xs font-semibold text-gray-500">{t('mapa.riskPrefix')} {selectedLocation.nivelRiesgo}</span>
                 )}
               </div>
               <button

@@ -66,14 +66,14 @@ export default function DetalleAccionPage() {
   function exportAccion() {
     if (!accion) return
     const lines = [
-      `Acción Correctiva: ${accion.IDAccion}`,
-      `Título: ${accion.titulo}`,
-      `Estado: ${t('estados.' + accion.Estado)}`,
-      `Fecha planificada: ${accion.FechaPlanificacion ? new Date(accion.FechaPlanificacion).toLocaleDateString('es-DO') : 'N/A'}`,
-      `Fecha implementación: ${accion.FechaImplementacion ? new Date(accion.FechaImplementacion).toLocaleDateString('es-DO') : 'N/A'}`,
-      `Responsable: ${accion.responsable?.nombre_completo ?? 'N/A'}`,
-      `Descripción: ${accion.descripcion_accion ?? 'N/A'}`,
-      `Resultado: ${accion.Resultado ?? 'N/A'}`,
+      `${t('acciones.exportActionTitle')} ${accion.IDAccion}`,
+      `${t('acciones.exportTitleField')} ${accion.titulo}`,
+      `${t('acciones.exportStatusField')} ${t('estados.' + accion.Estado)}`,
+      `${t('acciones.exportPlannedDate')} ${accion.FechaPlanificacion ? new Date(accion.FechaPlanificacion).toLocaleDateString('es-DO') : 'N/A'}`,
+      `${t('acciones.exportImplDate')} ${accion.FechaImplementacion ? new Date(accion.FechaImplementacion).toLocaleDateString('es-DO') : 'N/A'}`,
+      `${t('acciones.exportResponsibleField')} ${accion.responsable?.nombre_completo ?? 'N/A'}`,
+      `${t('acciones.exportDescriptionField')} ${accion.descripcion_accion ?? 'N/A'}`,
+      `${t('acciones.exportResultField')} ${accion.Resultado ?? 'N/A'}`,
     ]
     const blob = new Blob([lines.join('\n')], { type: 'text/plain' })
     const url = URL.createObjectURL(blob)

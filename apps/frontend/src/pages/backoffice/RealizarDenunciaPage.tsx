@@ -51,19 +51,23 @@ function RadioGroup({ label, required, name, options, value, onChange, error }) 
     <div>
       <Label required={required}>{label}</Label>
       <div className="flex gap-6">
-        {options.map((opt) => (
-          <label key={opt} className="flex items-center gap-2 cursor-pointer text-sm text-gray-600">
-            <input
-              type="radio"
-              name={name}
-              value={opt}
-              checked={value === opt}
-              onChange={() => onChange(opt)}
-              className="accent-primary w-4 h-4"
-            />
-            {opt}
-          </label>
-        ))}
+        {options.map((opt) => {
+          const optValue = typeof opt === 'object' ? opt.value : opt
+          const optLabel = typeof opt === 'object' ? opt.label : opt
+          return (
+            <label key={optValue} className="flex items-center gap-2 cursor-pointer text-sm text-gray-600">
+              <input
+                type="radio"
+                name={name}
+                value={optValue}
+                checked={value === optValue}
+                onChange={() => onChange(optValue)}
+                className="accent-primary w-4 h-4"
+              />
+              {optLabel}
+            </label>
+          )
+        })}
       </div>
       {error && <p className="mt-1 text-xs text-action">{error}</p>}
     </div>
@@ -129,7 +133,7 @@ export default function RealizarDenunciaPage() {
       setSubmitted(true)
     },
     onError: (err) => {
-      toast.error(err instanceof Error ? err.message : 'Error al crear la denuncia')
+      toast.error(err instanceof Error ? err.message : t('realizarDenuncia.createError'))
     },
   })
 
@@ -139,17 +143,17 @@ export default function RealizarDenunciaPage() {
       onSubmit: ({ value }) => {
         const fields = {}
         const anon = value.anonimo === 'Sí'
-        if (!value.anonimo) fields.anonimo = 'Requerido'
-        if (!anon && !value.nombres.trim()) fields.nombres = 'Requerido'
-        if (!anon && !value.apellidos.trim()) fields.apellidos = 'Requerido'
-        if (!value.tipoActividad) fields.tipoActividad = 'Requerido'
-        if (!value.fechaIncidente) fields.fechaIncidente = 'Requerido'
-        if (!value.detalleUbicacion.trim()) fields.detalleUbicacion = 'Requerido'
-        if (!value.tipoExtraccion) fields.tipoExtraccion = 'Requerido'
-        if (!value.numPersonas) fields.numPersonas = 'Requerido'
-        if (!value.cantidadArena.trim()) fields.cantidadArena = 'Requerido'
-        if (!value.detalleActividad.trim()) fields.detalleActividad = 'Requerido'
-        if (!value.consentimiento) fields.consentimiento = 'Debes aceptar la declaración para continuar'
+        if (!value.anonimo) fields.anonimo = t('realizarDenuncia.required')
+        if (!anon && !value.nombres.trim()) fields.nombres = t('realizarDenuncia.required')
+        if (!anon && !value.apellidos.trim()) fields.apellidos = t('realizarDenuncia.required')
+        if (!value.tipoActividad) fields.tipoActividad = t('realizarDenuncia.required')
+        if (!value.fechaIncidente) fields.fechaIncidente = t('realizarDenuncia.required')
+        if (!value.detalleUbicacion.trim()) fields.detalleUbicacion = t('realizarDenuncia.required')
+        if (!value.tipoExtraccion) fields.tipoExtraccion = t('realizarDenuncia.required')
+        if (!value.numPersonas) fields.numPersonas = t('realizarDenuncia.required')
+        if (!value.cantidadArena.trim()) fields.cantidadArena = t('realizarDenuncia.required')
+        if (!value.detalleActividad.trim()) fields.detalleActividad = t('realizarDenuncia.required')
+        if (!value.consentimiento) fields.consentimiento = t('realizarDenuncia.consentError')
         return Object.keys(fields).length ? { fields } : undefined
       },
     },
@@ -188,11 +192,11 @@ export default function RealizarDenunciaPage() {
         <BackofficeTopbar title={t('realizarDenuncia.title')} backTo="/admin/denuncias" />
         <main className="flex flex-col items-center justify-center p-16 gap-4">
           <CheckCircle className="h-16 w-16 text-emerald-500" />
-          <h2 className="text-xl font-bold text-primary">Denuncia creada exitosamente</h2>
-          <p className="text-sm text-gray-500">La denuncia ha sido registrada en el sistema.</p>
+          <h2 className="text-xl font-bold text-primary">{t('realizarDenuncia.successTitle')}</h2>
+          <p className="text-sm text-gray-500">{t('realizarDenuncia.successMsg')}</p>
           {codigoSeguimiento && (
             <p className="text-sm text-gray-500">
-              Código de seguimiento:{' '}
+              {t('realizarDenuncia.trackingCodeLabel')}{' '}
               <span className="font-bold text-primary">{codigoSeguimiento}</span>
             </p>
           )}
@@ -228,10 +232,13 @@ export default function RealizarDenunciaPage() {
               <form.Field name="anonimo">
                 {(field) => (
                   <RadioGroup
-                    label="Deseas Permanecer Anónimo/a"
+                    label={t('realizarDenuncia.anonymousLabel')}
                     required
                     name="anonimo"
-                    options={['Sí', 'No']}
+                    options={[
+                      { value: 'Sí', label: t('realizarDenuncia.anonymousYes') },
+                      { value: 'No', label: t('realizarDenuncia.anonymousNo') },
+                    ]}
                     value={field.state.value}
                     onChange={(v) => field.handleChange(v)}
                     error={field.state.meta.errors[0]}
@@ -240,11 +247,11 @@ export default function RealizarDenunciaPage() {
               </form.Field>
             </div>
             <div>
-              <Label required={!isAnon}>Nombres</Label>
+              <Label required={!isAnon}>{t('realizarDenuncia.namesLabel')}</Label>
               <form.Field name="nombres">
                 {(field) => (
                   <Input
-                    placeholder="Nombres"
+                    placeholder={t('realizarDenuncia.namesLabel')}
                     value={field.state.value}
                     onChange={(e) => field.handleChange(e.target.value)}
                     disabled={isAnon}
@@ -254,11 +261,11 @@ export default function RealizarDenunciaPage() {
               </form.Field>
             </div>
             <div>
-              <Label required={!isAnon}>Apellidos</Label>
+              <Label required={!isAnon}>{t('realizarDenuncia.lastNameLabel')}</Label>
               <form.Field name="apellidos">
                 {(field) => (
                   <Input
-                    placeholder="Apellidos"
+                    placeholder={t('realizarDenuncia.lastNameLabel')}
                     value={field.state.value}
                     onChange={(e) => field.handleChange(e.target.value)}
                     disabled={isAnon}
@@ -269,12 +276,12 @@ export default function RealizarDenunciaPage() {
             </div>
             <div />
             <div>
-              <Label>Correo Electrónico</Label>
+              <Label>{t('realizarDenuncia.emailLabel')}</Label>
               <form.Field name="correo">
                 {(field) => (
                   <Input
                     type="email"
-                    placeholder="Correo Electrónico"
+                    placeholder={t('realizarDenuncia.emailLabel')}
                     value={field.state.value}
                     onChange={(e) => field.handleChange(e.target.value)}
                     disabled={isAnon}
@@ -283,12 +290,12 @@ export default function RealizarDenunciaPage() {
               </form.Field>
             </div>
             <div>
-              <Label>Teléfono de contacto</Label>
+              <Label>{t('realizarDenuncia.phoneLabel')}</Label>
               <form.Field name="telefono">
                 {(field) => (
                   <Input
                     type="tel"
-                    placeholder="(000)-000-000"
+                    placeholder={t('realizarDenuncia.phonePlaceholder')}
                     value={field.state.value}
                     onChange={(e) => field.handleChange(e.target.value)}
                     disabled={isAnon}
@@ -305,7 +312,7 @@ export default function RealizarDenunciaPage() {
           <SectionCard title={t('realizarDenuncia.locationInfo')}>
             <div className="grid grid-cols-3 gap-4">
             <div>
-              <Label required>Fecha del incidente</Label>
+              <Label required>{t('realizarDenuncia.dateLabel')}</Label>
               <form.Field name="fechaIncidente">
                 {(field) => (
                   <Input
@@ -318,7 +325,7 @@ export default function RealizarDenunciaPage() {
               </form.Field>
             </div>
             <div>
-              <Label>Hora aproximada</Label>
+              <Label>{t('realizarDenuncia.timeLabel')}</Label>
               <form.Field name="hora">
                 {(field) => (
                   <Input
@@ -330,11 +337,11 @@ export default function RealizarDenunciaPage() {
               </form.Field>
             </div>
             <div>
-              <Label>Coordenadas GPS</Label>
+              <Label>{t('realizarDenuncia.gpsLabel')}</Label>
               <form.Field name="gps">
                 {(field) => (
                   <Input
-                    placeholder="Ejemplo: 18.7357, -70.1627"
+                    placeholder={t('realizarDenuncia.gpsPlaceholder')}
                     value={field.state.value}
                     onChange={(e) => field.handleChange(e.target.value)}
                   />
@@ -342,13 +349,13 @@ export default function RealizarDenunciaPage() {
               </form.Field>
             </div>
             <div className="col-span-3">
-              <Label required>Detalle de la ubicación</Label>
+              <Label required>{t('realizarDenuncia.locationDetailLabel')}</Label>
               <form.Field name="detalleUbicacion">
                 {(field) => (
                   <>
                     <textarea
                       rows={3}
-                      placeholder="Describir la zona afectada..."
+                      placeholder={t('realizarDenuncia.locationDetailPlaceholder')}
                       value={field.state.value}
                       onChange={(e) => field.handleChange(e.target.value)}
                       className={`w-full rounded-xl border px-3.5 py-2.5 text-sm text-gray-700 placeholder:text-gray-400 outline-none resize-none transition-colors
@@ -367,7 +374,7 @@ export default function RealizarDenunciaPage() {
         <SectionCard title={t('realizarDenuncia.incidentDetails')}>
           <div className="grid grid-cols-3 gap-6">
             <div className="col-span-3">
-              <Label required>Tipo de actividad</Label>
+              <Label required>{t('realizarDenuncia.activityTypeLabel')}</Label>
               <form.Field name="tipoActividad">
                 {(field) => (
                   <Select
@@ -375,7 +382,7 @@ export default function RealizarDenunciaPage() {
                     onChange={(e) => field.handleChange(e.target.value)}
                     error={field.state.meta.errors[0]}
                   >
-                    <option value="">Seleccione el tipo de actividad</option>
+                    <option value="">{t('realizarDenuncia.activityTypePlaceholder')}</option>
                     {TIPOS_ACTIVIDAD.map((tipo) => <option key={tipo} value={tipo}>{TIPO_LABEL[tipo]}</option>)}
                   </Select>
                 )}
@@ -384,10 +391,13 @@ export default function RealizarDenunciaPage() {
             <form.Field name="tipoExtraccion">
               {(field) => (
                 <RadioGroup
-                  label="Tipo de extracción observada"
+                  label={t('realizarDenuncia.extractionTypeLabel')}
                   required
                   name="tipoExtraccion"
-                  options={['Manual', 'Maquinaria pesada']}
+                  options={[
+                    { value: 'Manual', label: t('realizarDenuncia.extractionManual') },
+                    { value: 'Maquinaria pesada', label: t('realizarDenuncia.extractionHeavy') },
+                  ]}
                   value={field.state.value}
                   onChange={(v) => field.handleChange(v)}
                   error={field.state.meta.errors[0]}
@@ -397,10 +407,13 @@ export default function RealizarDenunciaPage() {
             <form.Field name="numPersonas">
               {(field) => (
                 <RadioGroup
-                  label="Número de personas involucradas"
+                  label={t('realizarDenuncia.peopleLabel')}
                   required
                   name="numPersonas"
-                  options={['1-5', 'Más de 6 personas']}
+                  options={[
+                    { value: '1-5', label: t('realizarDenuncia.people1to5') },
+                    { value: 'Más de 6 personas', label: t('realizarDenuncia.peopleMore') },
+                  ]}
                   value={field.state.value}
                   onChange={(v) => field.handleChange(v)}
                   error={field.state.meta.errors[0]}
@@ -408,11 +421,11 @@ export default function RealizarDenunciaPage() {
               )}
             </form.Field>
             <div>
-              <Label required>Cantidad estimada de arena extraída</Label>
+              <Label required>{t('realizarDenuncia.sandAmountLabel')}</Label>
               <form.Field name="cantidadArena">
                 {(field) => (
                   <Input
-                    placeholder='Ejemplo: "Un camión lleno"'
+                    placeholder={t('realizarDenuncia.sandAmountPlaceholder')}
                     value={field.state.value}
                     onChange={(e) => field.handleChange(e.target.value)}
                     error={field.state.meta.errors[0]}
@@ -421,13 +434,13 @@ export default function RealizarDenunciaPage() {
               </form.Field>
             </div>
             <div className="col-span-3">
-              <Label required>Detalle de la actividad realizada</Label>
+              <Label required>{t('realizarDenuncia.activityDetailLabel')}</Label>
               <form.Field name="detalleActividad">
                 {(field) => (
                   <>
                     <textarea
                       rows={3}
-                      placeholder="Describir la actividad observada..."
+                      placeholder={t('realizarDenuncia.activityDetailPlaceholder')}
                       value={field.state.value}
                       onChange={(e) => field.handleChange(e.target.value)}
                       className={`w-full rounded-xl border px-3.5 py-2.5 text-sm text-gray-700 placeholder:text-gray-400 outline-none resize-none transition-colors
@@ -490,7 +503,7 @@ export default function RealizarDenunciaPage() {
                       className="mt-0.5 h-4 w-4 accent-primary shrink-0"
                     />
                     <span className="text-xs text-gray-600 leading-relaxed">
-                      Declaro que la información proporcionada es verídica y doy mi consentimiento para que sea utilizada en investigaciones relacionadas.
+                      {t('realizarDenuncia.consentLabel')}
                     </span>
                   </label>
                   {field.state.meta.errors[0] && <p className="mt-1 text-xs text-action">{field.state.meta.errors[0]}</p>}
@@ -514,7 +527,7 @@ export default function RealizarDenunciaPage() {
                   disabled={isSubmitting || mutation.isPending}
                   className="rounded-full bg-action px-8 py-2.5 text-sm font-semibold text-white hover:bg-action/90 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
                 >
-                  {isSubmitting || mutation.isPending ? 'Creando...' : 'Crear Denuncia'}
+                  {isSubmitting || mutation.isPending ? t('realizarDenuncia.creating') : t('realizarDenuncia.createDenuncia')}
                 </button>
               )}
             </form.Subscribe>
