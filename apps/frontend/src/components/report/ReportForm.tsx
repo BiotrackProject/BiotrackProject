@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { UploadCloud, CheckCircle, X } from 'lucide-react'
-import { denunciasService, filtrarEvidencias, EVIDENCIA_MAX_FILES, EVIDENCIA_MAX_SIZE_MB, TIPOS_ACTIVIDAD, TIPO_LABEL } from '../../services/denunciasService'
+import { denunciasService, filtrarEvidencias, EVIDENCIA_MAX_FILES, EVIDENCIA_MAX_SIZE_MB, TIPOS_ACTIVIDAD } from '../../services/denunciasService'
 import { toast } from '../../utils/toast'
 import LocationPickerMap from '../map/LocationPickerMap'
 
@@ -105,7 +105,7 @@ export default function ReportForm() {
       setTrackingId(result.codigo_seguimiento)
       setSent(true)
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'No se pudo enviar el reporte')
+      toast.error(err instanceof Error ? err.message : t('reportForm.submitError'))
     } finally {
       setSubmitting(false)
     }
@@ -189,9 +189,9 @@ export default function ReportForm() {
               onChange={set('activityType')}
               className={inputCls(errors.activityType)}
             >
-              <option value="">Seleccionar</option>
+              <option value="">{t('reportForm.selectDefault')}</option>
               {TIPOS_ACTIVIDAD.map((tipo) => (
-                <option key={tipo} value={tipo}>{TIPO_LABEL[tipo]}</option>
+                <option key={tipo} value={tipo}>{t(`tipos.${tipo}`, tipo)}</option>
               ))}
             </select>
             {!errors.activityType && (
@@ -243,7 +243,7 @@ export default function ReportForm() {
 
         {/* Map */}
         <div className="mt-6">
-          <p className="mb-2 text-sm font-medium text-gray-700">Ubicación en mapa</p>
+          <p className="mb-2 text-sm font-medium text-gray-700">{t('reportForm.mapLabel')}</p>
           <LocationPickerMap
             lat={form.gps ? Number(form.gps.split(',')[0]) : null}
             lng={form.gps ? Number(form.gps.split(',')[1]) : null}
@@ -275,7 +275,7 @@ export default function ReportForm() {
           <Field label={t('reportForm.evidenceLabel')}>
             <label className="flex w-fit cursor-pointer items-center gap-2 rounded-lg border border-gray-200 bg-surface px-4 py-2 text-sm text-gray-600 transition-colors hover:bg-gray-100">
               <UploadCloud className="h-4 w-4" />
-              Adjuntar archivos
+              {t('reportForm.evidenceAttach')}
               <input
                 type="file"
                 accept="image/*,video/*,audio/*,application/pdf"
@@ -290,7 +290,7 @@ export default function ReportForm() {
               />
             </label>
             <p className="text-xs text-gray-400">
-              Imágenes, video, audio o PDF. Máx. {EVIDENCIA_MAX_FILES} archivos, {EVIDENCIA_MAX_SIZE_MB} MB c/u.
+              {t('reportForm.evidenceHintDetail', { files: EVIDENCIA_MAX_FILES, size: EVIDENCIA_MAX_SIZE_MB })}
             </p>
             {form.evidence.length > 0 && (
               <ul className="mt-2 flex flex-wrap gap-2">
@@ -354,7 +354,7 @@ export default function ReportForm() {
             disabled={submitting}
             className="rounded-lg bg-action px-6 py-3 text-sm font-bold text-white transition-colors hover:bg-red-700 disabled:opacity-60 disabled:cursor-not-allowed"
           >
-            {submitting ? 'Enviando...' : 'Enviar reporte'}
+            {submitting ? t('reportForm.submitting') : t('reportForm.submit')}
           </button>
         </div>
         <p className="text-xs text-gray-400">

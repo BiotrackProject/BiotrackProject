@@ -1,5 +1,6 @@
 import { useEffect, ReactNode } from 'react'
 import { X, AlertTriangle, Info } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 
 interface ModalProps {
   open: boolean
@@ -32,11 +33,15 @@ export default function Modal({
   title,
   children,
   variant = 'default',
-  confirmLabel = 'Confirmar',
-  cancelLabel = 'Cancelar',
+  confirmLabel,
+  cancelLabel,
   onConfirm,
   loading = false,
 }: ModalProps) {
+  const { t } = useTranslation()
+  const resolvedConfirmLabel = confirmLabel ?? t('common.confirm')
+  const resolvedCancelLabel = cancelLabel ?? t('common.cancel')
+
   useEffect(() => {
     if (!open) return
     const handler = (e) => { if (e.key === 'Escape') onClose() }
@@ -85,7 +90,7 @@ export default function Modal({
             disabled={loading}
             className="rounded-lg border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-600 transition-[transform,background-color,color,border-color] duration-150 ease-out hover:bg-gray-100 active:scale-[0.97] disabled:opacity-50 disabled:active:scale-100"
           >
-            {cancelLabel}
+            {resolvedCancelLabel}
           </button>
           {onConfirm && (
             <button
@@ -97,7 +102,7 @@ export default function Modal({
                   : 'bg-primary hover:bg-primary/90'
               }`}
             >
-              {loading ? 'Procesando...' : confirmLabel}
+              {loading ? t('common.processing') : resolvedConfirmLabel}
             </button>
           )}
         </div>

@@ -1,12 +1,11 @@
-/**
- * Inline or full-area loading spinner.
- * Props: fullPage (bool) — wraps in centered min-h container
- */
+import { useTranslation } from 'react-i18next'
+
 export default function LoadingSpinner({ fullPage = false }) {
+  const { t } = useTranslation()
   const spinner = (
     <div className="flex flex-col items-center gap-3">
       <div className="h-8 w-8 animate-spin rounded-full border-[3px] border-gray-200 border-t-primary" />
-      <p className="text-xs text-gray-400">Cargando...</p>
+      <p className="text-xs text-gray-400">{t('common.loading')}</p>
     </div>
   )
 

@@ -8,6 +8,7 @@ import { denunciasService, ESTADOS_DENUNCIA, ESTADO_STYLES } from '../../service
 import type { Denuncia, EstadoDenuncia } from '../../services/denunciasService'
 import { toast } from '../../utils/toast'
 import { descargarBlob } from '../../utils/download'
+import { formatDate } from '../../utils/dates'
 import { useDebounce } from '../../hooks/useDebounce'
 import { useQuery } from '@tanstack/react-query'
 
@@ -20,7 +21,7 @@ function exportCSV(data: Denuncia[], headers: string[]) {
     d.codigo_seguimiento,
     `"${(d.Descripcion ?? '').replace(/"/g, "'")}"`,
     d.tipo_actividad,
-    new Date(d.Fecha_denuncia).toLocaleDateString('es-DO'),
+    formatDate(d.Fecha_denuncia),
     d.Estado,
   ])
   const csv = [headers, ...rows].map((r) => r.join(',')).join('\n')
@@ -121,7 +122,7 @@ export default function DenunciasPage() {
                       onClick={() => { setFilterEstado(e); setFilterOpen(false); setPage(1) }}
                       className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${filterEstado === e ? 'bg-primary/10 text-primary font-semibold' : 'text-gray-600 hover:bg-gray-50'}`}
                     >
-                      {e ? t('estados.' + e) : t('denuncias.filterAll')}
+                      {e ? t(`estados.${e}`) : t('denuncias.filterAll')}
                     </button>
                   ))}
                 </div>
@@ -146,12 +147,12 @@ export default function DenunciasPage() {
                           <p className="mt-1 text-sm text-dark/85 line-clamp-2">{d.Descripcion}</p>
                         </div>
                         <span className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold ${ESTADO_STYLES[d.Estado]}`}>
-                          {t('estados.' + d.Estado)}
+                          {t(`estados.${d.Estado}`)}
                         </span>
                       </div>
                       <div className="flex items-center justify-between text-xs text-gray-500">
                         <span>{d.tipo_actividad.replace(/_/g, ' ')}</span>
-                        <span>{new Date(d.Fecha_denuncia).toLocaleDateString('es-DO')}</span>
+                        <span>{formatDate(d.Fecha_denuncia)}</span>
                       </div>
                       <button
                         onClick={() => navigate(`/admin/denuncias/${d.IDDenuncia}`)}
@@ -185,10 +186,10 @@ export default function DenunciasPage() {
                           <td className="px-5 py-4 font-bold text-primary">{d.codigo_seguimiento}</td>
                           <td className="px-5 py-4 text-primary/80 max-w-[220px] truncate">{d.Descripcion}</td>
                           <td className="px-5 py-4 text-gray-600 text-xs">{d.tipo_actividad.replace(/_/g, ' ')}</td>
-                          <td className="px-5 py-4 text-gray-600">{new Date(d.Fecha_denuncia).toLocaleDateString('es-DO')}</td>
+                          <td className="px-5 py-4 text-gray-600">{formatDate(d.Fecha_denuncia)}</td>
                           <td className="px-5 py-4">
                             <span className={`rounded-full px-3 py-1 text-xs font-semibold ${ESTADO_STYLES[d.Estado]}`}>
-                              {t('estados.' + d.Estado)}
+                              {t(`estados.${d.Estado}`)}
                             </span>
                           </td>
                           <td className="px-5 py-4">

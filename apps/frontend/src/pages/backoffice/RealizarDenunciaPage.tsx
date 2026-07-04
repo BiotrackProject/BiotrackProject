@@ -6,7 +6,7 @@ import { useForm, useStore } from '@tanstack/react-form'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { UploadCloud, X, CheckCircle } from 'lucide-react'
 import BackofficeTopbar from '../../components/backoffice/BackofficeTopbar'
-import { denunciasService, filtrarEvidencias, TIPOS_ACTIVIDAD, TIPO_LABEL } from '../../services/denunciasService'
+import { denunciasService, filtrarEvidencias, TIPOS_ACTIVIDAD } from '../../services/denunciasService'
 import { toast } from '../../utils/toast'
 
 function Label({ children, required }) {
@@ -383,7 +383,7 @@ export default function RealizarDenunciaPage() {
                     error={field.state.meta.errors[0]}
                   >
                     <option value="">{t('realizarDenuncia.activityTypePlaceholder')}</option>
-                    {TIPOS_ACTIVIDAD.map((tipo) => <option key={tipo} value={tipo}>{TIPO_LABEL[tipo]}</option>)}
+                    {TIPOS_ACTIVIDAD.map((tipo) => <option key={tipo} value={tipo}>{t(`tipos.${tipo}`, tipo)}</option>)}
                   </Select>
                 )}
               </form.Field>

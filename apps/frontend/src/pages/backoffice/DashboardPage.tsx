@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import { ChevronLeft, ChevronRight, FileWarning, MapPin, ClipboardCheck, Map } from 'lucide-react'
@@ -17,44 +17,53 @@ import {
 const CHART_COLORS = ['#22C55E', '#3B82F6', '#FBBF24', '#F97316', '#A855F7', '#EF4444', '#06B6D4', '#64748B']
 
 // ── Chart data fallbacks (shown while real data loads or if fetch fails) ──────
+// These are functions so they can access translations at runtime
 
-const FALLBACK_IMPACT_DATA = [
-  { name: 'Degradación ambiental',     value: 40, color: '#22C55E' },
-  { name: 'Problemas de salud',         value: 25, color: '#3B82F6' },
-  { name: 'Impacto económico',          value: 20, color: '#FBBF24' },
-  { name: 'Desplazamiento de familias', value: 10, color: '#F97316' },
-  { name: 'Conflictos sociales',        value:  5, color: '#A855F7' },
-]
+function getFallbackImpactData(t) {
+  return [
+    { name: t('dashboard.impactCategories.environmental'), value: 40, color: '#22C55E' },
+    { name: t('dashboard.impactCategories.health'),         value: 25, color: '#3B82F6' },
+    { name: t('dashboard.impactCategories.economic'),       value: 20, color: '#FBBF24' },
+    { name: t('dashboard.impactCategories.displacement'),   value: 10, color: '#F97316' },
+    { name: t('dashboard.impactCategories.social'),         value:  5, color: '#A855F7' },
+  ]
+}
 
-const FALLBACK_FREQUENCY_PAGES = [
-  [
-    { month: 'Enero',    value: 21 },
-    { month: 'Febrero',  value: 19 },
-    { month: 'Marzo',    value: 21 },
-    { month: 'Abril',    value: 18 },
-    { month: 'Mayo',     value: 17 },
-  ],
-  [
-    { month: 'Junio',     value: 16 },
-    { month: 'Julio',     value: 20 },
-    { month: 'Agosto',    value: 18 },
-    { month: 'Septiembre',value: 15 },
-    { month: 'Octubre',   value: 17 },
-  ],
-]
+function getMonthName(monthIndex: number, locale: string): string {
+  return new Date(2024, monthIndex, 1).toLocaleString(locale, { month: 'long' })
+}
 
-function toImpactData(rows: ImpactoRow[]) {
+function getFallbackFrequencyPages(locale: string) {
+  return [
+    [
+      { month: getMonthName(0, locale), value: 21 },
+      { month: getMonthName(1, locale), value: 19 },
+      { month: getMonthName(2, locale), value: 21 },
+      { month: getMonthName(3, locale), value: 18 },
+      { month: getMonthName(4, locale), value: 17 },
+    ],
+    [
+      { month: getMonthName(5, locale),  value: 16 },
+      { month: getMonthName(6, locale),  value: 20 },
+      { month: getMonthName(7, locale),  value: 18 },
+      { month: getMonthName(8, locale),  value: 15 },
+      { month: getMonthName(9, locale),  value: 17 },
+    ],
+  ]
+}
+
+function toImpactData(rows: ImpactoRow[], t, fallback) {
   const total = rows.reduce((s, r) => s + r.total, 0)
-  if (total === 0) return FALLBACK_IMPACT_DATA
+  if (total === 0) return fallback
   return rows.map((r, i) => ({
-    name: r.tipo_actividad.replace(/_/g, ' '),
+    name: t(`tipos.${r.tipo_actividad}`, r.tipo_actividad.replace(/_/g, ' ')),
     value: Math.round((r.total / total) * 100),
     color: CHART_COLORS[i % CHART_COLORS.length],
   }))
 }
 
-function toFrequencyPages(rows: FrecuenciaRow[]) {
-  if (!rows.length) return FALLBACK_FREQUENCY_PAGES
+function toFrequencyPages(rows: FrecuenciaRow[], locale: string, fallback) {
+  if (!rows.length) return fallback
   const mapped = rows.map((r) => ({ month: r.mes, value: r.total }))
   const pages: { month: string; value: number }[][] = []
   for (let i = 0; i < mapped.length; i += 5) pages.push(mapped.slice(i, i + 5))
@@ -238,18 +247,24 @@ function VolumeBarCard({ onVerTodas }) {
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export default function DashboardPage() {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const navigate = useNavigate()
-  const [stats, setStats]                   = useState(null)
-  const [loading, setLoading]               = useState(true)
-  const [impactData, setImpactData]         = useState(FALLBACK_IMPACT_DATA)
-  const [frequencyPages, setFrequencyPages] = useState(FALLBACK_FREQUENCY_PAGES)
+  const locale = i18n.language === 'en' ? 'en-US' : 'es-DO'
+
+  const [stats, setStats]             = useState(null)
+  const [loading, setLoading]         = useState(true)
+  const [impactoRows, setImpactoRows] = useState<ImpactoRow[] | null>(null)
+  const [frecRows, setFrecRows]       = useState<FrecuenciaRow[] | null>(null)
 
   useEffect(() => {
     dashboardService.getStats().then(setStats).finally(() => setLoading(false))
-    dashboardService.getImpacto().then((rows) => setImpactData(toImpactData(rows))).catch(() => {})
-    dashboardService.getFrecuencia().then((rows) => setFrequencyPages(toFrequencyPages(rows))).catch(() => {})
+    dashboardService.getImpacto().then(setImpactoRows).catch(() => {})
+    dashboardService.getFrecuencia().then(setFrecRows).catch(() => {})
   }, [])
+
+  // Re-compute when language changes — no stale closure
+  const impactData    = useMemo(() => toImpactData(impactoRows ?? [], t, getFallbackImpactData(t)), [impactoRows, t, locale])
+  const frequencyPages = useMemo(() => toFrequencyPages(frecRows ?? [], locale, getFallbackFrequencyPages(locale)), [frecRows, locale])
 
   return (
     <>

@@ -25,9 +25,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser]       = useState<AuthUser | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
-  // Al montar: verifica si existe una sesión activa consultando el perfil.
-  // El browser envía la cookie bt_session automáticamente si existe.
   useEffect(() => {
+    if (import.meta.env.VITE_MOCK_AUTH === 'true') {
+      setUser({ id: 'mock-1', nombre_completo: 'Dev User', rol: 'ADMINISTRADOR', debe_cambiar_contrasena: false })
+      setIsLoading(false)
+      return
+    }
     getPerfil()
       .then((res) => {
         if (res.success && res.data) {

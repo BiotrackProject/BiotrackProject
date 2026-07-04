@@ -5,16 +5,14 @@ import Footer from '../components/layout/Footer'
 import ReportHero from '../components/report/ReportHero'
 import RecursoPublicoFallback from '../components/report/RecursoPublicoFallback'
 import { useRecursoPublico } from '../hooks/useRecursoPublico'
-import {
-  accionesService,
-  type AccionPublica,
-} from '../services/accionesService'
+import { accionesService, type AccionPublica } from '../services/accionesService'
+import i18n from '../i18n'
 
 const dtClass = 'text-xs font-semibold uppercase tracking-wide text-gray-400'
 const ddClass = 'mt-1 text-sm font-semibold text-gray-700'
 
 function fmt(fecha: string | null, fallback: string): string {
-  return fecha ? new Date(fecha).toLocaleDateString('es-DO') : fallback
+  return fecha ? new Date(fecha).toLocaleDateString(i18n.language === 'en' ? 'en-US' : 'es-DO') : fallback
 }
 
 export default function ReporteAccionPublicoPage() {

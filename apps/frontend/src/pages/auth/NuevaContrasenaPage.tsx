@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Link, useNavigate, useLocation, Navigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import ImagePanel from '../../components/auth/ImagePanel'
 import { validateRegisterPassword } from '../../utils/validation'
 import { resetPassword } from '../../services/authService'
@@ -16,6 +17,7 @@ const INPUT_CLS = (hasError) =>
 export default function NuevaContrasenaPage() {
   const navigate = useNavigate()
   const location = useLocation()
+  const { t } = useTranslation()
   const email = location.state?.email ?? ''
   const token = location.state?.token ?? ''
 
@@ -25,14 +27,13 @@ export default function NuevaContrasenaPage() {
   const [formError, setFormError] = useState(null)
   const [loading, setLoading] = useState(false)
 
-  // Sin token no se puede continuar: volver al inicio del flujo.
   if (!token) return <Navigate to="/recuperar-cuenta" replace />
 
   function validate() {
     const passwordErr = validateRegisterPassword(password, '', '', email)
     let confirmErr = null
-    if (!confirm) confirmErr = 'Confirma tu contraseña'
-    else if (confirm !== password) confirmErr = 'Las contraseñas no coinciden'
+    if (!confirm) confirmErr = t('nuevaContrasena.confirmRequired')
+    else if (confirm !== password) confirmErr = t('nuevaContrasena.confirmMismatch')
     setErrors({ password: passwordErr, confirm: confirmErr })
     return !passwordErr && !confirmErr
   }
@@ -45,12 +46,12 @@ export default function NuevaContrasenaPage() {
     const res = await resetPassword(token, password)
     setLoading(false)
     if (!res.success) {
-      setFormError(res.error ?? 'No se pudo restablecer la contraseña. Solicita un nuevo código.')
+      setFormError(res.error ?? t('nuevaContrasena.resetError'))
       return
     }
     navigate('/login', {
       replace: true,
-      state: { mensaje: 'Tu contraseña ha sido restablecida. Ya puedes iniciar sesión.' },
+      state: { mensaje: t('nuevaContrasena.resetSuccess') },
     })
   }
 
@@ -60,31 +61,30 @@ export default function NuevaContrasenaPage() {
         <div className="relative h-32 w-full overflow-hidden md:hidden" style={{ backgroundImage: `url(${recoverBg})`, backgroundSize: 'cover', backgroundPosition: 'center' }}>
           <div className="absolute inset-0 bg-[linear-gradient(145deg,rgba(19,53,108,0.74),rgba(40,40,40,0.64))]" />
           <div className="absolute left-6 top-6 border-l-2 border-secondary/80 pl-3 text-[11px] font-semibold uppercase tracking-[0.2em] text-surface/90">
-            Seguridad BIOTRACK
+            {t('nuevaContrasena.mobileTag')}
           </div>
         </div>
 
         <div className="relative flex w-full items-center px-6 py-8 sm:px-10 md:px-12 lg:px-16">
           <div className="pointer-events-none absolute left-5 top-5 h-14 w-14 border-l-2 border-t-2 border-primary/25" />
           <div className="w-full max-w-[460px]">
-            <p className="mb-4 text-[11px] font-semibold uppercase tracking-[0.22em] text-primary/75">Recuperación de acceso</p>
+            <p className="mb-4 text-[11px] font-semibold uppercase tracking-[0.22em] text-primary/75">{t('nuevaContrasena.tag')}</p>
             <h2 className="mb-3 text-[clamp(1.9rem,3.5vw,2.85rem)] leading-[0.98] font-extrabold text-primary">
-              Nueva Contraseña
+              {t('nuevaContrasena.title')}
             </h2>
             <p className="mb-8 max-w-[46ch] text-[14px] leading-6 text-dark/80">
-              Crea una nueva contraseña segura para tu cuenta. Debe tener al menos 10 caracteres,
-              mayúsculas, minúsculas, un número y un carácter especial.
+              {t('nuevaContrasena.subtitle')}
             </p>
 
             <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-5">
               <div className="flex flex-col gap-1">
                 <label htmlFor="new-password" className="text-[12px] font-semibold uppercase tracking-[0.08em] text-dark/80">
-                  Nueva contraseña
+                  {t('nuevaContrasena.newLabel')}
                 </label>
                 <input
                   id="new-password"
                   type="password"
-                  placeholder="Ingresar nueva contraseña"
+                  placeholder={t('nuevaContrasena.newPlaceholder')}
                   value={password}
                   onChange={(e) => { setPassword(e.target.value); if (errors.password) setErrors((p) => ({ ...p, password: null })) }}
                   onBlur={() => setErrors((p) => ({ ...p, password: validateRegisterPassword(password, '', '', email) }))}
@@ -96,12 +96,12 @@ export default function NuevaContrasenaPage() {
 
               <div className="flex flex-col gap-1">
                 <label htmlFor="confirm-password" className="text-[12px] font-semibold uppercase tracking-[0.08em] text-dark/80">
-                  Confirmar contraseña
+                  {t('nuevaContrasena.confirmLabel')}
                 </label>
                 <input
                   id="confirm-password"
                   type="password"
-                  placeholder="Repetir nueva contraseña"
+                  placeholder={t('nuevaContrasena.confirmPlaceholder')}
                   value={confirm}
                   onChange={(e) => { setConfirm(e.target.value); if (errors.confirm) setErrors((p) => ({ ...p, confirm: null })) }}
                   autoComplete="new-password"
@@ -117,12 +117,12 @@ export default function NuevaContrasenaPage() {
                 disabled={loading}
                 className="mt-2 w-full rounded-md bg-dark py-3 text-[16px] font-bold text-surface transition-[transform,background-color] duration-200 active:scale-[0.985] hover:bg-primary disabled:cursor-not-allowed disabled:opacity-50"
               >
-                {loading ? 'Guardando...' : 'Restablecer contraseña'}
+                {loading ? t('nuevaContrasena.submitting') : t('nuevaContrasena.submit')}
               </button>
 
               <p className="text-center text-[13px] text-dark/85">
                 <Link to="/login" className="font-bold text-primary hover:text-primary/80">
-                  Volver a inicio de sesión
+                  {t('nuevaContrasena.backToLogin')}
                 </Link>
               </p>
             </form>

@@ -14,6 +14,7 @@ import { accionesService, ESTADOS_ACCION, ESTADO_ACCION_STYLES } from '../../ser
 import type { Accion, EstadoAccion } from '../../services/accionesService'
 import { toast } from '../../utils/toast'
 import { descargarBlob } from '../../utils/download'
+import { formatDate } from '../../utils/dates'
 
 const PAGE_SIZE_OPTIONS = [5, 10, 20]
 const COLUMN_KEYS = ['colId', 'colTitle', 'colPlannedDate', 'colStatus', 'colResponsible', 'colActions']
@@ -23,7 +24,7 @@ function exportCSV(data: Accion[], headers: string[]) {
     a.IDAccion,
     `"${(a.titulo ?? '').replace(/"/g, "'")}"`,
     a.Estado,
-    a.FechaPlanificacion ? new Date(a.FechaPlanificacion).toLocaleDateString('es-DO') : '—',
+    formatDate(a.FechaPlanificacion),
     a.responsable?.nombre_completo ?? '—',
   ])
   const csv = [headers, ...rows].map((r) => r.join(',')).join('\n')
@@ -198,7 +199,7 @@ export default function AccionesCorrectivasPage() {
                             <p className="truncate">{a.titulo}</p>
                           </td>
                           <td className="px-5 py-4 text-gray-600">
-                            {a.FechaPlanificacion ? new Date(a.FechaPlanificacion).toLocaleDateString('es-DO') : '—'}
+                            {formatDate(a.FechaPlanificacion)}
                           </td>
                           <td className="px-5 py-4">
                             <span className={`rounded-full px-3 py-1 text-xs font-semibold ${ESTADO_ACCION_STYLES[a.Estado]}`}>

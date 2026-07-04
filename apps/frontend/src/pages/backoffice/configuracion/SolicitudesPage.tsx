@@ -8,6 +8,7 @@ import LoadingSpinner from '../../../components/ui/LoadingSpinner'
 import { usuariosService } from '../../../services/usuariosService'
 import type { SolicitudRegistro, Rol } from '../../../services/usuariosService'
 import { toast } from '../../../utils/toast'
+import i18n from '../../../i18n'
 
 const ESTADO_STYLES: Record<string, string> = {
   Pendiente_Aprobacion: 'bg-amber-50 text-amber-600 border border-amber-200',
@@ -26,7 +27,7 @@ function getInitials(nombre_completo: string) {
 
 function formatFecha(iso: string | null) {
   if (!iso) return '—'
-  return new Date(iso).toLocaleDateString('es-DO', { day: '2-digit', month: 'short', year: 'numeric' })
+  return new Date(iso).toLocaleDateString(i18n.language === 'en' ? 'en-US' : 'es-DO', { day: '2-digit', month: 'short', year: 'numeric' })
 }
 
 function EstadoBadge({ estado }: Readonly<{ estado: string }>) {

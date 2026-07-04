@@ -11,32 +11,9 @@ import { ESTADO_STYLES, ESTADOS_DENUNCIA } from '../../services/denunciasService
 import type { Denuncia, EstadoDenuncia } from '../../services/denunciasService'
 import { toast } from '../../utils/toast'
 import { descargarBlob } from '../../utils/download'
-
-const FILE_COLORS = {
-  JPG: 'bg-blue-100 text-blue-600',
-  MP3: 'bg-orange-100 text-orange-600',
-  MP4: 'bg-purple-100 text-purple-600',
-  PDF: 'bg-red-100 text-red-600',
-  PNG: 'bg-green-100 text-green-600',
-}
-
-function InfoRow({ label, value }) {
-  return (
-    <p className="text-sm text-gray-600">
-      <span className="font-semibold text-gray-700">{label}: </span>
-      {value ?? '—'}
-    </p>
-  )
-}
-
-function InfoCard({ title, children }) {
-  return (
-    <div className="bg-white rounded-2xl p-5 shadow-sm">
-      <h3 className="text-sm font-bold text-primary mb-3">{title}</h3>
-      {children}
-    </div>
-  )
-}
+import { formatDate, formatDateTime } from '../../utils/dates'
+import { InfoCard, InfoRow } from '../../components/ui/InfoCard'
+import { FILE_COLORS } from '../../constants/fileColors'
 
 export default function DetalleMonitoreoPage() {
   const { id } = useParams()
@@ -75,7 +52,7 @@ export default function DetalleMonitoreoPage() {
     try {
       await monitoreoService.updateEstado(id, pendingEstado)
       setEstado(pendingEstado)
-      toast.success(t('monitoreo.statusUpdated', { status: t('estados.' + pendingEstado) }))
+      toast.success(t('monitoreo.statusUpdated', { status: t(`estados.${pendingEstado}`) }))
       setStatusModal(false)
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : t('monitoreo.statusError'))
@@ -95,9 +72,9 @@ export default function DetalleMonitoreoPage() {
     if (!denuncia) return
     const lines = [
       `${t('detalleDenuncia.exportCode')} ${denuncia.codigo_seguimiento}`,
-      `${t('detalleDenuncia.exportStatus')} ${t('estados.' + estado)}`,
-      `${t('detalleDenuncia.exportType')} ${t('tipos.' + denuncia.tipo_actividad)}`,
-      `${t('detalleDenuncia.exportDate')} ${new Date(denuncia.Fecha_denuncia).toLocaleDateString('es-DO')}`,
+      `${t('detalleDenuncia.exportStatus')} ${t(`estados.${estado}`)}`,
+      `${t('detalleDenuncia.exportType')} ${t(`tipos.${denuncia.tipo_actividad}`)}`,
+      `${t('detalleDenuncia.exportDate')} ${formatDate(denuncia.Fecha_denuncia)}`,
       `${t('detalleDenuncia.exportDescription')} ${denuncia.Descripcion}`,
     ]
     descargarBlob(new Blob([lines.join('\n')], { type: 'text/plain' }), `monitoreo_${denuncia.codigo_seguimiento}.txt`)
@@ -133,7 +110,7 @@ export default function DetalleMonitoreoPage() {
                 className="text-sm font-semibold text-primary bg-transparent outline-none cursor-pointer"
               >
                 {ESTADOS_DENUNCIA.map((e) => (
-                  <option key={e} value={e}>{t('estados.' + e)}</option>
+                  <option key={e} value={e}>{t(`estados.${e}`)}</option>
                 ))}
               </select>
             </div>
@@ -158,12 +135,12 @@ export default function DetalleMonitoreoPage() {
           <div className="flex items-center gap-2">
             <span className="text-sm font-semibold text-gray-500">{t('monitoreo.statusLabel')}</span>
             <span className={`rounded-full px-3 py-1 text-xs font-semibold ${ESTADO_STYLES[estado]}`}>
-              {t('estados.' + estado)}
+              {t(`estados.${estado}`)}
             </span>
           </div>
           <div className="flex items-center gap-2">
             <span className="text-sm font-semibold text-gray-500">{t('monitoreo.typeLabel')}</span>
-            <span className="text-sm text-gray-600">{t('tipos.' + denuncia.tipo_actividad)}</span>
+            <span className="text-sm text-gray-600">{t(`tipos.${denuncia.tipo_actividad}`)}</span>
           </div>
         </div>
 
@@ -173,9 +150,9 @@ export default function DetalleMonitoreoPage() {
             <InfoCard title={t('monitoreo.incidentInfo')}>
               <div className="flex flex-col gap-2">
                 <InfoRow label={t('monitoreo.codeLabel')} value={denuncia.codigo_seguimiento} />
-                <InfoRow label={t('monitoreo.incidentDate')} value={new Date(denuncia.Fecha_denuncia).toLocaleDateString('es-DO')} />
+                <InfoRow label={t('monitoreo.incidentDate')} value={formatDate(denuncia.Fecha_denuncia)} />
                 <InfoRow label={t('monitoreo.approxTime')} value={denuncia.hora_aproximada} />
-                <InfoRow label={t('monitoreo.activityType')} value={t('tipos.' + denuncia.tipo_actividad)} />
+                <InfoRow label={t('monitoreo.activityType')} value={t(`tipos.${denuncia.tipo_actividad}`)} />
               </div>
             </InfoCard>
 
@@ -205,11 +182,11 @@ export default function DetalleMonitoreoPage() {
                   {denuncia.historial.map((h) => (
                     <div key={h.id} className="text-sm text-gray-600">
                       <div className="flex items-center gap-2">
-                        <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${ESTADO_STYLES[h.estado_anterior]}`}>{t('estados.' + h.estado_anterior)}</span>
+                        <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${ESTADO_STYLES[h.estado_anterior]}`}>{t(`estados.${h.estado_anterior}`)}</span>
                         <span className="text-gray-400">→</span>
-                        <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${ESTADO_STYLES[h.estado_nuevo]}`}>{t('estados.' + h.estado_nuevo)}</span>
+                        <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${ESTADO_STYLES[h.estado_nuevo]}`}>{t(`estados.${h.estado_nuevo}`)}</span>
                       </div>
-                      <p className="text-xs text-gray-400 mt-0.5">{h.Usuario.nombre_completo} · {new Date(h.created_at).toLocaleString('es-DO')}</p>
+                      <p className="text-xs text-gray-400 mt-0.5">{h.Usuario.nombre_completo} · {formatDateTime(h.created_at)}</p>
                       {h.comentario && <p className="text-xs text-gray-500 italic">{h.comentario}</p>}
                     </div>
                   ))}
@@ -277,7 +254,7 @@ export default function DetalleMonitoreoPage() {
         onConfirm={confirmEstado}
         loading={savingEstado}
       >
-        <p>{t('detalleDenuncia.changeStatusMsg', { code: denuncia.codigo_seguimiento, status: t('estados.' + pendingEstado) })}</p>
+        <p>{t('detalleDenuncia.changeStatusMsg', { code: denuncia.codigo_seguimiento, status: t(`estados.${pendingEstado}`) })}</p>
       </Modal>
 
       {/* Análisis placeholder */}

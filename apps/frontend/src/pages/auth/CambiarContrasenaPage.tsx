@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import ImagePanel from '../../components/auth/ImagePanel'
 import { validateRegisterPassword } from '../../utils/validation'
 import { useAuth } from '../../context/AuthContext'
@@ -16,8 +17,8 @@ const INPUT_CLS = (hasError) =>
 
 export default function CambiarContrasenaPage() {
   const navigate = useNavigate()
+  const { t } = useTranslation()
   const { user, updateUser } = useAuth()
-  // Cuando el cambio es obligatorio (primer login) no ofrecemos salida hacia el panel.
   const obligatorio = !!user?.debe_cambiar_contrasena
 
   const [actual, setActual] = useState('')
@@ -28,12 +29,12 @@ export default function CambiarContrasenaPage() {
   const [loading, setLoading] = useState(false)
 
   function validate() {
-    const actualErr = actual ? null : 'Ingresa tu contraseña actual'
+    const actualErr = actual ? null : t('cambiarContrasena.currentRequired')
     const passwordErr = validateRegisterPassword(password, '', '', '')
-      || (password === actual ? 'La nueva contraseña debe ser distinta de la actual' : null)
+      || (password === actual ? t('cambiarContrasena.newDistinct') : null)
     let confirmErr = null
-    if (!confirm) confirmErr = 'Confirma tu contraseña'
-    else if (confirm !== password) confirmErr = 'Las contraseñas no coinciden'
+    if (!confirm) confirmErr = t('cambiarContrasena.confirmRequired')
+    else if (confirm !== password) confirmErr = t('cambiarContrasena.confirmMismatch')
     setErrors({ actual: actualErr, password: passwordErr, confirm: confirmErr })
     return !actualErr && !passwordErr && !confirmErr
   }
@@ -46,7 +47,7 @@ export default function CambiarContrasenaPage() {
     const res = await cambiarContrasena(actual, password)
     setLoading(false)
     if (!res.success) {
-      setFormError(res.error ?? 'No se pudo cambiar la contraseña.')
+      setFormError(res.error ?? t('cambiarContrasena.changeError'))
       return
     }
     updateUser({ debe_cambiar_contrasena: false })
@@ -59,32 +60,30 @@ export default function CambiarContrasenaPage() {
         <div className="relative h-32 w-full overflow-hidden md:hidden" style={{ backgroundImage: `url(${recoverBg})`, backgroundSize: 'cover', backgroundPosition: 'center' }}>
           <div className="absolute inset-0 bg-[linear-gradient(145deg,rgba(19,53,108,0.74),rgba(40,40,40,0.64))]" />
           <div className="absolute left-6 top-6 border-l-2 border-secondary/80 pl-3 text-[11px] font-semibold uppercase tracking-[0.2em] text-surface/90">
-            Seguridad BIOTRACK
+            {t('cambiarContrasena.mobileTag')}
           </div>
         </div>
 
         <div className="relative flex w-full items-center px-6 py-8 sm:px-10 md:px-12 lg:px-16">
           <div className="pointer-events-none absolute left-5 top-5 h-14 w-14 border-l-2 border-t-2 border-primary/25" />
           <div className="w-full max-w-[460px]">
-            <p className="mb-4 text-[11px] font-semibold uppercase tracking-[0.22em] text-primary/75">Seguridad de la cuenta</p>
+            <p className="mb-4 text-[11px] font-semibold uppercase tracking-[0.22em] text-primary/75">{t('cambiarContrasena.tag')}</p>
             <h2 className="mb-3 text-[clamp(1.9rem,3.5vw,2.85rem)] leading-[0.98] font-extrabold text-primary">
-              Cambiar Contraseña
+              {t('cambiarContrasena.title')}
             </h2>
             <p className="mb-8 max-w-[46ch] text-[14px] leading-6 text-dark/80">
-              {obligatorio
-                ? 'Por seguridad, debes reemplazar la contraseña temporal asignada antes de continuar. Debe tener al menos 10 caracteres, mayúsculas, minúsculas, un número y un carácter especial.'
-                : 'Crea una nueva contraseña segura. Debe tener al menos 10 caracteres, mayúsculas, minúsculas, un número y un carácter especial.'}
+              {obligatorio ? t('cambiarContrasena.subtitleMandatory') : t('cambiarContrasena.subtitle')}
             </p>
 
             <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-5">
               <div className="flex flex-col gap-1">
                 <label htmlFor="current-password" className="text-[12px] font-semibold uppercase tracking-[0.08em] text-dark/80">
-                  Contraseña actual
+                  {t('cambiarContrasena.currentLabel')}
                 </label>
                 <input
                   id="current-password"
                   type="password"
-                  placeholder="Ingresar contraseña actual"
+                  placeholder={t('cambiarContrasena.currentPlaceholder')}
                   value={actual}
                   onChange={(e) => { setActual(e.target.value); if (errors.actual) setErrors((p) => ({ ...p, actual: null })) }}
                   autoComplete="current-password"
@@ -95,12 +94,12 @@ export default function CambiarContrasenaPage() {
 
               <div className="flex flex-col gap-1">
                 <label htmlFor="new-password" className="text-[12px] font-semibold uppercase tracking-[0.08em] text-dark/80">
-                  Nueva contraseña
+                  {t('cambiarContrasena.newLabel')}
                 </label>
                 <input
                   id="new-password"
                   type="password"
-                  placeholder="Ingresar nueva contraseña"
+                  placeholder={t('cambiarContrasena.newPlaceholder')}
                   value={password}
                   onChange={(e) => { setPassword(e.target.value); if (errors.password) setErrors((p) => ({ ...p, password: null })) }}
                   onBlur={() => setErrors((p) => ({ ...p, password: validateRegisterPassword(password, '', '', '') }))}
@@ -112,12 +111,12 @@ export default function CambiarContrasenaPage() {
 
               <div className="flex flex-col gap-1">
                 <label htmlFor="confirm-password" className="text-[12px] font-semibold uppercase tracking-[0.08em] text-dark/80">
-                  Confirmar contraseña
+                  {t('cambiarContrasena.confirmLabel')}
                 </label>
                 <input
                   id="confirm-password"
                   type="password"
-                  placeholder="Repetir nueva contraseña"
+                  placeholder={t('cambiarContrasena.confirmPlaceholder')}
                   value={confirm}
                   onChange={(e) => { setConfirm(e.target.value); if (errors.confirm) setErrors((p) => ({ ...p, confirm: null })) }}
                   autoComplete="new-password"
@@ -133,7 +132,7 @@ export default function CambiarContrasenaPage() {
                 disabled={loading}
                 className="mt-2 w-full rounded-md bg-dark py-3 text-[16px] font-bold text-surface transition-[transform,background-color] duration-200 active:scale-[0.985] hover:bg-primary disabled:cursor-not-allowed disabled:opacity-50"
               >
-                {loading ? 'Guardando...' : 'Guardar nueva contraseña'}
+                {loading ? t('cambiarContrasena.submitting') : t('cambiarContrasena.submit')}
               </button>
             </form>
           </div>

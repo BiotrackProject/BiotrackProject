@@ -9,48 +9,60 @@ const MOCK_NOTIFICACIONES = [
     id: 'n001',
     tipo: 'nueva_denuncia',
     leida: false,
-    mensaje: 'Nueva denuncia recibida: #005 — Extracción en Las Terrenas, Samaná',
-    fecha: 'Hace 2 horas',
+    msgKey: 'notif.nueva_denuncia',
+    msgParams: { id: '005', location: 'Las Terrenas, Samaná' },
+    timeKey: 'notif.timeHours_other',
+    timeParams: { count: 2 },
     link: '/admin/denuncias/005',
   },
   {
     id: 'n002',
     tipo: 'cambio_estado',
     leida: false,
-    mensaje: 'Denuncia #001 cambió a estado "Corregido"',
-    fecha: 'Hace 4 horas',
+    msgKey: 'notif.cambio_estado',
+    msgParams: { id: '001', status: 'Corregido' },
+    timeKey: 'notif.timeHours_other',
+    timeParams: { count: 4 },
     link: '/admin/denuncias/001',
   },
   {
     id: 'n003',
     tipo: 'monitoreo',
     leida: false,
-    mensaje: 'Zona de Monitoreo #002 marcada como En Corrección — requiere acción',
-    fecha: 'Ayer, 3:15 PM',
+    msgKey: 'notif.monitoreo',
+    msgParams: { id: '002', status: 'En Corrección' },
+    timeKey: 'notif.timeYesterday',
+    timeParams: { time: '3:15 PM' },
     link: '/admin/monitoreo/002',
   },
   {
     id: 'n004',
     tipo: 'accion',
     leida: true,
-    mensaje: 'Acción correctiva #003 completada por Dr. Luis Sánchez',
-    fecha: 'Ayer, 10:00 AM',
+    msgKey: 'notif.accion',
+    msgParams: { id: '003', name: 'Dr. Luis Sánchez' },
+    timeKey: 'notif.timeYesterday',
+    timeParams: { time: '10:00 AM' },
     link: '/admin/acciones/003',
   },
   {
     id: 'n005',
     tipo: 'sistema',
     leida: true,
-    mensaje: 'Respaldo automático completado exitosamente — 06/06/2026 2:00 AM',
-    fecha: '6 jun 2026',
+    msgKey: 'notif.sistema',
+    msgParams: { date: '06/06/2026 2:00 AM' },
+    timeKey: 'notif.timeAgo',
+    timeParams: { date: '6 jun 2026' },
     link: null,
   },
   {
     id: 'n006',
     tipo: 'nueva_denuncia',
     leida: true,
-    mensaje: 'Nueva denuncia recibida: #004 — Minería ilegal en Pueblo Viejo, Sánchez Ramírez',
-    fecha: '3 jun 2026',
+    msgKey: 'notif.nueva_denuncia',
+    msgParams: { id: '004', location: 'Pueblo Viejo, Sánchez Ramírez' },
+    timeKey: 'notif.timeAgo',
+    timeParams: { date: '3 jun 2026' },
     link: '/admin/denuncias/004',
   },
 ]
@@ -141,9 +153,9 @@ export default function NotificacionesPage() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className={`text-sm leading-snug ${item.leida ? 'text-gray-600' : 'text-gray-800 font-medium'}`}>
-                        {item.mensaje}
+                        {t(item.msgKey, item.msgParams)}
                       </p>
-                      <p className="text-xs text-gray-400 mt-1">{item.fecha}</p>
+                      <p className="text-xs text-gray-400 mt-1">{t(item.timeKey, item.timeParams)}</p>
                     </div>
                     {!item.leida && (
                       <div className="mt-2 h-2 w-2 shrink-0 rounded-full bg-action" />

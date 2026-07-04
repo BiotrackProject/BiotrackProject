@@ -8,7 +8,7 @@ import StatusBadge from '../../components/ui/StatusBadge'
 import LoadingSpinner from '../../components/ui/LoadingSpinner'
 import { locationService } from '../../services/locationService'
 import { toast } from '../../utils/toast'
-import { ESTADOS_DENUNCIA, ESTADO_LABEL } from '../../services/denunciasService'
+import { ESTADOS_DENUNCIA } from '../../services/denunciasService'
 import { DR_CENTER } from '../../constants/mapConfig'
 
 /** Backend urgency values paired with i18n keys. */
@@ -184,7 +184,7 @@ export default function MapaDenunciasPage() {
                 className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:border-primary text-gray-700"
               >
                 <option value="">{t('mapa.allStatuses')}</option>
-                {ESTADOS_DENUNCIA.map((e) => <option key={e} value={e}>{t('estados.' + e)}</option>)}
+                {ESTADOS_DENUNCIA.map((e) => <option key={e} value={e}>{t(`estados.${e}`)}</option>)}
               </select>
             </div>
 
@@ -300,7 +300,7 @@ export default function MapaDenunciasPage() {
               <div className="flex gap-2 mb-3">
                 <StatusBadge status={selectedLocation.estado} />
                 {selectedLocation.nivelRiesgo && (
-                  <span className="text-xs font-semibold text-gray-500">{t('mapa.riskPrefix')} {selectedLocation.nivelRiesgo}</span>
+                  <span className="text-xs font-semibold text-gray-500">{t('mapa.riskPrefix')} {t(`urgencias.${selectedLocation.nivelRiesgo}`, selectedLocation.nivelRiesgo)}</span>
                 )}
               </div>
               <button
