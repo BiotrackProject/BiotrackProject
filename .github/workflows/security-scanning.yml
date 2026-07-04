@@ -7,11 +7,12 @@ on:
 
 permissions:
   contents: read
-  issues: write
 
 jobs:
   zap_scan_frontend:
     runs-on: ubuntu-latest
+    permissions:
+      issues: write
     steps:
       - name: Checkout code
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
@@ -24,10 +25,21 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           fail_action: true
 
+      - name: Upload ZAP report (frontend)
+        if: always()
+        uses: actions/upload-artifact@65c4c4a1ddee5b72f698fdd19549f0f0fb45cf08
+        with:
+          name: zap-report-frontend
+          path: |
+            report_json.json
+            report_md.md
+            report_html.html
+          retention-days: 30
+
   zap_scan_api:
     runs-on: ubuntu-latest
-    # Runs even if the previous job fails, so we can still get the report.
-    if: always()
+    permissions:
+      issues: write
     steps:
       - name: Checkout code
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
@@ -41,3 +53,14 @@ jobs:
           format: openapi
           rules_file_name: "owasp-zap-rules.txt"
           fail_action: true
+
+      - name: Upload ZAP report (api)
+        if: always()
+        uses: actions/upload-artifact@65c4c4a1ddee5b72f698fdd19549f0f0fb45cf08
+        with:
+          name: zap-report-api
+          path: |
+            report_json.json
+            report_md.md
+            report_html.html
+          retention-days: 30
