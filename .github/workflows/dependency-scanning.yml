@@ -8,13 +8,8 @@
 name: Security — SCA
 
 on:
-  push:
-    branches: [main]
   pull_request:
     branches: [main]
-  schedule:
-    # Monday 09:00 AST (UTC-4) = Monday 13:00 UTC
-    - cron: '0 13 * * 1'
   workflow_dispatch:
 
 jobs:
@@ -24,15 +19,15 @@ jobs:
     timeout-minutes: 10
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
 
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271
         with:
           version: 11.1.2
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e
         with:
-          node-version: '24'
+          node-version: "24"
           cache: pnpm
 
       - name: Install dependencies
@@ -49,7 +44,7 @@ jobs:
         run: pnpm audit --json > audit-report.json 2>/dev/null || true
 
       - name: Upload audit report
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         if: always()
         with:
           name: audit-report-${{ github.run_number }}
