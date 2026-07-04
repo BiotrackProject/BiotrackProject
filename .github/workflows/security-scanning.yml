@@ -5,6 +5,10 @@ on:
     branches: [main, dev, qa]
   workflow_dispatch:
 
+permissions:
+  contents: read
+  issues: write
+
 jobs:
   zap_scan_frontend:
     runs-on: ubuntu-latest
