@@ -88,6 +88,7 @@ export async function crearUsuario(datos: CrearUsuarioInput, adminId: string, ip
       institucion: datos.institucion ?? null,
       telefono: datos.telefono ?? null,
       Estado: 'Activo',
+      debe_cambiar_contrasena: true
     },
     select: {
       IDUsuario: true,

@@ -149,13 +149,32 @@ export async function getSeguimiento(codigo: string) {
           created_at: true,
         },
       },
+      // RF-5.2 — Solo acciones correctivas publicadas (visibilidad Publico),
+      // sin datos personales, para transparencia en la consulta pública.
+      accion_denuncia: {
+        where: { Accion_Correctiva: { visibilidad: 'Publico' } },
+        select: {
+          Accion_Correctiva: {
+            select: {
+              IDAccion: true,
+              titulo: true,
+              Estado: true,
+              resumen_publico: true,
+              FechaPlanificacion: true,
+              FechaImplementacion: true,
+            },
+          },
+        },
+      },
     },
   });
 
   if (!denuncia) throw new NotFoundError('Denuncia');
 
   const gps = await readGps(denuncia.IDDenuncia);
-  return { ...denuncia, gps };
+  const { accion_denuncia, ...rest } = denuncia;
+  const acciones = accion_denuncia.map((a) => a.Accion_Correctiva);
+  return { ...rest, acciones, gps };
 }
 
 /**
@@ -288,17 +307,31 @@ export async function getDenuncia(id: number) {
           fecha_carga: true,
         },
       },
+      // RF-5.1 — Acciones correctivas vinculadas (visibles en el detalle de la denuncia).
+      accion_denuncia: {
+        select: {
+          Accion_Correctiva: {
+            select: {
+              IDAccion: true,
+              titulo: true,
+              Estado: true,
+              FechaPlanificacion: true,
+            },
+          },
+        },
+      },
     },
   });
 
   if (!denuncia) throw new NotFoundError('Denuncia');
 
-  const { contacto_cifrado, historial_estado_denuncia, ...rest } = denuncia;
+  const { contacto_cifrado, historial_estado_denuncia, accion_denuncia, ...rest } = denuncia;
   const contacto = contacto_cifrado ? decrypt(contacto_cifrado) : null;
   const gps = await readGps(denuncia.IDDenuncia);
 
   // El frontend consume el historial bajo la clave `historial`.
-  return { ...rest, historial: historial_estado_denuncia, contacto, gps };
+  const acciones = accion_denuncia.map((a) => a.Accion_Correctiva);
+  return { ...rest, historial: historial_estado_denuncia, acciones, contacto, gps };
 }
 
 /**

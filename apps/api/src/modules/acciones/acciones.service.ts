@@ -10,6 +10,7 @@ import type {
   PublicarAccionInput,
 } from './acciones.validation.js';
 import { type estado_accion, type Prisma } from '@prisma/client';
+import type { EvidenciaAccionInput } from './acciones.upload.js';
 
 // Valid state machine transitions for acciones correctivas
 const TRANSICIONES_ACCION: Record<estado_accion, estado_accion[]> = {
@@ -85,10 +86,12 @@ export async function listarAcciones(
  */
 export async function crearAccion(
   datos: CrearAccionInput,
+  evidencias: EvidenciaAccionInput[],
   usuarioId: string,
   ip: string | undefined
 ) {
-  const { denunciaIds, FechaPlanificacion, FechaImplementacion, Presupuesto, ...rest } = datos;
+  const { denunciaIds, zonaIds, FechaPlanificacion, FechaImplementacion, Presupuesto, ...rest } =
+    datos;
 
   const accion = await prisma.accion_Correctiva.create({
     data: {
@@ -106,10 +109,29 @@ export async function crearAccion(
             },
           }
         : {}),
+      ...(zonaIds && zonaIds.length > 0
+        ? {
+            accion_zona: {
+              create: zonaIds.map((id) => ({ IDZona: id })),
+            },
+          }
+        : {}),
+      ...(evidencias.length > 0
+        ? {
+            Evidencia_Accion: {
+              create: evidencias.map((e) => ({
+                archivo_url: e.archivo_url,
+                TipoArchivo: e.TipoArchivo,
+                tamano_bytes: e.tamano_bytes,
+                hash_archivo: e.hash_archivo,
+              })),
+            },
+          }
+        : {}),
     },
     include: {
       Usuario: { select: { nombre_completo: true, correo_electronico: true } },
-      _count: { select: { accion_denuncia: true } },
+      _count: { select: { accion_denuncia: true, accion_zona: true, Evidencia_Accion: true } },
     },
   });
 
@@ -152,6 +174,7 @@ export async function getAccion(id: string) {
           },
         },
       },
+      accion_zona: { select: { IDZona: true } },
       Evidencia_Accion: true,
     },
   });
@@ -181,7 +204,8 @@ export async function actualizarAccion(
     throw new ForbiddenError('Solo el responsable puede modificar esta acción.');
   }
 
-  const { denunciaIds: _denunciaIds, FechaPlanificacion, FechaImplementacion, Presupuesto, ...rest } = datos;
+  const { denunciaIds, zonaIds, FechaPlanificacion, FechaImplementacion, Presupuesto, ...rest } =
+    datos;
 
   const actualizada = await prisma.accion_Correctiva.update({
     where: { IDAccion: id },
@@ -196,6 +220,23 @@ export async function actualizarAccion(
         ? { FechaImplementacion: FechaImplementacion ? new Date(FechaImplementacion) : null }
         : {}),
       ...(Presupuesto !== undefined ? { Presupuesto } : {}),
+      // Vínculos: si llega el array, se reemplaza el conjunto completo (deleteMany + create).
+      ...(denunciaIds !== undefined
+        ? {
+            accion_denuncia: {
+              deleteMany: {},
+              create: denunciaIds.map((idDen) => ({ IDDenuncia: idDen })),
+            },
+          }
+        : {}),
+      ...(zonaIds !== undefined
+        ? {
+            accion_zona: {
+              deleteMany: {},
+              create: zonaIds.map((idZona) => ({ IDZona: idZona })),
+            },
+          }
+        : {}),
     },
     include: {
       Usuario: { select: { nombre_completo: true } },
@@ -361,7 +402,17 @@ export async function getAccionPublica(id: string) {
       FechaPlanificacion: true,
       FechaImplementacion: true,
       visibilidad: true,
-      Usuario: { select: { nombre_completo: true, institucion: true } },
+      // Institución (dato institucional, no personal). Se omite nombre_completo
+      // del responsable para no exponer datos personales (RF-5.2 / TC-AC-003).
+      Usuario: { select: { institucion: true } },
+      accion_denuncia: {
+        select: {
+          Denuncia: {
+            select: { codigo_seguimiento: true, tipo_actividad: true, Estado: true },
+          },
+        },
+      },
+      accion_zona: { select: { IDZona: true } },
     },
   });
 
@@ -371,5 +422,12 @@ export async function getAccionPublica(id: string) {
     throw new NotFoundError('Acción Correctiva');
   }
 
-  return accion;
+  // Aplanar vínculos a formato público sin datos personales.
+  const { accion_denuncia, accion_zona, Usuario, ...rest } = accion;
+  return {
+    ...rest,
+    institucion: Usuario?.institucion ?? null,
+    denuncias: accion_denuncia.map((a) => a.Denuncia),
+    zonas: accion_zona.map((z) => z.IDZona),
+  };
 }

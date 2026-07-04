@@ -24,6 +24,16 @@ export interface Denuncia {
   created_at: string
   historial?: HistorialEstado[]
   Evidencia_Denuncia?: Evidencia[]
+  /** RF-5.1 — Acciones correctivas vinculadas a esta denuncia. */
+  acciones?: AccionVinculada[]
+}
+
+/** Acción correctiva vinculada, expuesta en el detalle de la denuncia (RF-5.1). */
+export interface AccionVinculada {
+  IDAccion: string
+  titulo: string
+  Estado: string
+  FechaPlanificacion: string | null
 }
 
 export interface HistorialEstado {
@@ -72,6 +82,18 @@ export interface DenunciaSeguimiento {
   IDZona: string | null
   gps: string | null
   historial_estado_denuncia: SeguimientoEstado[]
+  /** RF-5.2 — Acciones correctivas publicadas vinculadas (sin datos personales). */
+  acciones?: AccionPublicaVinculada[]
+}
+
+/** Acción correctiva publicada, expuesta en la consulta pública de denuncias. */
+export interface AccionPublicaVinculada {
+  IDAccion: string
+  titulo: string
+  Estado: string
+  resumen_publico: string | null
+  FechaPlanificacion: string | null
+  FechaImplementacion: string | null
 }
 
 /** Denuncia geolocalizada para el mapa (solo las que tienen coordenadas). */

@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { authenticate } from '../../middleware/authenticate.js';
 import { authorize } from '../../middleware/authorize.js';
+import { uploadEvidencias } from './acciones.upload.js';
 import {
   listarAcciones,
   crearAccion,
@@ -10,6 +11,7 @@ import {
   publicarAccion,
   despublicarAccion,
   getAccionPublica,
+  exportarAccion,
 } from './acciones.controller.js';
 
 const router: Router = Router();
@@ -26,7 +28,10 @@ router.get('/publicas/:id', getAccionPublica);
 
 // Rutas protegidas
 router.get('/', authenticate, authorize('MOD_05_ACCIONES', 'Leer'), listarAcciones);
-router.post('/', authenticate, authorize('MOD_05_ACCIONES', 'Crear'), crearAccion);
+// Acepta multipart/form-data con evidencias adjuntas (campo "evidencias").
+router.post('/', authenticate, authorize('MOD_05_ACCIONES', 'Crear'), uploadEvidencias, crearAccion);
+// RF-5.3 — Exportación PDF/XLSX. Debe ir antes de /:id para no colisionar.
+router.get('/:id/exportar', authenticate, authorize('MOD_05_ACCIONES', 'Exportar'), exportarAccion);
 router.get('/:id', authenticate, authorize('MOD_05_ACCIONES', 'Leer'), getAccion);
 router.put('/:id', authenticate, authorize('MOD_05_ACCIONES', 'Editar'), actualizarAccion);
 router.post('/:id/estado', authenticate, authorize('MOD_05_ACCIONES', 'Editar'), cambiarEstadoAccion);

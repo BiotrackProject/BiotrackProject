@@ -44,3 +44,30 @@ export function validateCode(value) {
   if (!value?.trim()) return 'El código es requerido'
   return null
 }
+
+const E164_REGEX = /^\+[1-9]\d{7,14}$/
+
+/**
+ * Normaliza un teléfono a formato E.164 (+<código país><número>), que es el
+ * que exige el backend (E164_REGEX). Devuelve `{ valor: null }` si está vacío,
+ * o `{ valor: null, error }` si no se puede normalizar a un formato válido.
+ *
+ * @param {string} raw  Valor crudo del input.
+ * @returns {{ valor: string | null, error?: string }}
+ */
+export function normalizarTelefono(raw) {
+  const trimmed = (raw ?? '').trim()
+  if (!trimmed) return { valor: null }
+
+  // Conserva el + inicial y elimina cualquier otro caracter no numérico.
+  const tienePlus = trimmed.startsWith('+')
+  const digitos = trimmed.replace(/\D/g, '')
+
+  // Número local de 10 dígitos sin + (RD/NANP) → asume código de país +1
+  const e164 = !tienePlus && digitos.length === 10 ? `+1${digitos}` : `+${digitos}`
+
+  if (!E164_REGEX.test(e164)) {
+    return { valor: null, error: 'Teléfono inválido. Usa formato internacional, ej. +18090000000' }
+  }
+  return { valor: e164 }
+}

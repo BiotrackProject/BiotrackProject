@@ -56,21 +56,21 @@ export const usuariosService = {
   },
 
   async create(data: NuevoUsuarioForm): Promise<Usuario> {
-    const res = await apiClient.post<Usuario>('/api/v1/admin/usuarios', data)
-    if (!res.success || !res.data) throw new Error(res.error ?? 'Error al crear usuario')
-    return res.data
+    const res = await apiClient.post<{ mensaje: string; usuario: Usuario }>('/api/v1/admin/usuarios', data)
+    if (!res.success || !res.data?.usuario) throw new Error(res.error ?? 'Error al crear usuario')
+    return res.data.usuario
   },
 
   async update(id: string, data: Partial<NuevoUsuarioForm>): Promise<Usuario> {
-    const res = await apiClient.patch<Usuario>(`/api/v1/admin/usuarios/${id}`, data)
-    if (!res.success || !res.data) throw new Error(res.error ?? 'Error al actualizar')
-    return res.data
+    const res = await apiClient.patch<{ mensaje: string; usuario: Usuario }>(`/api/v1/admin/usuarios/${id}`, data)
+    if (!res.success || !res.data?.usuario) throw new Error(res.error ?? 'Error al actualizar')
+    return res.data.usuario
   },
 
   async asignarRol(id: string, rol_id: string): Promise<Usuario> {
-    const res = await apiClient.patch<Usuario>(`/api/v1/admin/usuarios/${id}/rol`, { rol_id })
-    if (!res.success || !res.data) throw new Error(res.error ?? 'Error al asignar rol')
-    return res.data
+    const res = await apiClient.patch<{ mensaje: string; usuario: Usuario }>(`/api/v1/admin/usuarios/${id}/rol`, { rol_id })
+    if (!res.success || !res.data?.usuario) throw new Error(res.error ?? 'Error al asignar rol')
+    return res.data.usuario
   },
 
   async desactivar(id: string): Promise<void> {

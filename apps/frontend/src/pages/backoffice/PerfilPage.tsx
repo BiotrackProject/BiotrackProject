@@ -4,6 +4,7 @@ import { User, Mail, Phone, Building, Shield } from 'lucide-react'
 import BackofficeTopbar from '../../components/backoffice/BackofficeTopbar'
 import LoadingSpinner from '../../components/ui/LoadingSpinner'
 import { toast } from '../../utils/toast'
+import { normalizarTelefono } from '../../utils/validation'
 import * as authService from '../../services/authService'
 import type { PerfilCompleto } from '../../services/authService'
 
@@ -65,11 +66,16 @@ export default function PerfilPage() {
   }
 
   async function handleSave() {
+    const tel = normalizarTelefono(form.telefono)
+    if (tel.error) {
+      toast.error(tel.error)
+      return
+    }
     setSaving(true)
     try {
       const res = await authService.actualizarPerfil({
         nombre_completo: form.nombre_completo || undefined,
-        telefono: form.telefono || null,
+        telefono: tel.valor,
       })
       if (res.success && res.data) {
         setPerfil(res.data.usuario as PerfilCompleto)

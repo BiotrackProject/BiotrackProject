@@ -8,6 +8,7 @@ import LoadingSpinner from '../../components/ui/LoadingSpinner'
 import { monitoreoService } from '../../services/monitoreoService'
 import { ESTADO_STYLES } from '../../services/denunciasService'
 import type { Denuncia, EstadoDenuncia } from '../../services/denunciasService'
+import { descargarBlob } from '../../utils/download'
 
 const MONITOREO_ESTADOS: EstadoDenuncia[] = ['Pendiente', 'En_Investigacion', 'Verificada']
 const PAGE_SIZE_OPTIONS = [5, 10, 20]
@@ -21,13 +22,7 @@ function exportCSV(data: Denuncia[], headers: string[]) {
     d.Estado,
   ])
   const csv = [headers, ...rows].map((r) => r.join(',')).join('\n')
-  const blob = new Blob([csv], { type: 'text/csv' })
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = 'monitoreos.csv'
-  a.click()
-  URL.revokeObjectURL(url)
+  descargarBlob(new Blob([csv], { type: 'text/csv' }), 'monitoreos.csv')
 }
 
 export default function MonitoreoPage() {

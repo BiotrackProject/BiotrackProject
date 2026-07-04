@@ -9,6 +9,7 @@ import Modal from '../../components/ui/Modal'
 import { denunciasService, ESTADOS_DENUNCIA, ESTADO_LABEL, ESTADO_STYLES, TIPO_LABEL } from '../../services/denunciasService'
 import type { Denuncia, EstadoDenuncia } from '../../services/denunciasService'
 import { toast } from '../../utils/toast'
+import { descargarBlob } from '../../utils/download'
 
 const FILE_COLORS: Record<string, string> = {
   JPG: 'bg-blue-100 text-blue-600',
@@ -71,7 +72,7 @@ export default function DetalleDenunciaPage() {
       const refreshed = await denunciasService.getById(id!)
       setDenuncia(refreshed)
       setEstado(refreshed.Estado)
-      toast.success(t('detalleDenuncia.statusUpdated', { status: t('estados.' + pendingEstado) }))
+      toast.success(t('detalleDenuncia.statusUpdated', { status: t(`estados.${pendingEstado}`) }))
       setStatusModal(false)
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : t('detalleDenuncia.statusError'))
@@ -84,16 +85,12 @@ export default function DetalleDenunciaPage() {
     if (!denuncia) return
     const lines = [
       `${t('detalleDenuncia.exportCode')} ${denuncia.codigo_seguimiento}`,
-      `${t('detalleDenuncia.exportStatus')} ${t('estados.' + estado)}`,
+      `${t('detalleDenuncia.exportStatus')} ${t(`estados.${estado}`)}`,
       `${t('detalleDenuncia.exportDate')} ${new Date(denuncia.Fecha_denuncia).toLocaleDateString('es-DO')}`,
-      `${t('detalleDenuncia.exportType')} ${t('tipos.' + denuncia.tipo_actividad)}`,
+      `${t('detalleDenuncia.exportType')} ${t(`tipos.${denuncia.tipo_actividad}`)}`,
       `${t('detalleDenuncia.exportDescription')} ${denuncia.Descripcion}`,
     ]
-    const blob = new Blob([lines.join('\n')], { type: 'text/plain' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url; a.download = `denuncia_${denuncia.codigo_seguimiento}.txt`; a.click()
-    URL.revokeObjectURL(url)
+    descargarBlob(new Blob([lines.join('\n')], { type: 'text/plain' }), `denuncia_${denuncia.codigo_seguimiento}.txt`)
     toast.info(t('denuncias.exportStarted'))
   }
 
@@ -132,7 +129,7 @@ export default function DetalleDenunciaPage() {
                 className="text-sm font-semibold text-primary bg-transparent outline-none cursor-pointer"
               >
                 {ESTADOS_DENUNCIA.map((e) => (
-                  <option key={e} value={e}>{t('estados.' + e)}</option>
+                  <option key={e} value={e}>{t(`estados.${e}`)}</option>
                 ))}
               </select>
             </div>
@@ -158,7 +155,7 @@ export default function DetalleDenunciaPage() {
           <div className="flex items-center gap-2">
             <span className="text-sm font-semibold text-gray-500">{t('detalleDenuncia.statusLabel')}</span>
             <span className={`rounded-full px-3 py-1 text-xs font-semibold ${ESTADO_STYLES[estado]}`}>
-              {t('estados.' + estado)}
+              {t(`estados.${estado}`)}
             </span>
           </div>
         </div>
@@ -203,11 +200,11 @@ export default function DetalleDenunciaPage() {
                   <div className="flex flex-col gap-1 flex-1">
                     <div className="flex items-center gap-2">
                       <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${ESTADO_STYLES[h.estado_anterior]}`}>
-                        {t('estados.' + h.estado_anterior)}
+                        {t(`estados.${h.estado_anterior}`)}
                       </span>
                       <span className="text-gray-400">→</span>
                       <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${ESTADO_STYLES[h.estado_nuevo]}`}>
-                        {t('estados.' + h.estado_nuevo)}
+                        {t(`estados.${h.estado_nuevo}`)}
                       </span>
                     </div>
                     {h.comentario && <p className="text-xs text-gray-500 mt-1">{h.comentario}</p>}
@@ -242,20 +239,51 @@ export default function DetalleDenunciaPage() {
           )}
         </InfoCard>
 
-        {/* Acción correctiva link */}
-        {(estado === 'Verificada' || estado === 'En_Investigacion') && (
-          <div className="bg-cyan-50 border border-cyan-200 rounded-2xl px-6 py-4 flex items-center justify-between">
-            <p className="text-sm text-cyan-700 font-medium">
-              {t('detalleDenuncia.relatedActions')}
-            </p>
-            <button
-              onClick={() => navigate('/admin/acciones')}
-              className="rounded-lg bg-cyan-600 px-4 py-2 text-sm font-semibold text-white hover:bg-cyan-700 transition-colors"
-            >
-              {t('detalleDenuncia.viewActions')}
-            </button>
-          </div>
-        )}
+        {(() => {
+          if (denuncia.acciones && denuncia.acciones.length > 0) {
+            return (
+              <InfoCard title={t('detalleDenuncia.linkedActions')}>
+                <div className="flex flex-col gap-2">
+                  {denuncia.acciones.map((a) => (
+                    <div key={a.IDAccion} className="flex items-center justify-between rounded-lg border border-gray-100 px-4 py-2.5">
+                      <div>
+                        <p className="text-sm font-semibold text-primary">{a.titulo}</p>
+                        <p className="text-xs text-gray-400">
+                          {t(`estados.${a.Estado}`)}
+                          {a.FechaPlanificacion ? ` · ${new Date(a.FechaPlanificacion).toLocaleDateString('es-DO')}` : ''}
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => navigate(`/admin/acciones/${a.IDAccion}`)}
+                        className="text-xs font-semibold text-primary hover:underline"
+                      >
+                        {t('detalleDenuncia.viewAction')}
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </InfoCard>
+            )
+          }
+
+          if (estado === 'Verificada' || estado === 'En_Investigacion') {
+            return (
+              <div className="bg-cyan-50 border border-cyan-200 rounded-2xl px-6 py-4 flex items-center justify-between">
+                <p className="text-sm text-cyan-700 font-medium">
+                  {t('detalleDenuncia.relatedActions')}
+                </p>
+                <button
+                  onClick={() => navigate('/admin/acciones')}
+                  className="rounded-lg bg-cyan-600 px-4 py-2 text-sm font-semibold text-white hover:bg-cyan-700 transition-colors"
+                >
+                  {t('detalleDenuncia.viewActions')}
+                </button>
+              </div>
+            )
+          }
+
+          return null
+        })()}
       </main>
 
       {/* Status change confirmation */}
@@ -269,7 +297,7 @@ export default function DetalleDenunciaPage() {
       >
         <div className="flex flex-col gap-4">
           <p>
-            {t('detalleDenuncia.changeStatusMsg', { code: denuncia.codigo_seguimiento, status: t('estados.' + pendingEstado) })}
+            {t('detalleDenuncia.changeStatusMsg', { code: denuncia.codigo_seguimiento, status: t(`estados.${pendingEstado}`) })}
           </p>
           <div className="flex flex-col gap-1.5">
             <label className="text-xs font-semibold text-gray-600">{t('detalleDenuncia.commentLabel')}</label>

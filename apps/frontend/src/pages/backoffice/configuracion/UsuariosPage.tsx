@@ -10,6 +10,7 @@ import LoadingSpinner from '../../../components/ui/LoadingSpinner'
 import { usuariosService } from '../../../services/usuariosService'
 import type { Usuario, Rol } from '../../../services/usuariosService'
 import { toast } from '../../../utils/toast'
+import { normalizarTelefono } from '../../../utils/validation'
 
 function getRolColor(rolNombre: string) {
   const map: Record<string, string> = {
@@ -113,6 +114,8 @@ export default function UsuariosPage() {
     if (!nuevoForm.correo_electronico.trim() || !nuevoForm.correo_electronico.includes('@')) errs.correo_electronico = t('usuarios.validation.emailInvalid')
     if (!nuevoForm.contrasena.trim() || nuevoForm.contrasena.length < 8) errs.contrasena = t('usuarios.validation.passwordMin')
     if (!nuevoForm.rol_id) errs.rol_id = t('usuarios.validation.rolRequired')
+    const tel = normalizarTelefono(nuevoForm.telefono)
+    if (tel.error) errs.telefono = tel.error
     setNuevoErrors(errs)
     return Object.keys(errs).length === 0
   }
@@ -128,7 +131,7 @@ export default function UsuariosPage() {
         rol_id: nuevoForm.rol_id,
         cargo: nuevoForm.cargo || undefined,
         institucion: nuevoForm.institucion || undefined,
-        telefono: nuevoForm.telefono || undefined,
+        telefono: normalizarTelefono(nuevoForm.telefono).valor ?? undefined,
       })
       setUsuarios((prev) => [...prev, created])
       toast.success(t('usuarios.created', { name: created.nombre_completo }))
@@ -315,7 +318,8 @@ export default function UsuariosPage() {
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div className="flex flex-col gap-1">
               <label className="text-xs font-semibold text-gray-600">{t('usuarios.phoneLabel')}</label>
-              <input value={nuevoForm.telefono} onChange={(e) => setNuevoForm((p) => ({ ...p, telefono: e.target.value }))} className={fieldCls()} placeholder={t('usuarios.phonePlaceholder')} />
+              <input value={nuevoForm.telefono} onChange={(e) => setNuevoForm((p) => ({ ...p, telefono: e.target.value }))} className={fieldCls(nuevoErrors.telefono)} placeholder={t('usuarios.phonePlaceholder')} />
+              {nuevoErrors.telefono && <p className="text-xs text-action">{nuevoErrors.telefono}</p>}
             </div>
             <div className="flex flex-col gap-1">
               <label className="text-xs font-semibold text-gray-600">{t('usuarios.rolLabel')}</label>

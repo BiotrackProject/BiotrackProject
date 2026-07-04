@@ -31,6 +31,7 @@ const LandingPage          = lazy(() => import('../pages/LandingPage'))
 const ReportPage           = lazy(() => import('../pages/ReportPage'))
 const SearchReportsPage    = lazy(() => import('../pages/SearchReportsPage'))
 const ReportDetailPage     = lazy(() => import('../pages/ReportDetailPage'))
+const ReporteAccionPublicoPage = lazy(() => import('../pages/ReporteAccionPublicoPage'))
 const BackofficeLayout     = lazy(() => import('../components/backoffice/BackofficeLayout'))
 const DashboardPage        = lazy(() => import('../pages/backoffice/DashboardPage'))
 const DenunciasPage        = lazy(() => import('../pages/backoffice/DenunciasPage'))
@@ -40,6 +41,7 @@ const MonitoreoPage        = lazy(() => import('../pages/backoffice/MonitoreoPag
 const DetalleMonitoreoPage = lazy(() => import('../pages/backoffice/DetalleMonitoreoPage'))
 const PlanificarMonitoreoPage = lazy(() => import('../pages/backoffice/PlanificarMonitoreoPage'))
 const AccionesCorrectivasPage = lazy(() => import('../pages/backoffice/AccionesCorrectivasPage'))
+const CrearAccionPage      = lazy(() => import('../pages/backoffice/CrearAccionPage'))
 const DetalleAccionPage    = lazy(() => import('../pages/backoffice/DetalleAccionPage'))
 const UsuariosPage         = lazy(() => import('../pages/backoffice/configuracion/UsuariosPage'))
 const SolicitudesPage      = lazy(() => import('../pages/backoffice/configuracion/SolicitudesPage'))
@@ -66,6 +68,7 @@ const router = createBrowserRouter([
   { path: '/cambiar-contrasena',         element: <PrivateRoute>{withSuspense(CambiarContrasenaPage)}</PrivateRoute> },
   { path: '/reporte/nuevo',              element: withSuspense(ReportPage) },
   { path: '/reportes',                   element: withSuspense(SearchReportsPage) },
+  { path: '/reportes/accion/:id',        element: withSuspense(ReporteAccionPublicoPage) },
   { path: '/reportes/:id',               element: withSuspense(ReportDetailPage) },
   {
     path: '/admin',
@@ -79,6 +82,7 @@ const router = createBrowserRouter([
       { path: 'monitoreo/:id',             element: withSuspense(DetalleMonitoreoPage) },
       { path: 'monitoreo/:id/planificar',  element: withSuspense(PlanificarMonitoreoPage) },
       { path: 'acciones',                  element: withSuspense(AccionesCorrectivasPage) },
+      { path: 'acciones/nueva',            element: withSuspense(CrearAccionPage) },
       { path: 'acciones/:id',              element: withSuspense(DetalleAccionPage) },
       { path: 'configuracion/usuarios',    element: withSuspense(UsuariosPage) },
       { path: 'configuracion/solicitudes', element: withSuspense(SolicitudesPage) },
