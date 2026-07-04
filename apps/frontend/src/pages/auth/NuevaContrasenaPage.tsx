@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Link, useNavigate, useLocation, Navigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import AuthPageLayout from '../../components/auth/AuthPageLayout'
-import { inputCls } from '../../components/auth/inputCls'
+import PasswordField from '../../components/auth/PasswordField'
 import { validateRegisterPassword } from '../../utils/validation'
 import { resetPassword } from '../../services/authService'
 
@@ -60,38 +60,26 @@ export default function NuevaContrasenaPage() {
       </p>
 
       <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-5">
-        <div className="flex flex-col gap-1">
-          <label htmlFor="new-password" className="text-[12px] font-semibold uppercase tracking-[0.08em] text-dark/80">
-            {t('nuevaContrasena.newLabel')}
-          </label>
-          <input
-            id="new-password"
-            type="password"
-            placeholder={t('nuevaContrasena.newPlaceholder')}
-            value={password}
-            onChange={(e) => { setPassword(e.target.value); if (errors.password) setErrors((p) => ({ ...p, password: null })) }}
-            onBlur={() => setErrors((p) => ({ ...p, password: validateRegisterPassword(password, '', '', email) }))}
-            autoComplete="new-password"
-            className={inputCls(errors.password)}
-          />
-          {errors.password && <p className="text-xs text-action/95">{errors.password}</p>}
-        </div>
+        <PasswordField
+          id="new-password"
+          label={t('nuevaContrasena.newLabel')}
+          placeholder={t('nuevaContrasena.newPlaceholder')}
+          value={password}
+          error={errors.password}
+          autoComplete="new-password"
+          onChange={(e) => { setPassword(e.target.value); if (errors.password) setErrors((p) => ({ ...p, password: null })) }}
+          onBlur={() => setErrors((p) => ({ ...p, password: validateRegisterPassword(password, '', '', email) }))}
+        />
 
-        <div className="flex flex-col gap-1">
-          <label htmlFor="confirm-password" className="text-[12px] font-semibold uppercase tracking-[0.08em] text-dark/80">
-            {t('nuevaContrasena.confirmLabel')}
-          </label>
-          <input
-            id="confirm-password"
-            type="password"
-            placeholder={t('nuevaContrasena.confirmPlaceholder')}
-            value={confirm}
-            onChange={(e) => { setConfirm(e.target.value); if (errors.confirm) setErrors((p) => ({ ...p, confirm: null })) }}
-            autoComplete="new-password"
-            className={inputCls(errors.confirm)}
-          />
-          {errors.confirm && <p className="text-xs text-action/95">{errors.confirm}</p>}
-        </div>
+        <PasswordField
+          id="confirm-password"
+          label={t('nuevaContrasena.confirmLabel')}
+          placeholder={t('nuevaContrasena.confirmPlaceholder')}
+          value={confirm}
+          error={errors.confirm}
+          autoComplete="new-password"
+          onChange={(e) => { setConfirm(e.target.value); if (errors.confirm) setErrors((p) => ({ ...p, confirm: null })) }}
+        />
 
         {formError && <p className="text-center text-[13px] text-action/95">{formError}</p>}
 

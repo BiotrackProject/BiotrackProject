@@ -10,9 +10,10 @@ import { denunciasService, ESTADOS_DENUNCIA, ESTADO_STYLES } from '../../service
 import type { Denuncia, EstadoDenuncia } from '../../services/denunciasService'
 import { toast } from '../../utils/toast'
 import { descargarBlob } from '../../utils/download'
-import { formatDate, formatDateTime } from '../../utils/dates'
+import { formatDate } from '../../utils/dates'
 import { InfoCard, InfoRow } from '../../components/ui/InfoCard'
-import { FILE_COLORS } from '../../constants/fileColors'
+import HistorialEstados from '../../components/backoffice/HistorialEstados'
+import EvidenciaList from '../../components/backoffice/EvidenciaList'
 
 export default function DetalleDenunciaPage() {
   const { id } = useParams()
@@ -171,49 +172,16 @@ export default function DetalleDenunciaPage() {
         {/* Historial de estados */}
         {denuncia.historial && denuncia.historial.length > 0 && (
           <InfoCard title={t('detalleDenuncia.historyTitle')}>
-            <div className="flex flex-col gap-3">
-              {denuncia.historial.map((h) => (
-                <div key={h.id} className="flex items-start gap-3 text-sm">
-                  <div className="flex flex-col gap-1 flex-1">
-                    <div className="flex items-center gap-2">
-                      <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${ESTADO_STYLES[h.estado_anterior]}`}>
-                        {t(`estados.${h.estado_anterior}`)}
-                      </span>
-                      <span className="text-gray-400">→</span>
-                      <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${ESTADO_STYLES[h.estado_nuevo]}`}>
-                        {t(`estados.${h.estado_nuevo}`)}
-                      </span>
-                    </div>
-                    {h.comentario && <p className="text-xs text-gray-500 mt-1">{h.comentario}</p>}
-                    <p className="text-xs text-gray-400">
-                      {h.Usuario.nombre_completo} · {formatDateTime(h.created_at)}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
+            <HistorialEstados historial={denuncia.historial} />
           </InfoCard>
         )}
 
         {/* Evidencias */}
         <InfoCard title={t('detalleDenuncia.evidenceTitle')}>
-          {!denuncia.Evidencia_Denuncia || denuncia.Evidencia_Denuncia.length === 0 ? (
-            <p className="text-sm text-gray-400">{t('detalleDenuncia.noEvidence')}</p>
-          ) : (
-            <div className="flex flex-wrap gap-6">
-              {denuncia.Evidencia_Denuncia.map((ev) => {
-                const ext = ev.TipoArchivo.toUpperCase()
-                return (
-                  <a key={ev.IDEvidencia} href={ev.archivo_url} target="_blank" rel="noopener noreferrer" className="flex flex-col items-center gap-2">
-                    <div className={`flex h-14 w-12 items-center justify-center rounded-xl text-xs font-bold ${FILE_COLORS[ext] ?? 'bg-gray-100 text-gray-500'}`}>
-                      {ext}
-                    </div>
-                    <span className="text-xs text-gray-500 max-w-[80px] text-center truncate">{ev.archivo_url.split('/').pop()}</span>
-                  </a>
-                )
-              })}
-            </div>
-          )}
+          <EvidenciaList
+            evidencias={denuncia.Evidencia_Denuncia ?? []}
+            emptyText={t('detalleDenuncia.noEvidence')}
+          />
         </InfoCard>
 
         {(() => {

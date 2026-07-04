@@ -1,30 +1,20 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
-import { Search, SlidersHorizontal, Download, ChevronLeft, ChevronRight, ListFilter, Map } from 'lucide-react'
+import { Search, Download, ListFilter, Map } from 'lucide-react'
 import { toast } from '../../utils/toast'
 import BackofficeTopbar from '../../components/backoffice/BackofficeTopbar'
 import LoadingSpinner from '../../components/ui/LoadingSpinner'
+import StatusFilterDropdown from '../../components/backoffice/StatusFilterDropdown'
+import PaginationBar from '../../components/backoffice/PaginationBar'
 import { monitoreoService } from '../../services/monitoreoService'
 import { ESTADO_STYLES } from '../../services/denunciasService'
 import type { Denuncia, EstadoDenuncia } from '../../services/denunciasService'
-import { descargarBlob } from '../../utils/download'
 import { formatDate } from '../../utils/dates'
+import { exportDenunciaCSV } from '../../utils/csv'
 
 const MONITOREO_ESTADOS: EstadoDenuncia[] = ['Pendiente', 'En_Investigacion', 'Verificada']
 const PAGE_SIZE_OPTIONS = [5, 10, 20]
-
-function exportCSV(data: Denuncia[], headers: string[]) {
-  const rows = data.map((d) => [
-    d.codigo_seguimiento,
-    `"${d.Descripcion.replace(/"/g, "'")}"`,
-    d.tipo_actividad,
-    formatDate(d.Fecha_denuncia),
-    d.Estado,
-  ])
-  const csv = [headers, ...rows].map((r) => r.join(',')).join('\n')
-  descargarBlob(new Blob([csv], { type: 'text/csv' }), 'monitoreos.csv')
-}
 
 export default function MonitoreoPage() {
   const { t } = useTranslation()
@@ -56,6 +46,12 @@ export default function MonitoreoPage() {
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize))
   const paginated = filtered.slice((page - 1) * pageSize, page * pageSize)
 
+  function handleFilterSelect(estado: EstadoDenuncia | '') {
+    setFilterEstado(estado)
+    setFilterOpen(false)
+    setPage(1)
+  }
+
   return (
     <>
       <BackofficeTopbar
@@ -70,7 +66,7 @@ export default function MonitoreoPage() {
               {t('denuncias.viewMap')}
             </button>
             <button
-              onClick={() => exportCSV(filtered, [t('monitoreo.colCode'), t('monitoreo.colDescription'), t('monitoreo.colType'), t('monitoreo.colDate'), t('monitoreo.colStatus')])}
+              onClick={() => exportDenunciaCSV(filtered, [t('monitoreo.colCode'), t('monitoreo.colDescription'), t('monitoreo.colType'), t('monitoreo.colDate'), t('monitoreo.colStatus')], 'monitoreos.csv')}
               className="flex items-center gap-1.5 rounded-lg border border-emerald-500 px-3 py-2 text-xs font-semibold text-emerald-600 transition-colors hover:bg-emerald-50 sm:px-4 sm:text-sm"
             >
               <Download className="h-4 w-4" />
@@ -96,30 +92,16 @@ export default function MonitoreoPage() {
               />
               <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
             </div>
-            <div className="relative">
-              <button
-                onClick={() => setFilterOpen((v) => !v)}
-                aria-label={t('monitoreo.filterLabel')}
-                aria-expanded={filterOpen}
-                className={`flex items-center justify-center h-10 w-10 rounded-xl border transition-colors ${filterOpen || filterEstado ? 'border-primary bg-primary/10 text-primary' : 'border-gray-200 text-gray-400 hover:border-gray-300'}`}
-              >
-                <SlidersHorizontal className="h-4 w-4" />
-              </button>
-              {filterOpen && (
-                <div className="absolute top-12 left-0 z-20 w-48 rounded-xl border border-gray-100 bg-white shadow-lg p-2">
-                  <p className="px-2 py-1 text-xs font-semibold text-gray-400 uppercase tracking-wide">{t('denuncias.filterTitle')}</p>
-                  {(['', ...MONITOREO_ESTADOS] as Array<EstadoDenuncia | ''>).map((e) => (
-                    <button
-                      key={e}
-                      onClick={() => { setFilterEstado(e); setFilterOpen(false); setPage(1) }}
-                      className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${filterEstado === e ? 'bg-primary/10 text-primary font-semibold' : 'text-gray-600 hover:bg-gray-50'}`}
-                    >
-                      {e ? t(`estados.${e}`) : t('denuncias.filterAll')}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
+            <StatusFilterDropdown
+              estados={MONITOREO_ESTADOS}
+              filterEstado={filterEstado}
+              filterOpen={filterOpen}
+              filterLabel={t('monitoreo.filterLabel')}
+              filterTitle={t('denuncias.filterTitle')}
+              filterAll={t('denuncias.filterAll')}
+              onToggle={() => setFilterOpen((v) => !v)}
+              onSelect={handleFilterSelect}
+            />
           </div>
 
           {/* Mobile list */}
@@ -193,29 +175,18 @@ export default function MonitoreoPage() {
             </table>
           </div>
 
-          {/* Pagination */}
-          <div data-tour="backoffice-monitoreo-pagination" className="flex flex-wrap items-center justify-between gap-3 border-t border-gray-100 px-4 py-4 sm:px-5">
-            <p className="order-2 w-full text-xs text-gray-400 sm:order-1 sm:w-auto">
-              {t('denuncias.showing', { from: filtered.length === 0 ? 0 : (page - 1) * pageSize + 1, to: Math.min(page * pageSize, filtered.length), total: filtered.length })}
-            </p>
-            <div className="order-1 flex items-center gap-1 sm:order-2">
-              <button onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1} className="h-8 w-8 flex items-center justify-center rounded-lg border border-gray-200 text-gray-400 hover:bg-gray-50 disabled:opacity-30">
-                <ChevronLeft className="h-4 w-4" />
-              </button>
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map((n) => (
-                <button key={n} onClick={() => setPage(n)} className={`h-8 w-8 flex items-center justify-center rounded-lg text-xs font-semibold transition-colors ${n === page ? 'bg-primary text-white' : 'border border-gray-200 text-gray-500 hover:bg-gray-50'}`}>{n}</button>
-              ))}
-              <button onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={page === totalPages} className="h-8 w-8 flex items-center justify-center rounded-lg border border-gray-200 text-gray-400 hover:bg-gray-50 disabled:opacity-30">
-                <ChevronRight className="h-4 w-4" />
-              </button>
-            </div>
-            <div className="order-3 flex items-center gap-2 text-xs text-gray-500">
-              {t('denuncias.perPage')}
-              <select value={pageSize} onChange={(e) => { setPageSize(Number(e.target.value)); setPage(1) }} className="rounded-lg border border-gray-200 px-2 py-1 text-xs outline-none focus:border-primary">
-                {PAGE_SIZE_OPTIONS.map((n) => <option key={n} value={n}>{n}</option>)}
-              </select>
-            </div>
-          </div>
+          <PaginationBar
+            dataTour="backoffice-monitoreo-pagination"
+            page={page}
+            totalPages={totalPages}
+            pageSize={pageSize}
+            pageSizeOptions={PAGE_SIZE_OPTIONS}
+            from={filtered.length === 0 ? 0 : (page - 1) * pageSize + 1}
+            to={Math.min(page * pageSize, filtered.length)}
+            total={filtered.length}
+            onPageChange={setPage}
+            onPageSizeChange={(size) => { setPageSize(size); setPage(1) }}
+          />
         </div>
         )}
       </main>
