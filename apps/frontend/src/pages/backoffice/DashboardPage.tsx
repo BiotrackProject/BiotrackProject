@@ -228,7 +228,7 @@ function VolumeBarCard({ onVerTodas }) {
           <XAxis type="number" tick={{ fontSize: 11, fill: '#9CA3AF' }} axisLine={false} tickLine={false} tickFormatter={(v) => `${v}m³`} domain={[0, 2200]} ticks={[0, 500, 900, 1000, 2000]} />
           <YAxis type="category" dataKey="province" tick={{ fontSize: 12, fill: '#4B5563' }} axisLine={false} tickLine={false} width={96} />
           <Bar dataKey="value" radius={[0, 4, 4, 0]} shape={(props) => <ColoredBar {...props} fill={VOLUME_DATA[props.index]?.color ?? '#3B82F6'} />} />
-          <Tooltip formatter={(v) => [`${v.toLocaleString()} m³`, 'Volumen']} contentStyle={{ borderRadius: 8, border: 'none', boxShadow: '0 2px 8px rgba(0,0,0,.1)', fontSize: 12 }} />
+          <Tooltip formatter={(v) => [`${v.toLocaleString()} m³`, t('dashboard.volumeLabel')]} contentStyle={{ borderRadius: 8, border: 'none', boxShadow: '0 2px 8px rgba(0,0,0,.1)', fontSize: 12 }} />
         </BarChart>
       </ResponsiveContainer>
     </Card>

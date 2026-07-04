@@ -17,8 +17,7 @@ import { toast } from '../../utils/toast'
 const PAGE_SIZE_OPTIONS = [5, 10, 20]
 const COLUMN_KEYS = ['colId', 'colTitle', 'colPlannedDate', 'colStatus', 'colResponsible', 'colActions']
 
-function exportCSV(data: Accion[]) {
-  const headers = ['IDAccion', 'Título', 'Estado', 'Fecha Planificación', 'Responsable']
+function exportCSV(data: Accion[], headers: string[]) {
   const rows = data.map((a) => [
     a.IDAccion,
     `"${(a.titulo ?? '').replace(/"/g, "'")}"`,
@@ -102,7 +101,7 @@ export default function AccionesCorrectivasPage() {
               {t('acciones.new')}
             </button>
             <button
-              onClick={() => exportCSV(filtered)}
+              onClick={() => exportCSV(filtered, [t('acciones.exportIdLabel'), t('acciones.exportTitleLabel'), t('acciones.exportStatusLabel'), t('acciones.exportDateLabel'), t('acciones.exportResponsibleLabel')])}
               className="flex items-center gap-1.5 rounded-lg border border-emerald-500 px-3 py-2 text-xs font-semibold text-emerald-600 transition-colors hover:bg-emerald-50 sm:px-4 sm:text-sm"
             >
               <Download className="h-4 w-4" />

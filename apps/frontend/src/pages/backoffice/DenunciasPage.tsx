@@ -14,8 +14,7 @@ import { useQuery } from '@tanstack/react-query'
 // un valor no permitido hace que el backend caiga a 25 y rompe la paginación.
 const PAGE_SIZE_OPTIONS = [10, 25, 50]
 
-function exportCSV(data: Denuncia[]) {
-  const headers = ['Código', 'Descripción', 'Tipo', 'Fecha', 'Estado']
+function exportCSV(data: Denuncia[], headers: string[]) {
   const rows = data.map((d) => [
     d.codigo_seguimiento,
     `"${(d.Descripcion ?? '').replace(/"/g, "'")}"`,
@@ -55,7 +54,7 @@ export default function DenunciasPage() {
   })
 
   useEffect(() => {
-    if (isError) toast.error('Error al cargar las denuncias')
+    if (isError) toast.error(t('denuncias.loadError'))
   }, [isError])
 
   const denuncias: Denuncia[] = data?.data ?? []
@@ -84,7 +83,7 @@ export default function DenunciasPage() {
               {t('denuncias.newDenuncia')}
             </button>
             <button
-              onClick={() => exportCSV(denuncias)}
+              onClick={() => exportCSV(denuncias, [t('denuncias.exportCode'), t('denuncias.exportDescription'), t('denuncias.exportType'), t('denuncias.exportDate'), t('denuncias.exportStatus')])}
               className="flex items-center gap-1.5 rounded-lg border border-emerald-500 px-3 py-2 text-xs font-semibold text-emerald-600 transition-colors hover:bg-emerald-50 sm:px-4 sm:text-sm"
             >
               <Download className="h-4 w-4" />
