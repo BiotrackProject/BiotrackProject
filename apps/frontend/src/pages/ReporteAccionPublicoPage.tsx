@@ -12,7 +12,9 @@ const dtClass = 'text-xs font-semibold uppercase tracking-wide text-gray-400'
 const ddClass = 'mt-1 text-sm font-semibold text-gray-700'
 
 function fmt(fecha: string | null, fallback: string): string {
-  return fecha ? new Date(fecha).toLocaleDateString(i18n.language === 'en' ? 'en-US' : 'es-DO') : fallback
+  if (!fecha) return fallback
+  const locale = i18n.language === 'en' ? 'en-US' : 'es-DO'
+  return new Date(fecha).toLocaleDateString(locale)
 }
 
 export default function ReporteAccionPublicoPage() {

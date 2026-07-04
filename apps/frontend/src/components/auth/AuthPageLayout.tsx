@@ -10,7 +10,7 @@ interface AuthPageLayoutProps {
 /**
  * Shared layout for all auth pages: mobile top banner + form column + image panel.
  */
-export default function AuthPageLayout({ imageSrc, mobileTag, children }: AuthPageLayoutProps) {
+export default function AuthPageLayout({ imageSrc, mobileTag, children }: Readonly<AuthPageLayoutProps>) {
   return (
     <div className="min-h-screen bg-[#eceff3]">
       <div className="grid min-h-screen md:grid-cols-[0.95fr_1.05fr]">

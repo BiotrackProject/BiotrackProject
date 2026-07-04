@@ -70,10 +70,12 @@ export default function DetalleMonitoreoPage() {
 
   function exportDenuncia() {
     if (!denuncia) return
+    const estadoLabel = t(`estados.${estado}`)
+    const tipoLabel = t(`tipos.${denuncia.tipo_actividad}`)
     const lines = [
       `${t('detalleDenuncia.exportCode')} ${denuncia.codigo_seguimiento}`,
-      `${t('detalleDenuncia.exportStatus')} ${t(`estados.${estado}`)}`,
-      `${t('detalleDenuncia.exportType')} ${t(`tipos.${denuncia.tipo_actividad}`)}`,
+      `${t('detalleDenuncia.exportStatus')} ${estadoLabel}`,
+      `${t('detalleDenuncia.exportType')} ${tipoLabel}`,
       `${t('detalleDenuncia.exportDate')} ${formatDate(denuncia.Fecha_denuncia)}`,
       `${t('detalleDenuncia.exportDescription')} ${denuncia.Descripcion}`,
     ]
