@@ -13,6 +13,7 @@ import LoadingSpinner from '../../components/ui/LoadingSpinner'
 import { accionesService, ESTADOS_ACCION, ESTADO_ACCION_STYLES } from '../../services/accionesService'
 import type { Accion, EstadoAccion } from '../../services/accionesService'
 import { toast } from '../../utils/toast'
+import { descargarBlob } from '../../utils/download'
 
 const PAGE_SIZE_OPTIONS = [5, 10, 20]
 const COLUMN_KEYS = ['colId', 'colTitle', 'colPlannedDate', 'colStatus', 'colResponsible', 'colActions']
@@ -26,11 +27,7 @@ function exportCSV(data: Accion[], headers: string[]) {
     a.responsable?.nombre_completo ?? '—',
   ])
   const csv = [headers, ...rows].map((r) => r.join(',')).join('\n')
-  const blob = new Blob([csv], { type: 'text/csv' })
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url; a.download = 'acciones-correctivas.csv'; a.click()
-  URL.revokeObjectURL(url)
+  descargarBlob(new Blob([csv], { type: 'text/csv' }), 'acciones-correctivas.csv')
 }
 
 export default function AccionesCorrectivasPage() {
@@ -78,7 +75,7 @@ export default function AccionesCorrectivasPage() {
     try {
       const updated = await accionesService.cambiarEstado(statusModal.accion!.IDAccion, nuevoEstado)
       setAcciones((prev) => prev.map((a) => (a.IDAccion === updated.IDAccion ? updated : a)))
-      toast.success(t('acciones.statusUpdated', { status: t('estados.' + nuevoEstado) }))
+      toast.success(t('acciones.statusUpdated', { status: t(`estados.${nuevoEstado}`) }))
       setStatusModal({ open: false, accion: null })
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : t('acciones.statusUpdateError'))
@@ -143,7 +140,7 @@ export default function AccionesCorrectivasPage() {
                       onClick={() => { setFilterEstado(e); setFilterOpen(false); setPage(1) }}
                       className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${filterEstado === e ? 'bg-primary/10 text-primary font-semibold' : 'text-gray-600 hover:bg-gray-50'}`}
                     >
-                      {e ? t('estados.' + e) : t('denuncias.filterAll')}
+                      {e ? t(`estados.${e}`) : t('denuncias.filterAll')}
                     </button>
                   ))}
                 </div>
@@ -168,7 +165,7 @@ export default function AccionesCorrectivasPage() {
                           <p className="mt-1 text-sm text-dark/85">{a.titulo}</p>
                         </div>
                         <span className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold ${ESTADO_ACCION_STYLES[a.Estado]}`}>
-                          {t('estados.' + a.Estado)}
+                          {t(`estados.${a.Estado}`)}
                         </span>
                       </div>
                       <div className="flex flex-wrap items-center gap-2">
@@ -205,7 +202,7 @@ export default function AccionesCorrectivasPage() {
                           </td>
                           <td className="px-5 py-4">
                             <span className={`rounded-full px-3 py-1 text-xs font-semibold ${ESTADO_ACCION_STYLES[a.Estado]}`}>
-                              {t('estados.' + a.Estado)}
+                              {t(`estados.${a.Estado}`)}
                             </span>
                           </td>
                           <td className="px-5 py-4 text-gray-600">{a.responsable?.nombre_completo ?? '—'}</td>
@@ -276,7 +273,7 @@ export default function AccionesCorrectivasPage() {
                 className="rounded-lg border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary/20"
               >
                 {ESTADOS_ACCION.map((e) => (
-                  <option key={e} value={e}>{t('estados.' + e)}</option>
+                  <option key={e} value={e}>{t(`estados.${e}`)}</option>
                 ))}
               </select>
             </div>

@@ -2,7 +2,7 @@ import 'dotenv/config';
 import { randomInt } from 'node:crypto';
 import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
-import type { estado_denuncia, tipo_actividad_ilegal, estado_accion } from '@prisma/client';
+import type { Prisma, estado_denuncia, tipo_actividad_ilegal, estado_accion } from '@prisma/client';
 
 const adapter = new PrismaPg({ connectionString: process.env['DATABASE_URL'] as string });
 const prisma = new PrismaClient({ adapter });
@@ -153,6 +153,61 @@ function transicionesPara(estadoFinal: estado_denuncia): estado_denuncia[] {
   }
 }
 
+/**
+ * MOD-05 — Crea 1-2 acciones correctivas vinculadas a una denuncia
+ * Verificada/Resuelta (~70% de probabilidad). Devuelve cuántas creó.
+ */
+async function crearAccionesCorrectivas(
+  tx: Prisma.TransactionClient,
+  idDenuncia: number,
+  estadoFinal: estado_denuncia,
+  fechaBase: Date,
+  adminId: string
+): Promise<number> {
+  // Solo las denuncias Verificadas o Resueltas generan respuesta institucional.
+  if (estadoFinal !== 'Verificada' && estadoFinal !== 'Resuelta') return 0;
+  if (randomInt(10) >= 7) return 0;
+
+  const numAcciones = 1 + randomInt(2); // 1 o 2
+  for (let a = 0; a < numAcciones; a++) {
+    // Una denuncia resuelta tiende a tener acciones completadas.
+    const estadoAccion: estado_accion =
+      estadoFinal === 'Resuelta' ? rand(['Completada', 'En_Ejecucion']) : rand(ESTADOS_ACCION);
+    const completada = estadoAccion === 'Completada';
+
+    // Planificación tras la denuncia; implementación solo si está completada.
+    const fechaPlan = new Date(fechaBase.getTime() + (2 + randomInt(10)) * 24 * 60 * 60 * 1000);
+    const fechaImpl = completada
+      ? new Date(fechaPlan.getTime() + (3 + randomInt(20)) * 24 * 60 * 60 * 1000)
+      : null;
+
+    // Algunas acciones completadas se publican en el portal público.
+    const publica = completada && randomInt(10) < 5;
+
+    await tx.accion_Correctiva.create({
+      data: {
+        responsable_id: adminId,
+        titulo: rand(TITULOS_ACCION),
+        descripcion_accion: rand(DESCRIPCIONES_ACCION),
+        Estado: estadoAccion,
+        FechaPlanificacion: fechaPlan,
+        FechaImplementacion: fechaImpl,
+        Presupuesto: (50_000 + randomInt(950) * 1000).toString(),
+        Resultado: completada
+          ? 'Acción ejecutada satisfactoriamente; se mitigó el impacto reportado.'
+          : null,
+        visibilidad: publica ? 'Publico' : 'Restringido',
+        resumen_publico: publica ? rand(RESUMENES_PUBLICOS) : null,
+        created_at: fechaPlan,
+        accion_denuncia: {
+          create: { IDDenuncia: idDenuncia },
+        },
+      },
+    });
+  }
+  return numAcciones;
+}
+
 async function main(): Promise<void> {
   console.log(`Generando ${CANTIDAD} denuncias de prueba (datos random)...`);
 
@@ -224,48 +279,9 @@ async function main(): Promise<void> {
         }
 
         // ── Acciones correctivas (MOD-05) ──────────────────────────────────
-        // Solo las denuncias Verificadas o Resueltas generan respuesta institucional.
-        // ~70% de ellas reciben 1-2 acciones correctivas vinculadas.
-        if ((estadoFinal === 'Verificada' || estadoFinal === 'Resuelta') && randomInt(10) < 7) {
-          const numAcciones = 1 + randomInt(2); // 1 o 2
-          for (let a = 0; a < numAcciones; a++) {
-            // Una denuncia resuelta tiende a tener acciones completadas.
-            const estadoAccion: estado_accion =
-              estadoFinal === 'Resuelta' ? rand(['Completada', 'En_Ejecucion']) : rand(ESTADOS_ACCION);
-            const completada = estadoAccion === 'Completada';
-
-            // Planificación tras la denuncia; implementación solo si está completada.
-            const fechaPlan = new Date(fechaBase.getTime() + (2 + randomInt(10)) * 24 * 60 * 60 * 1000);
-            const fechaImpl = completada
-              ? new Date(fechaPlan.getTime() + (3 + randomInt(20)) * 24 * 60 * 60 * 1000)
-              : null;
-
-            // Algunas acciones completadas se publican en el portal público.
-            const publica = completada && randomInt(10) < 5;
-
-            await tx.accion_Correctiva.create({
-              data: {
-                responsable_id: admin.IDUsuario,
-                titulo: rand(TITULOS_ACCION),
-                descripcion_accion: rand(DESCRIPCIONES_ACCION),
-                Estado: estadoAccion,
-                FechaPlanificacion: fechaPlan,
-                FechaImplementacion: fechaImpl,
-                Presupuesto: (50_000 + randomInt(950) * 1000).toString(),
-                Resultado: completada
-                  ? 'Acción ejecutada satisfactoriamente; se mitigó el impacto reportado.'
-                  : null,
-                visibilidad: publica ? 'Publico' : 'Restringido',
-                resumen_publico: publica ? rand(RESUMENES_PUBLICOS) : null,
-                created_at: fechaPlan,
-                accion_denuncia: {
-                  create: { IDDenuncia: denuncia.IDDenuncia },
-                },
-              },
-            });
-            accionesCreadas++;
-          }
-        }
+        accionesCreadas += await crearAccionesCorrectivas(
+          tx, denuncia.IDDenuncia, estadoFinal, fechaBase, admin.IDUsuario
+        );
       });
       creadas++;
     } catch (err) {

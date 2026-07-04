@@ -90,8 +90,8 @@ export async function exportarAccion(req: Request, res: Response): Promise<void>
 
   const resultado =
     formato === 'PDF'
-      ? await generarPDF(accion as never, incluir_evidencias)
-      : await generarXLSX(accion as never);
+      ? await generarPDF(accion, incluir_evidencias)
+      : await generarXLSX(accion);
 
   res.setHeader('Content-Type', resultado.contentType);
   res.setHeader('Content-Disposition', `attachment; filename="${resultado.filename}"`);

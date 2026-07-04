@@ -1,6 +1,5 @@
-import { apiClient } from './api-client'
-
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000'
+import { apiClient, API_BASE_URL } from './api-client'
+import { descargarBlob } from '../utils/download'
 
 export type EstadoAccion = 'Planificada' | 'En_Ejecucion' | 'Completada' | 'Cancelada'
 
@@ -146,7 +145,7 @@ export const accionesService = {
     // Siempre multipart: los campos de texto viajan junto a los archivos adjuntos.
     const formData = new FormData()
     for (const [clave, valor] of Object.entries(campos)) {
-      if (valor !== undefined && valor !== null && valor !== '') {
+      if (valor !== undefined && valor !== '') {
         formData.append(clave, String(valor))
       }
     }
@@ -190,21 +189,14 @@ export const accionesService = {
 
   /** RF-5.3 — Descarga el reporte exportado (PDF/XLSX) como blob. */
   async exportar(id: string, formato: 'PDF' | 'XLSX', incluirEvidencias = false): Promise<void> {
-    const token = localStorage.getItem('biotrack_token')
     const params = new URLSearchParams({ formato, incluir_evidencias: String(incluirEvidencias) })
     const res = await fetch(`${API_BASE_URL}/api/v1/acciones/${id}/exportar?${params.toString()}`, {
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      credentials: 'include',
     })
     if (!res.ok) throw new Error('Error al exportar el reporte')
 
     const blob = await res.blob()
-    const url = URL.createObjectURL(blob)
-    const ext = formato.toLowerCase()
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `accion-${id.slice(-8)}.${ext}`
-    a.click()
-    URL.revokeObjectURL(url)
+    descargarBlob(blob, `accion-${id.slice(-8)}.${formato.toLowerCase()}`)
   },
 
   async filter(filtros: { query?: string; estado?: string } = {}) {

@@ -7,6 +7,7 @@ import LoadingSpinner from '../../components/ui/LoadingSpinner'
 import { denunciasService, ESTADOS_DENUNCIA, ESTADO_STYLES } from '../../services/denunciasService'
 import type { Denuncia, EstadoDenuncia } from '../../services/denunciasService'
 import { toast } from '../../utils/toast'
+import { descargarBlob } from '../../utils/download'
 import { useDebounce } from '../../hooks/useDebounce'
 import { useQuery } from '@tanstack/react-query'
 
@@ -23,13 +24,7 @@ function exportCSV(data: Denuncia[], headers: string[]) {
     d.Estado,
   ])
   const csv = [headers, ...rows].map((r) => r.join(',')).join('\n')
-  const blob = new Blob([csv], { type: 'text/csv' })
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = 'denuncias.csv'
-  a.click()
-  URL.revokeObjectURL(url)
+  descargarBlob(new Blob([csv], { type: 'text/csv' }), 'denuncias.csv')
 }
 
 export default function DenunciasPage() {

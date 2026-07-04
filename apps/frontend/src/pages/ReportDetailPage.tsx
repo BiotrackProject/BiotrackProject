@@ -1,10 +1,11 @@
-import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link, useParams } from 'react-router-dom'
 import Navbar from '../components/layout/Navbar'
 import Footer from '../components/layout/Footer'
 import ReportHero from '../components/report/ReportHero'
 import StatusBadge from '../components/ui/StatusBadge'
+import RecursoPublicoFallback from '../components/report/RecursoPublicoFallback'
+import { useRecursoPublico } from '../hooks/useRecursoPublico'
 import {
   denunciasService,
   ESTADO_LABEL,
@@ -12,39 +13,10 @@ import {
   type DenunciaSeguimiento,
 } from '../services/denunciasService'
 
-type FetchState =
-  | { status: 'loading' }
-  | { status: 'found'; reporte: DenunciaSeguimiento }
-  | { status: 'notFound' }
-  | { status: 'error'; message: string }
-
 export default function ReportDetailPage() {
   const { t } = useTranslation()
   const { id } = useParams()
-  // Inicializador perezoso para no llamar setState síncronamente en el effect.
-  const [state, setState] = useState<FetchState>(() => (id ? { status: 'loading' } : { status: 'notFound' }))
-
-  useEffect(() => {
-    if (!id) return
-    let active = true
-    denunciasService
-      .getSeguimiento(id)
-      .then((reporte) => {
-        if (active) setState({ status: 'found', reporte })
-      })
-      .catch((err) => {
-        if (!active) return
-        const message = err instanceof Error ? err.message : 'Error al consultar el reporte'
-        if (/no encontrad|not found|404/i.test(message)) {
-          setState({ status: 'notFound' })
-        } else {
-          setState({ status: 'error', message })
-        }
-      })
-    return () => {
-      active = false
-    }
-  }, [id])
+  const state = useRecursoPublico(id, (codigo) => denunciasService.getSeguimiento(codigo), 'Error al consultar el reporte')
 
   return (
     <div className="min-h-screen flex flex-col bg-surface">
@@ -53,38 +25,33 @@ export default function ReportDetailPage() {
         <ReportHero category={t('searchPage.category')} title={t('reportDetail.detailTitle', { id: id ?? '' })} />
 
         <section className="mx-auto max-w-5xl px-6 py-10">
-          {state.status === 'loading' && (
-            <div className="rounded-2xl bg-white p-8 text-center text-sm text-gray-500 shadow-sm">
-              Cargando reporte...
-            </div>
+          {state.status === 'found' ? (
+            <ReportDetail reporte={state.data} />
+          ) : (
+            <RecursoPublicoFallback
+              state={state}
+              loadingText="Cargando reporte..."
+              notFoundTitle="Reporte no encontrado"
+              notFoundDesc="El código consultado no existe o no está disponible."
+              errorTitle="No se pudo cargar el reporte"
+              actions={
+                <>
+                  <Link
+                    to="/reportes"
+                    className="mt-5 inline-flex rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary/90"
+                  >
+                    {t('reportDetail.backToReports')}
+                  </Link>
+                  <Link
+                    to="/reporte/nuevo"
+                    className="ml-2 mt-5 inline-flex rounded-lg border border-primary px-4 py-2 text-sm font-semibold text-primary hover:bg-primary hover:text-white"
+                  >
+                    {t('reportDetail.newReport')}
+                  </Link>
+                </>
+              }
+            />
           )}
-
-          {(state.status === 'notFound' || state.status === 'error') && (
-            <div className="rounded-2xl bg-white p-8 shadow-sm">
-              <h2 className="text-xl font-black text-primary">
-                {state.status === 'notFound' ? 'Reporte no encontrado' : 'No se pudo cargar el reporte'}
-              </h2>
-              <p className="mt-2 text-sm text-gray-600">
-                {state.status === 'notFound'
-                  ? 'El código consultado no existe o no está disponible.'
-                  : state.message}
-              </p>
-              <Link
-                to="/reportes"
-                className="mt-5 inline-flex rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary/90"
-              >
-                {t('reportDetail.backToReports')}
-              </Link>
-              <Link
-                to="/reporte/nuevo"
-                className="ml-2 mt-5 inline-flex rounded-lg border border-primary px-4 py-2 text-sm font-semibold text-primary hover:bg-primary hover:text-white"
-              >
-                {t('reportDetail.newReport')}
-              </Link>
-            </div>
-          )}
-
-          {state.status === 'found' && <ReportDetail reporte={state.reporte} />}
         </section>
       </main>
       <Footer />
@@ -187,13 +154,13 @@ function ReportDetail({ reporte }: Readonly<{ reporte: DenunciaSeguimiento }>) {
           </p>
           <ul className="mt-5 space-y-3">
             {acciones.map((a) => {
-              const fecha = a.FechaImplementacion ?? a.FechaPlanificacion
+              const fechaAccion = a.FechaImplementacion ?? a.FechaPlanificacion
               return (
                 <li key={a.IDAccion} className="rounded-xl border border-gray-100 p-4">
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <h3 className="text-sm font-bold text-gray-800">{a.titulo}</h3>
                     <span className="rounded-full bg-surface px-3 py-1 text-xs font-semibold text-gray-600">
-                      {t('estados.' + a.Estado)}
+                      {t(`estados.${a.Estado}`)}
                     </span>
                   </div>
                   {a.resumen_publico && (
@@ -201,7 +168,7 @@ function ReportDetail({ reporte }: Readonly<{ reporte: DenunciaSeguimiento }>) {
                   )}
                   <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
                     <span className="text-xs text-gray-400">
-                      {fecha ? t('reportDetail.executionDate', { date: new Date(fecha).toLocaleDateString('es-DO') }) : t('reportDetail.dateTbd')}
+                      {fechaAccion ? t('reportDetail.executionDate', { date: new Date(fechaAccion).toLocaleDateString('es-DO') }) : t('reportDetail.dateTbd')}
                     </span>
                     <Link
                       to={`/reportes/accion/${a.IDAccion}`}

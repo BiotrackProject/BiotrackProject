@@ -63,15 +63,8 @@ export function normalizarTelefono(raw) {
   const tienePlus = trimmed.startsWith('+')
   const digitos = trimmed.replace(/\D/g, '')
 
-  let e164
-  if (tienePlus) {
-    e164 = `+${digitos}`
-  } else if (digitos.length === 10) {
-    // Número local de 10 dígitos (RD/NANP) → asume código de país +1
-    e164 = `+1${digitos}`
-  } else {
-    e164 = `+${digitos}`
-  }
+  // Número local de 10 dígitos sin + (RD/NANP) → asume código de país +1
+  const e164 = !tienePlus && digitos.length === 10 ? `+1${digitos}` : `+${digitos}`
 
   if (!E164_REGEX.test(e164)) {
     return { valor: null, error: 'Teléfono inválido. Usa formato internacional, ej. +18090000000' }

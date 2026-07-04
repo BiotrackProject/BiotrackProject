@@ -58,7 +58,7 @@ export default function DetalleAccionPage() {
     try {
       const updated = await accionesService.cambiarEstado(id!, nuevoEstado)
       setAccion(updated)
-      toast.success(t('acciones.statusUpdated', { status: t('estados.' + nuevoEstado) }))
+      toast.success(t('acciones.statusUpdated', { status: t(`estados.${nuevoEstado}`) }))
       setStatusModal(false)
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : t('acciones.statusUpdateError'))
@@ -151,7 +151,7 @@ export default function DetalleAccionPage() {
               {t('acciones.changeStatusBtn')}
             </button>
             <button
-              onClick={handlePublishToggle}
+              onClick={() => { void handlePublishToggle() }}
               className={`flex items-center gap-1.5 rounded-lg border px-4 py-2 text-sm font-semibold transition-colors ${
                 accion.visibilidad === 'Publico'
                   ? 'border-amber-500 text-amber-600 hover:bg-amber-50'
@@ -162,7 +162,7 @@ export default function DetalleAccionPage() {
               {accion.visibilidad === 'Publico' ? t('acciones.unpublish') : t('acciones.publish')}
             </button>
             <button
-              onClick={() => handleExport('PDF')}
+              onClick={() => { void handleExport('PDF') }}
               disabled={exporting}
               className="flex items-center gap-1.5 rounded-lg border border-emerald-500 px-4 py-2 text-sm font-semibold text-emerald-600 hover:bg-emerald-50 transition-colors disabled:opacity-50"
             >
@@ -170,7 +170,7 @@ export default function DetalleAccionPage() {
               PDF
             </button>
             <button
-              onClick={() => handleExport('XLSX')}
+              onClick={() => { void handleExport('XLSX') }}
               disabled={exporting}
               className="flex items-center gap-1.5 rounded-lg border border-emerald-500 px-4 py-2 text-sm font-semibold text-emerald-600 hover:bg-emerald-50 transition-colors disabled:opacity-50"
             >
@@ -192,7 +192,7 @@ export default function DetalleAccionPage() {
           <div className="flex items-center gap-2">
             <span className="text-sm font-semibold text-gray-500">{t('acciones.statusLabel')}</span>
             <span className={`rounded-full px-3 py-1 text-xs font-semibold ${ESTADO_ACCION_STYLES[accion.Estado]}`}>
-              {t('estados.' + accion.Estado)}
+              {t(`estados.${accion.Estado}`)}
             </span>
           </div>
         </div>
@@ -212,7 +212,7 @@ export default function DetalleAccionPage() {
           <InfoCard title={t('acciones.responsible')} icon={User}>
             <div className="flex flex-col gap-2">
               <InfoRow label={t('acciones.responsibleName')} value={accion.responsable?.nombre_completo} />
-              <InfoRow label={t('acciones.actionStatus')} value={t('estados.' + accion.Estado)} />
+              <InfoRow label={t('acciones.actionStatus')} value={t(`estados.${accion.Estado}`)} />
             </div>
           </InfoCard>
         </div>
@@ -237,7 +237,7 @@ export default function DetalleAccionPage() {
                 <div key={d.IDDenuncia} className="flex items-center justify-between rounded-lg border border-gray-100 px-4 py-2.5">
                   <div>
                     <p className="text-sm font-semibold text-primary">{d.codigo_seguimiento}</p>
-                    <p className="text-xs text-gray-400">{t('tipos.' + d.tipo_actividad)} · {t('estados.' + d.Estado)}</p>
+                    <p className="text-xs text-gray-400">{t(`tipos.${d.tipo_actividad}`)} · {t(`estados.${d.Estado}`)}</p>
                   </div>
                   <button
                     onClick={() => navigate(`/admin/denuncias/${d.IDDenuncia}`)}
@@ -282,20 +282,21 @@ export default function DetalleAccionPage() {
         onClose={() => { setStatusModal(false); setNuevoEstado(accion.Estado) }}
         title={t('acciones.changeStatusActionTitle')}
         confirmLabel={t('acciones.changeStatusActionSave')}
-        onConfirm={handleSaveEstado}
+        onConfirm={() => { void handleSaveEstado() }}
         loading={saving}
       >
         <div className="flex flex-col gap-4">
           <p>{t('acciones.changeStatusActionMsg', { title: accion.titulo })}</p>
           <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-semibold text-gray-600">{t('acciones.statusFieldLabel')}</label>
+            <label htmlFor="accion-nuevo-estado" className="text-xs font-semibold text-gray-600">{t('acciones.statusFieldLabel')}</label>
             <select
+              id="accion-nuevo-estado"
               value={nuevoEstado}
               onChange={(e) => setNuevoEstado(e.target.value as EstadoAccion)}
               className="rounded-lg border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary/20"
             >
               {ESTADOS_ACCION.map((e) => (
-                <option key={e} value={e}>{t('estados.' + e)}</option>
+                <option key={e} value={e}>{t(`estados.${e}`)}</option>
               ))}
             </select>
           </div>
@@ -308,7 +309,7 @@ export default function DetalleAccionPage() {
         onClose={() => setPublishModal(false)}
         title={t('acciones.publishModalTitle')}
         confirmLabel={t('acciones.publish')}
-        onConfirm={handleConfirmPublish}
+        onConfirm={() => { void handleConfirmPublish() }}
         loading={publishing}
       >
         <div className="flex flex-col gap-4">
@@ -316,8 +317,9 @@ export default function DetalleAccionPage() {
             {t('acciones.publishModalMsg')}
           </p>
           <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-semibold text-gray-600">{t('acciones.publicSummaryLabel')}</label>
+            <label htmlFor="accion-resumen-publico" className="text-xs font-semibold text-gray-600">{t('acciones.publicSummaryLabel')}</label>
             <textarea
+              id="accion-resumen-publico"
               value={resumenPublico}
               onChange={(e) => setResumenPublico(e.target.value)}
               maxLength={500}

@@ -10,6 +10,7 @@ import { monitoreoService } from '../../services/monitoreoService'
 import { ESTADO_STYLES, ESTADOS_DENUNCIA } from '../../services/denunciasService'
 import type { Denuncia, EstadoDenuncia } from '../../services/denunciasService'
 import { toast } from '../../utils/toast'
+import { descargarBlob } from '../../utils/download'
 
 const FILE_COLORS = {
   JPG: 'bg-blue-100 text-blue-600',
@@ -99,11 +100,7 @@ export default function DetalleMonitoreoPage() {
       `${t('detalleDenuncia.exportDate')} ${new Date(denuncia.Fecha_denuncia).toLocaleDateString('es-DO')}`,
       `${t('detalleDenuncia.exportDescription')} ${denuncia.Descripcion}`,
     ]
-    const blob = new Blob([lines.join('\n')], { type: 'text/plain' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url; a.download = `monitoreo_${denuncia.codigo_seguimiento}.txt`; a.click()
-    URL.revokeObjectURL(url)
+    descargarBlob(new Blob([lines.join('\n')], { type: 'text/plain' }), `monitoreo_${denuncia.codigo_seguimiento}.txt`)
     toast.info(t('monitoreo.exportStarted'))
   }
 
