@@ -2,17 +2,11 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import ImagePanel from '../../components/auth/ImagePanel'
+import { inputCls } from '../../components/auth/inputCls'
 import { validateName, validateEmail } from '../../utils/validation'
 import * as authService from '../../services/authService'
 
 import registerBg from '../../assets/images/register-bg.jpg'
-
-const INPUT_CLS = (hasError) =>
-  `w-full rounded-md border bg-white/90 px-3.5 py-3 text-[15px] text-dark outline-none placeholder:text-[#8d94a0] transition-[border-color,box-shadow,transform] duration-200 focus:-translate-y-[1px] focus:ring-2 ${
-    hasError
-      ? 'border-action focus:border-action focus:ring-action/20'
-      : 'border-[#c8ced6] focus:border-primary focus:ring-primary/15'
-  }`
 
 export default function RegisterPage() {
   const { t } = useTranslation()
@@ -159,7 +153,7 @@ export default function RegisterPage() {
                     value={form.nombres}
                     onChange={handleChange('nombres')}
                     onBlur={handleBlur('nombres')}
-                    className={INPUT_CLS(errors.nombres)}
+                    className={inputCls(errors.nombres)}
                   />
                   {errors.nombres && <p className="text-xs text-action/95">{errors.nombres}</p>}
                 </div>
@@ -174,7 +168,7 @@ export default function RegisterPage() {
                     value={form.apellidos}
                     onChange={handleChange('apellidos')}
                     onBlur={handleBlur('apellidos')}
-                    className={INPUT_CLS(errors.apellidos)}
+                    className={inputCls(errors.apellidos)}
                   />
                   {errors.apellidos && <p className="text-xs text-action/95">{errors.apellidos}</p>}
                 </div>
@@ -192,7 +186,7 @@ export default function RegisterPage() {
                   onChange={handleChange('email')}
                   onBlur={handleBlur('email')}
                   autoComplete="email"
-                  className={INPUT_CLS(errors.email)}
+                  className={inputCls(errors.email)}
                 />
                 {errors.email && <p className="text-xs text-action/95">{errors.email}</p>}
               </div>
@@ -207,7 +201,7 @@ export default function RegisterPage() {
                     placeholder={t('register.cargoPlaceholder')}
                     value={form.cargo}
                     onChange={handleChange('cargo')}
-                    className={INPUT_CLS(false)}
+                    className={inputCls(false)}
                   />
                 </div>
 
@@ -220,7 +214,7 @@ export default function RegisterPage() {
                     placeholder={t('register.institucionPlaceholder')}
                     value={form.institucion}
                     onChange={handleChange('institucion')}
-                    className={INPUT_CLS(false)}
+                    className={inputCls(false)}
                   />
                 </div>
               </div>

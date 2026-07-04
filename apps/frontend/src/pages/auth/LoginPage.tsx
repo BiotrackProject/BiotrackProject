@@ -3,18 +3,12 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { Eye, EyeOff } from 'lucide-react'
 import ImagePanel from '../../components/auth/ImagePanel'
+import { inputCls } from '../../components/auth/inputCls'
 import { validateEmail, validateLoginPassword } from '../../utils/validation'
 import { useAuth } from '../../context/AuthContext'
 import * as authService from '../../services/authService'
 
 import loginBg from '../../assets/images/login-bg.jpg'
-
-const INPUT_CLS = (hasError) =>
-  `w-full rounded-md border bg-white/90 px-3.5 py-3 text-[15px] text-dark outline-none placeholder:text-[#8d94a0] transition-[border-color,box-shadow,transform] duration-200 focus:-translate-y-[1px] focus:ring-2 ${
-    hasError
-      ? 'border-action focus:border-action focus:ring-action/20'
-      : 'border-[#c8ced6] focus:border-primary focus:ring-primary/15'
-  }`
 
 export default function LoginPage() {
   const { t } = useTranslation()
@@ -109,7 +103,7 @@ export default function LoginPage() {
                   onChange={handleChange('email')}
                   onBlur={handleBlur('email')}
                   autoComplete="email"
-                  className={INPUT_CLS(errors.email)}
+                  className={inputCls(errors.email)}
                 />
                 {errors.email && <p className="text-xs text-action/95">{errors.email}</p>}
               </div>
@@ -127,7 +121,7 @@ export default function LoginPage() {
                     onChange={handleChange('password')}
                     onBlur={handleBlur('password')}
                     autoComplete="current-password"
-                    className={INPUT_CLS(errors.password)}
+                    className={inputCls(errors.password)}
                   />
                   <button
                     type="button"

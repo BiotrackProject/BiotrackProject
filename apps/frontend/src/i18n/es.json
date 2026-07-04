@@ -419,6 +419,8 @@
     "noCode": "¿No has recibido el código?",
     "resend": "Reenviar",
     "resendMsg": "Código reenviado. Revisa tu correo electrónico.",
+    "invalidCode": "Código inválido o expirado.",
+    "resendError": "No se pudo reenviar el código.",
     "loginLink": "Iniciar sesión",
     "mobileTag": "Seguridad BIOTRACK"
   },
