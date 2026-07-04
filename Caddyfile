@@ -42,6 +42,16 @@ biotrack.org.do {
         # Isolates the window from cross-origin openers (prevents tab-napping).
         Cross-Origin-Opener-Policy "same-origin"
 
+        # credentialless: strips credentials from cross-origin subresource
+        # requests instead of blocking them outright, so third parties that
+        # don't send Cross-Origin-Resource-Policy (Google Fonts, OSM tiles,
+        # Unsplash) keep loading. Re-evaluate if any of those start requiring
+        # credentialed requests.
+        Cross-Origin-Embedder-Policy "credentialless"
+
+        # This origin's own assets (JS/CSS/favicon) are not shared cross-origin.
+        Cross-Origin-Resource-Policy "same-origin"
+
         # ── Permissions Policy ────────────────────────────────────────────────
         # Disable features the app does not need. geolocation=(self) is
         # kept in case the report form adds browser-based location in the future.
@@ -51,12 +61,12 @@ biotrack.org.do {
         # script-src: Vite bundles as same-origin ES modules — no eval/inline.
         # style-src:  'unsafe-inline' required for Leaflet/intro.js runtime CSS
         #             injection; googleapis needed for Google Fonts stylesheet.
-        # img-src:    data: for Leaflet markers; OSM tiles (*.tile.openstreetmap.org
-        #             covers tile.openstreetmap.org and all subdomains); Unsplash
-        #             for landing page imagery.
+        # img-src:    data: for Leaflet markers; OSM tiles served from
+        #             *.tile.openstreetmap.org; Unsplash for landing page imagery.
         # font-src:   gstatic.com serves the actual font files for Google Fonts.
         # connect-src: API on api.biotrack.org.do; OSM nominatim for geocoding.
-        Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: blob: https:; connect-src 'self' https://api.biotrack.org.do https://nominatim.openstreetmap.org; font-src 'self' https://fonts.gstatic.com; frame-src https://www.openstreetmap.org; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests"
+        # frame-ancestors: explicit 'none' backs up X-Frame-Options DENY above.
+        Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: blob: https://images.unsplash.com https://*.tile.openstreetmap.org; connect-src 'self' https://api.biotrack.org.do https://nominatim.openstreetmap.org; font-src 'self' https://fonts.gstatic.com; frame-src https://www.openstreetmap.org; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests"
 
         # ── Remove server fingerprinting ──────────────────────────────────────
         -Server
