@@ -35,7 +35,7 @@ export default function PasswordField({
         onChange={onChange}
         onBlur={onBlur}
         autoComplete={autoComplete}
-        className={inputCls(error)}
+        className={inputCls(!!error)}
       />
       {error && <p className="text-xs text-action/95">{error}</p>}
     </div>

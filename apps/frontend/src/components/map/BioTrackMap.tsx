@@ -141,11 +141,11 @@ export default function BioTrackMap({
                   <p className="text-gray-700 text-xs leading-snug mb-3 line-clamp-2">{loc.descripcion}</p>
                   <div className="flex items-center gap-2 flex-wrap mb-3">
                     <span className="rounded-full px-2 py-0.5 text-[10px] font-semibold text-white" style={{ background: STATUS_MARKER_COLORS[loc.estado] ?? DEFAULT_MARKER_COLOR }}>
-                      {t(`estados.${loc.estado}`, loc.estado)}
+                      {String(t(`estados.${loc.estado}`, loc.estado))}
                     </span>
                     {loc.nivelRiesgo && (
                       <span className="rounded-full px-2 py-0.5 text-[10px] font-semibold text-white" style={{ background: RISK_MARKER_COLORS[loc.nivelRiesgo] ?? DEFAULT_MARKER_COLOR }}>
-                        {t('mapa.riskPrefix')} {t(`urgencias.${loc.nivelRiesgo}`, loc.nivelRiesgo)}
+                        {t('mapa.riskPrefix')} {String(t(`urgencias.${loc.nivelRiesgo}`, loc.nivelRiesgo))}
                       </span>
                     )}
                   </div>
