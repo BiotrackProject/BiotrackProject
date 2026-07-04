@@ -300,7 +300,7 @@ export default function MapaDenunciasPage() {
               <div className="flex gap-2 mb-3">
                 <StatusBadge status={selectedLocation.estado} />
                 {selectedLocation.nivelRiesgo && (
-                  <span className="text-xs font-semibold text-gray-500">{t('mapa.riskPrefix')} {t(`urgencias.${selectedLocation.nivelRiesgo}`, selectedLocation.nivelRiesgo)}</span>
+                  <span className="text-xs font-semibold text-gray-500">{t('mapa.riskPrefix')} {String(t(`urgencias.${selectedLocation.nivelRiesgo}`, selectedLocation.nivelRiesgo))}</span>
                 )}
               </div>
               <button
