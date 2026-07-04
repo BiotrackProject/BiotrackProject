@@ -9,6 +9,7 @@
  */
 import { denunciasService } from './denunciasService'
 import { MOCK_ZONE_LOCATIONS, parseGPS } from '../data/mockLocations'
+import i18n from '../i18n'
 
 /** Mapea una denuncia geolocalizada del backend a la forma de marcador. */
 function denunciaToMarker(d) {
@@ -65,18 +66,18 @@ export const locationService = {
   async getCurrentUserLocation(): Promise<{ lat: number; lng: number }> {
     return new Promise((resolve, reject) => {
       if (!navigator.geolocation) {
-        reject(new Error('Tu navegador no soporta geolocalización'))
+        reject(new Error(i18n.t('location.noGeolocation')))
         return
       }
       navigator.geolocation.getCurrentPosition(
         (pos) => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
         (err) => {
           const messages = {
-            1: 'Permiso de ubicación denegado. Actívalo en la configuración del navegador.',
-            2: 'No se pudo obtener tu ubicación. Verifica tu conexión GPS.',
-            3: 'Tiempo de espera agotado al detectar la ubicación.',
+            1: i18n.t('location.permissionDenied'),
+            2: i18n.t('location.positionUnavailable'),
+            3: i18n.t('location.timeout'),
           }
-          reject(new Error(messages[err.code] ?? 'Error desconocido de geolocalización'))
+          reject(new Error(messages[err.code] ?? i18n.t('location.unknownError')))
         },
         { timeout: 10_000, enableHighAccuracy: true },
       )

@@ -1,5 +1,6 @@
 import { Suspense, lazy, ComponentType, ReactElement } from 'react'
 import { createBrowserRouter, Navigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { useAuth } from '../context/AuthContext'
 
 function PrivateRoute({ children }: { children: ReactElement }) {
@@ -50,9 +51,14 @@ const PerfilPage           = lazy(() => import('../pages/backoffice/PerfilPage')
 const NotificacionesPage   = lazy(() => import('../pages/backoffice/NotificacionesPage'))
 const MapaDenunciasPage    = lazy(() => import('../pages/backoffice/MapaDenunciasPage'))
 
+function SuspenseFallback() {
+  const { t } = useTranslation()
+  return <div className="flex min-h-[40vh] items-center justify-center text-sm text-gray-500">{t('common.loading')}</div>
+}
+
 function withSuspense(Component: ComponentType): ReactElement {
   return (
-    <Suspense fallback={<div className="flex min-h-[40vh] items-center justify-center text-sm text-gray-500">Cargando...</div>}>
+    <Suspense fallback={<SuspenseFallback />}>
       <Component />
     </Suspense>
   )

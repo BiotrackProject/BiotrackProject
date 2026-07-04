@@ -11,6 +11,7 @@ import { usuariosService } from '../../../services/usuariosService'
 import type { Usuario, Rol } from '../../../services/usuariosService'
 import { toast } from '../../../utils/toast'
 import { normalizarTelefono } from '../../../utils/validation'
+import i18n from '../../../i18n'
 
 function getRolColor(rolNombre: string) {
   const map: Record<string, string> = {
@@ -28,7 +29,7 @@ function getInitials(nombre_completo: string) {
 
 function formatFecha(iso: string | null) {
   if (!iso) return '—'
-  return new Date(iso).toLocaleDateString('es-DO', { day: '2-digit', month: 'short', year: 'numeric' })
+  return new Date(iso).toLocaleDateString(i18n.language === 'en' ? 'en-US' : 'es-DO', { day: '2-digit', month: 'short', year: 'numeric' })
 }
 
 const EMPTY_FORM = {
@@ -194,7 +195,7 @@ export default function UsuariosPage() {
                       <StatusBadge status={u.Estado} className="shrink-0" />
                     </div>
                     <div className="flex flex-wrap items-center gap-2 text-xs">
-                      <span className={`inline-flex items-center rounded-full px-2.5 py-1 font-semibold ${getRolColor(u.rol.nombre)}`}>{u.rol.nombre}</span>
+                      <span className={`inline-flex items-center rounded-full px-2.5 py-1 font-semibold ${getRolColor(u.rol.nombre)}`}>{t(`roles.${u.rol.nombre}`, u.rol.nombre)}</span>
                       {u.cargo && <span className="text-gray-400">{u.cargo}</span>}
                     </div>
                     <div className="flex flex-wrap items-center gap-2">
@@ -246,7 +247,7 @@ export default function UsuariosPage() {
                         </td>
                         <td className="px-5 py-4 text-gray-600">{u.correo_electronico}</td>
                         <td className="px-5 py-4">
-                          <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${getRolColor(u.rol.nombre)}`}>{u.rol.nombre}</span>
+                          <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${getRolColor(u.rol.nombre)}`}>{t(`roles.${u.rol.nombre}`, u.rol.nombre)}</span>
                         </td>
                         <td className="px-5 py-4"><StatusBadge status={u.Estado} /></td>
                         <td className="px-5 py-4 text-xs text-gray-400">{formatFecha(u.Ultimo_acceso)}</td>

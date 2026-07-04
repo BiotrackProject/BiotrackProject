@@ -11,6 +11,7 @@
 import { useEffect } from 'react'
 import { MapContainer, TileLayer, CircleMarker, Popup, useMapEvents, useMap, ZoomControl } from 'react-leaflet'
 import { MapPin } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { DR_CENTER, DR_ZOOM, TILE_URL, TILE_ATTRIBUTION } from '../../constants/mapConfig'
 
 function ClickHandler({ onChange }) {
@@ -47,6 +48,7 @@ export default function LocationPickerMap({
   readonly = false,
   province,
 }: LocationPickerMapProps) {
+  const { t } = useTranslation()
   const hasPin = lat != null && lng != null
 
   return (
@@ -73,7 +75,7 @@ export default function LocationPickerMap({
               pathOptions={{ color: '#fff', weight: 2.5, fillColor: '#1e40af', fillOpacity: 0.95 }}
             >
               <Popup>
-                {province ?? 'Punto seleccionado'}<br />
+                {province ?? t('reportForm.mapSelectedPoint')}<br />
                 <span className="text-xs text-gray-500">{lat.toFixed(5)}, {lng.toFixed(5)}</span>
               </Popup>
             </CircleMarker>
@@ -82,7 +84,7 @@ export default function LocationPickerMap({
 
         {!readonly && (
           <div className="absolute top-2 left-2 z-[1000] rounded-lg bg-white/90 px-2.5 py-1.5 text-xs font-medium text-gray-600 pointer-events-none shadow">
-            Haz clic en el mapa para ubicar la zona
+            {t('reportForm.mapClickHint')}
           </div>
         )}
       </div>
@@ -93,7 +95,7 @@ export default function LocationPickerMap({
           <span className="font-mono">{lat.toFixed(5)}, {lng.toFixed(5)}</span>
           {!readonly && onChange && (
             <button onClick={() => onChange(null)} className="ml-auto text-action hover:underline">
-              Quitar pin
+              {t('reportForm.mapRemovePin')}
             </button>
           )}
         </div>

@@ -8,15 +8,14 @@ import RecursoPublicoFallback from '../components/report/RecursoPublicoFallback'
 import { useRecursoPublico } from '../hooks/useRecursoPublico'
 import {
   denunciasService,
-  ESTADO_LABEL,
-  TIPO_LABEL,
   type DenunciaSeguimiento,
 } from '../services/denunciasService'
+import { formatDate } from '../utils/dates'
 
 export default function ReportDetailPage() {
   const { t } = useTranslation()
   const { id } = useParams()
-  const state = useRecursoPublico(id, (codigo) => denunciasService.getSeguimiento(codigo), 'Error al consultar el reporte')
+  const state = useRecursoPublico(id, (codigo) => denunciasService.getSeguimiento(codigo), t('reportDetail.loadFetchError'))
 
   return (
     <div className="min-h-screen flex flex-col bg-surface">
@@ -30,10 +29,10 @@ export default function ReportDetailPage() {
           ) : (
             <RecursoPublicoFallback
               state={state}
-              loadingText="Cargando reporte..."
-              notFoundTitle="Reporte no encontrado"
-              notFoundDesc="El código consultado no existe o no está disponible."
-              errorTitle="No se pudo cargar el reporte"
+              loadingText={t('reportDetail.loading')}
+              notFoundTitle={t('reportDetail.notFoundTitle')}
+              notFoundDesc={t('reportDetail.notFoundMsg')}
+              errorTitle={t('reportDetail.loadError')}
               actions={
                 <>
                   <Link
@@ -61,18 +60,14 @@ export default function ReportDetailPage() {
 
 function ReportDetail({ reporte }: Readonly<{ reporte: DenunciaSeguimiento }>) {
   const { t } = useTranslation()
-  const fecha = new Date(reporte.Fecha_denuncia).toLocaleDateString('es-DO')
-  const fechaIncidente = reporte.fecha_incidente
-    ? new Date(reporte.fecha_incidente).toLocaleDateString('es-DO')
-    : null
+  const fecha = formatDate(reporte.Fecha_denuncia)
+  const fechaIncidente = reporte.fecha_incidente ? formatDate(reporte.fecha_incidente) : null
 
-  // Construye la línea de tiempo a partir del historial; si está vacío, muestra
-  // el estado actual como único hito.
   const timeline = reporte.historial_estado_denuncia.length
     ? reporte.historial_estado_denuncia.map((h) => ({
         key: h.id,
         estado: h.estado_nuevo,
-        fecha: new Date(h.created_at).toLocaleDateString('es-DO'),
+        fecha: formatDate(h.created_at),
         comentario: h.comentario,
       }))
     : [{ key: 'actual', estado: reporte.Estado, fecha, comentario: null }]
@@ -84,33 +79,33 @@ function ReportDetail({ reporte }: Readonly<{ reporte: DenunciaSeguimiento }>) {
     <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
       <article className="rounded-2xl bg-white p-7 shadow-sm">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <h2 className="text-xl font-black text-primary">Resumen del caso</h2>
+          <h2 className="text-xl font-black text-primary">{t('reportDetail.summaryTitle')}</h2>
           <span className="text-sm font-semibold text-gray-400">{reporte.codigo_seguimiento}</span>
         </div>
         <p className="mt-4 text-sm leading-relaxed text-gray-700">{reporte.Descripcion}</p>
 
         <dl className="mt-6 grid gap-4 sm:grid-cols-2">
           <div>
-            <dt className="text-xs font-semibold uppercase tracking-wide text-gray-400">Fecha de reporte</dt>
+            <dt className="text-xs font-semibold uppercase tracking-wide text-gray-400">{t('reportDetail.reportDate')}</dt>
             <dd className="mt-1 text-sm font-semibold text-gray-700">{fecha}</dd>
           </div>
           {fechaIncidente && (
             <div>
-              <dt className="text-xs font-semibold uppercase tracking-wide text-gray-400">Fecha del incidente</dt>
+              <dt className="text-xs font-semibold uppercase tracking-wide text-gray-400">{t('reportDetail.incidentDate')}</dt>
               <dd className="mt-1 text-sm font-semibold text-gray-700">{fechaIncidente}</dd>
             </div>
           )}
           <div>
-            <dt className="text-xs font-semibold uppercase tracking-wide text-gray-400">Ubicación</dt>
-            <dd className="mt-1 text-sm font-semibold text-gray-700">{reporte.detalle_ubicacion || 'No especificada'}</dd>
+            <dt className="text-xs font-semibold uppercase tracking-wide text-gray-400">{t('reportDetail.location')}</dt>
+            <dd className="mt-1 text-sm font-semibold text-gray-700">{reporte.detalle_ubicacion || t('reportDetail.locationNone')}</dd>
           </div>
           <div>
-            <dt className="text-xs font-semibold uppercase tracking-wide text-gray-400">Tipo</dt>
-            <dd className="mt-1 text-sm font-semibold text-gray-700">{TIPO_LABEL[reporte.tipo_actividad] ?? reporte.tipo_actividad}</dd>
+            <dt className="text-xs font-semibold uppercase tracking-wide text-gray-400">{t('reportDetail.type')}</dt>
+            <dd className="mt-1 text-sm font-semibold text-gray-700">{t(`tipos.${reporte.tipo_actividad}`, reporte.tipo_actividad)}</dd>
           </div>
           {reporte.nivel_urgencia && (
             <div>
-              <dt className="text-xs font-semibold uppercase tracking-wide text-gray-400">Nivel de urgencia</dt>
+              <dt className="text-xs font-semibold uppercase tracking-wide text-gray-400">{t('reportDetail.urgencyLevel')}</dt>
               <dd className="mt-1 text-sm font-semibold text-gray-700">{reporte.nivel_urgencia}</dd>
             </div>
           )}
@@ -118,17 +113,17 @@ function ReportDetail({ reporte }: Readonly<{ reporte: DenunciaSeguimiento }>) {
       </article>
 
       <aside className="rounded-2xl bg-white p-7 shadow-sm">
-        <h3 className="text-lg font-black text-primary">Estado actual</h3>
+        <h3 className="text-lg font-black text-primary">{t('reportDetail.currentStatus')}</h3>
         <p className="mt-3">
           <StatusBadge status={reporte.Estado} />
         </p>
 
-        <h4 className="mt-6 text-xs font-semibold uppercase tracking-wide text-gray-400">Progreso</h4>
+        <h4 className="mt-6 text-xs font-semibold uppercase tracking-wide text-gray-400">{t('reportDetail.progress')}</h4>
         <ul className="mt-3 space-y-2">
           {timeline.map((step) => (
             <li key={step.key} className="rounded-lg bg-surface px-3 py-2 text-sm text-gray-700">
               <div className="flex items-center justify-between gap-2">
-                <span className="font-semibold">{ESTADO_LABEL[step.estado] ?? step.estado}</span>
+                <span className="font-semibold">{t(`estados.${step.estado}`, step.estado)}</span>
                 <span className="text-xs text-gray-400">{step.fecha}</span>
               </div>
               {step.comentario && <p className="mt-1 text-xs text-gray-500">{step.comentario}</p>}
@@ -140,12 +135,12 @@ function ReportDetail({ reporte }: Readonly<{ reporte: DenunciaSeguimiento }>) {
           to="/reportes"
           className="mt-6 inline-flex rounded-lg border border-primary px-4 py-2 text-sm font-semibold text-primary hover:bg-primary hover:text-white"
         >
-          Volver al listado
+          {t('reportDetail.backToList')}
         </Link>
       </aside>
     </div>
 
-      {/* Acciones correctivas publicadas (RF-5.2) */}
+      {/* Corrective actions (RF-5.2) */}
       {acciones.length > 0 && (
         <article className="rounded-2xl bg-white p-7 shadow-sm">
           <h2 className="text-xl font-black text-primary">{t('reportDetail.accionesTitle')}</h2>
@@ -168,7 +163,7 @@ function ReportDetail({ reporte }: Readonly<{ reporte: DenunciaSeguimiento }>) {
                   )}
                   <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
                     <span className="text-xs text-gray-400">
-                      {fechaAccion ? t('reportDetail.executionDate', { date: new Date(fechaAccion).toLocaleDateString('es-DO') }) : t('reportDetail.dateTbd')}
+                      {fechaAccion ? t('reportDetail.executionDate', { date: formatDate(fechaAccion) }) : t('reportDetail.dateTbd')}
                     </span>
                     <Link
                       to={`/reportes/accion/${a.IDAccion}`}

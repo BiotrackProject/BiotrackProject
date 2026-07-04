@@ -17,12 +17,13 @@
 import { useEffect, useRef } from 'react'
 import { MapContainer, TileLayer, CircleMarker, Popup, useMap, ZoomControl } from 'react-leaflet'
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import {
   DR_CENTER, DR_ZOOM,
   TILE_URL, TILE_ATTRIBUTION,
   STATUS_MARKER_COLORS, RISK_MARKER_COLORS, DEFAULT_MARKER_COLOR,
 } from '../../constants/mapConfig'
-import { ESTADO_LABEL } from '../../services/denunciasService'
+import i18n from '../../i18n'
 
 // ── Marker colour helpers ──────────────────────────────────────────────────────
 
@@ -55,7 +56,7 @@ function buildLegend(locations, colorBy) {
     seen.add(value)
     items.push({
       value,
-      label: colorBy === 'risk' ? value : (ESTADO_LABEL[value] ?? value),
+      label: colorBy === 'risk' ? value : (i18n.t(`estados.${value}`, value)),
       color: colors[value] ?? DEFAULT_MARKER_COLOR,
     })
   }
@@ -63,12 +64,13 @@ function buildLegend(locations, colorBy) {
 }
 
 function Legend({ locations, colorBy }) {
+  const { t } = useTranslation()
   const items = buildLegend(locations, colorBy)
   if (items.length === 0) return null
   return (
     <div className="absolute bottom-6 left-3 z-[1000] rounded-xl bg-white/95 shadow-lg px-3 py-2.5 text-xs pointer-events-none">
       <p className="font-bold text-gray-700 mb-2 text-[11px] uppercase tracking-wide">
-        {colorBy === 'risk' ? 'Nivel de urgencia' : 'Estado'}
+        {colorBy === 'risk' ? t('mapa.riskLabel') : t('mapa.statusLabel')}
       </p>
       <div className="flex flex-col gap-1.5">
         {items.map(({ value, label, color }) => (
@@ -95,6 +97,7 @@ export default function BioTrackMap({
   interactive = true,
 }) {
   const navigate = useNavigate()
+  const { t } = useTranslation()
 
   function handleClick(loc) {
     if (onMarkerClick) onMarkerClick(loc)
@@ -138,11 +141,11 @@ export default function BioTrackMap({
                   <p className="text-gray-700 text-xs leading-snug mb-3 line-clamp-2">{loc.descripcion}</p>
                   <div className="flex items-center gap-2 flex-wrap mb-3">
                     <span className="rounded-full px-2 py-0.5 text-[10px] font-semibold text-white" style={{ background: STATUS_MARKER_COLORS[loc.estado] ?? DEFAULT_MARKER_COLOR }}>
-                      {ESTADO_LABEL[loc.estado] ?? loc.estado}
+                      {t(`estados.${loc.estado}`, loc.estado)}
                     </span>
                     {loc.nivelRiesgo && (
                       <span className="rounded-full px-2 py-0.5 text-[10px] font-semibold text-white" style={{ background: RISK_MARKER_COLORS[loc.nivelRiesgo] ?? DEFAULT_MARKER_COLOR }}>
-                        Riesgo {loc.nivelRiesgo}
+                        {t('mapa.riskPrefix')} {t(`urgencias.${loc.nivelRiesgo}`, loc.nivelRiesgo)}
                       </span>
                     )}
                   </div>
@@ -151,7 +154,7 @@ export default function BioTrackMap({
                       onClick={() => navigate(loc.markerType === 'zone' ? `/admin/monitoreo/${loc.denunciaId}` : `/admin/denuncias/${loc.denunciaId}`)}
                       className="w-full rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-white hover:bg-primary/90 transition-colors"
                     >
-                      Ver detalle →
+                      {t('mapa.viewFullDetail')}
                     </button>
                   )}
                 </div>
@@ -168,8 +171,8 @@ export default function BioTrackMap({
       {locations.length === 0 && (
         <div className="absolute inset-0 flex items-center justify-center bg-white/60 z-[999] pointer-events-none">
           <div className="rounded-xl bg-white px-5 py-4 shadow text-center">
-            <p className="text-sm font-semibold text-gray-600">Sin marcadores para mostrar</p>
-            <p className="text-xs text-gray-400 mt-1">Ajusta los filtros para ver resultados</p>
+            <p className="text-sm font-semibold text-gray-600">{t('mapa.noResults')}</p>
+            <p className="text-xs text-gray-400 mt-1">{t('mapa.adjustFilters')}</p>
           </div>
         </div>
       )}

@@ -6,36 +6,14 @@ import BackofficeTopbar from '../../components/backoffice/BackofficeTopbar'
 import StatusBadge from '../../components/ui/StatusBadge'
 import LoadingSpinner from '../../components/ui/LoadingSpinner'
 import Modal from '../../components/ui/Modal'
-import { denunciasService, ESTADOS_DENUNCIA, ESTADO_LABEL, ESTADO_STYLES, TIPO_LABEL } from '../../services/denunciasService'
+import { denunciasService, ESTADOS_DENUNCIA, ESTADO_STYLES } from '../../services/denunciasService'
 import type { Denuncia, EstadoDenuncia } from '../../services/denunciasService'
 import { toast } from '../../utils/toast'
 import { descargarBlob } from '../../utils/download'
-
-const FILE_COLORS: Record<string, string> = {
-  JPG: 'bg-blue-100 text-blue-600',
-  MP3: 'bg-orange-100 text-orange-600',
-  MP4: 'bg-purple-100 text-purple-600',
-  PDF: 'bg-red-100 text-red-600',
-  PNG: 'bg-green-100 text-green-600',
-}
-
-function InfoRow({ label, value }: { label: string; value?: string | null }) {
-  return (
-    <p className="text-sm text-gray-600">
-      <span className="font-semibold text-gray-700">{label}: </span>
-      {value ?? '—'}
-    </p>
-  )
-}
-
-function InfoCard({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <div className="bg-white rounded-2xl p-6 shadow-sm">
-      <h3 className="text-sm font-bold text-primary mb-4">{title}</h3>
-      {children}
-    </div>
-  )
-}
+import { formatDate } from '../../utils/dates'
+import { InfoCard, InfoRow } from '../../components/ui/InfoCard'
+import HistorialEstados from '../../components/backoffice/HistorialEstados'
+import EvidenciaList from '../../components/backoffice/EvidenciaList'
 
 export default function DetalleDenunciaPage() {
   const { id } = useParams()
@@ -86,7 +64,7 @@ export default function DetalleDenunciaPage() {
     const lines = [
       `${t('detalleDenuncia.exportCode')} ${denuncia.codigo_seguimiento}`,
       `${t('detalleDenuncia.exportStatus')} ${t(`estados.${estado}`)}`,
-      `${t('detalleDenuncia.exportDate')} ${new Date(denuncia.Fecha_denuncia).toLocaleDateString('es-DO')}`,
+      `${t('detalleDenuncia.exportDate')} ${formatDate(denuncia.Fecha_denuncia)}`,
       `${t('detalleDenuncia.exportType')} ${t(`tipos.${denuncia.tipo_actividad}`)}`,
       `${t('detalleDenuncia.exportDescription')} ${denuncia.Descripcion}`,
     ]
@@ -164,10 +142,10 @@ export default function DetalleDenunciaPage() {
         <div data-tour="backoffice-denuncia-details" className="grid grid-cols-2 gap-5">
           <InfoCard title={t('detalleDenuncia.incidentInfo')}>
             <div className="flex flex-col gap-2">
-              <InfoRow label={t('detalleDenuncia.activityType')} value={TIPO_LABEL[denuncia.tipo_actividad]} />
+              <InfoRow label={t('detalleDenuncia.activityType')} value={t(`tipos.${denuncia.tipo_actividad}`)} />
               <InfoRow
                 label={t('detalleDenuncia.incidentDate')}
-                value={denuncia.fecha_incidente ? new Date(denuncia.fecha_incidente).toLocaleDateString('es-DO') : null}
+                value={denuncia.fecha_incidente ? formatDate(denuncia.fecha_incidente) : null}
               />
               <InfoRow label={t('detalleDenuncia.approxTime')} value={denuncia.hora_aproximada} />
               <InfoRow label={t('detalleDenuncia.tipoExtraccion')} value={denuncia.tipo_extraccion} />
@@ -175,7 +153,7 @@ export default function DetalleDenunciaPage() {
               <InfoRow label={t('detalleDenuncia.cantidadArena')} value={denuncia.cantidad_arena} />
               <InfoRow label={t('detalleDenuncia.nivelUrgencia')} value={denuncia.nivel_urgencia} />
               <InfoRow label={t('detalleDenuncia.trackingCode')} value={denuncia.codigo_seguimiento} />
-              <InfoRow label={t('detalleDenuncia.fechaRegistro')} value={new Date(denuncia.Fecha_denuncia).toLocaleDateString('es-DO')} />
+              <InfoRow label={t('detalleDenuncia.fechaRegistro')} value={formatDate(denuncia.Fecha_denuncia)} />
             </div>
           </InfoCard>
 
@@ -194,49 +172,16 @@ export default function DetalleDenunciaPage() {
         {/* Historial de estados */}
         {denuncia.historial && denuncia.historial.length > 0 && (
           <InfoCard title={t('detalleDenuncia.historyTitle')}>
-            <div className="flex flex-col gap-3">
-              {denuncia.historial.map((h) => (
-                <div key={h.id} className="flex items-start gap-3 text-sm">
-                  <div className="flex flex-col gap-1 flex-1">
-                    <div className="flex items-center gap-2">
-                      <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${ESTADO_STYLES[h.estado_anterior]}`}>
-                        {t(`estados.${h.estado_anterior}`)}
-                      </span>
-                      <span className="text-gray-400">→</span>
-                      <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${ESTADO_STYLES[h.estado_nuevo]}`}>
-                        {t(`estados.${h.estado_nuevo}`)}
-                      </span>
-                    </div>
-                    {h.comentario && <p className="text-xs text-gray-500 mt-1">{h.comentario}</p>}
-                    <p className="text-xs text-gray-400">
-                      {h.Usuario.nombre_completo} · {new Date(h.created_at).toLocaleString('es-DO')}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
+            <HistorialEstados historial={denuncia.historial} />
           </InfoCard>
         )}
 
         {/* Evidencias */}
         <InfoCard title={t('detalleDenuncia.evidenceTitle')}>
-          {!denuncia.Evidencia_Denuncia || denuncia.Evidencia_Denuncia.length === 0 ? (
-            <p className="text-sm text-gray-400">{t('detalleDenuncia.noEvidence')}</p>
-          ) : (
-            <div className="flex flex-wrap gap-6">
-              {denuncia.Evidencia_Denuncia.map((ev) => {
-                const ext = ev.TipoArchivo.toUpperCase()
-                return (
-                  <a key={ev.IDEvidencia} href={ev.archivo_url} target="_blank" rel="noopener noreferrer" className="flex flex-col items-center gap-2">
-                    <div className={`flex h-14 w-12 items-center justify-center rounded-xl text-xs font-bold ${FILE_COLORS[ext] ?? 'bg-gray-100 text-gray-500'}`}>
-                      {ext}
-                    </div>
-                    <span className="text-xs text-gray-500 max-w-[80px] text-center truncate">{ev.archivo_url.split('/').pop()}</span>
-                  </a>
-                )
-              })}
-            </div>
-          )}
+          <EvidenciaList
+            evidencias={denuncia.Evidencia_Denuncia ?? []}
+            emptyText={t('detalleDenuncia.noEvidence')}
+          />
         </InfoCard>
 
         {(() => {
@@ -250,7 +195,7 @@ export default function DetalleDenunciaPage() {
                         <p className="text-sm font-semibold text-primary">{a.titulo}</p>
                         <p className="text-xs text-gray-400">
                           {t(`estados.${a.Estado}`)}
-                          {a.FechaPlanificacion ? ` · ${new Date(a.FechaPlanificacion).toLocaleDateString('es-DO')}` : ''}
+                          {a.FechaPlanificacion ? ` · ${formatDate(a.FechaPlanificacion)}` : ''}
                         </p>
                       </div>
                       <button

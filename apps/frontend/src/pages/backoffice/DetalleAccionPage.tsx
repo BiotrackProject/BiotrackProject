@@ -8,27 +8,8 @@ import Modal from '../../components/ui/Modal'
 import { accionesService, ESTADOS_ACCION, ESTADO_ACCION_STYLES } from '../../services/accionesService'
 import type { Accion, EstadoAccion } from '../../services/accionesService'
 import { toast } from '../../utils/toast'
-
-function InfoCard({ title, icon: Icon, children }: { title: string; icon?: React.ElementType; children: React.ReactNode }) {
-  return (
-    <div className="bg-white rounded-2xl p-6 shadow-sm">
-      <div className="flex items-center gap-2 mb-4">
-        {Icon && <Icon className="h-4 w-4 text-primary" />}
-        <h3 className="text-sm font-bold text-primary">{title}</h3>
-      </div>
-      {children}
-    </div>
-  )
-}
-
-function InfoRow({ label, value }: { label: string; value?: string | null }) {
-  return (
-    <p className="text-sm text-gray-600">
-      <span className="font-semibold text-gray-700">{label}: </span>
-      {value ?? '—'}
-    </p>
-  )
-}
+import { formatDate } from '../../utils/dates'
+import { InfoCard, InfoRow } from '../../components/ui/InfoCard'
 
 export default function DetalleAccionPage() {
   const { id } = useParams()
@@ -201,8 +182,8 @@ export default function DetalleAccionPage() {
           {/* Información general */}
           <InfoCard title={t('acciones.generalInfo')} icon={FileText}>
             <div className="flex flex-col gap-2">
-              <InfoRow label={t('acciones.plannedDate')} value={accion.FechaPlanificacion ? new Date(accion.FechaPlanificacion).toLocaleDateString('es-DO') : null} />
-              <InfoRow label={t('acciones.implementationDate')} value={accion.FechaImplementacion ? new Date(accion.FechaImplementacion).toLocaleDateString('es-DO') : null} />
+              <InfoRow label={t('acciones.plannedDate')} value={formatDate(accion.FechaPlanificacion)} />
+              <InfoRow label={t('acciones.implementationDate')} value={formatDate(accion.FechaImplementacion)} />
               <InfoRow label={t('acciones.visibility')} value={accion.visibilidad} />
               <InfoRow label={t('acciones.budget')} value={accion.Presupuesto} />
             </div>

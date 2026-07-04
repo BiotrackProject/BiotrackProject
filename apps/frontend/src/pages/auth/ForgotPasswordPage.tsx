@@ -38,7 +38,7 @@ export default function ForgotPasswordPage() {
     const res = await forgotPassword(email.trim().toLowerCase())
     setLoading(false)
     if (!res.success) {
-      setError(res.error ?? 'No se pudo enviar el código. Intenta nuevamente.')
+      setError(res.error ?? t('forgot.sendError'))
       return
     }
     navigate('/recuperar-cuenta/verificar', { state: { email: email.trim().toLowerCase() } })

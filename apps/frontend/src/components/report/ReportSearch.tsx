@@ -1,17 +1,14 @@
 import { FormEvent, useEffect, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { Search, X, AlertCircle, FileSearch } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import isotipoGris from '../../assets/images/isotipogris.png'
 import StatusBadge from '../ui/StatusBadge'
 import {
   denunciasService,
-  TIPO_LABEL,
   type DenunciaSeguimiento,
 } from '../../services/denunciasService'
 
-// El resultado guarda el código al que pertenece para que el render pueda
-// derivar el estado "cargando" comparándolo con el código actual de la URL,
-// evitando setState síncronos dentro del effect.
 type SearchResult =
   | { status: 'idle' }
   | { status: 'found'; codigo: string; reporte: DenunciaSeguimiento }
@@ -20,13 +17,12 @@ type SearchResult =
 
 export default function ReportSearch() {
   const navigate = useNavigate()
+  const { t, i18n } = useTranslation()
   const [searchParams, setSearchParams] = useSearchParams()
   const queryCodigo = (searchParams.get('codigo') ?? '').trim()
   const [codigo, setCodigo] = useState(queryCodigo)
   const [result, setResult] = useState<SearchResult>({ status: 'idle' })
 
-  // La URL (?codigo=) es la fuente de verdad de la búsqueda: permite enlaces
-  // compartibles y dispara la consulta al cargar o navegar.
   useEffect(() => {
     if (!queryCodigo) return
     let active = true
@@ -37,7 +33,7 @@ export default function ReportSearch() {
       })
       .catch((err) => {
         if (!active) return
-        const message = err instanceof Error ? err.message : 'Error al consultar el reporte'
+        const message = err instanceof Error ? err.message : t('trackingSearch.errorMsg')
         if (/no encontrad|not found|404/i.test(message)) {
           setResult({ status: 'notFound', codigo: queryCodigo })
         } else {
@@ -63,11 +59,13 @@ export default function ReportSearch() {
     setResult({ status: 'idle' })
   }
 
+  const dateLocale = i18n.language === 'en' ? 'en-US' : 'es-DO'
+
   function renderResult() {
     if (loading) {
       return (
         <div className="rounded-xl border border-gray-100 bg-surface px-4 py-9 text-center text-sm text-gray-500">
-          Consultando reporte...
+          {t('trackingSearch.loading')}
         </div>
       )
     }
@@ -77,12 +75,12 @@ export default function ReportSearch() {
         <div className="rounded-xl border border-dashed border-gray-300 bg-surface px-4 py-9 text-center">
           <FileSearch className="mx-auto h-8 w-8 text-gray-400" />
           <p className="mt-3 text-sm font-medium text-gray-600">
-            Escribe tu código de seguimiento para ver el estado de tu reporte.
+            {t('trackingSearch.idleHint')}
           </p>
           <p className="mt-1 text-xs text-gray-500">
-            ¿Aún no tienes un reporte?{' '}
+            {t('trackingSearch.idleNewReport')}{' '}
             <Link to="/reporte/nuevo" className="font-semibold text-primary hover:underline">
-              Crea uno nuevo
+              {t('trackingSearch.idleCreate')}
             </Link>
             .
           </p>
@@ -94,22 +92,22 @@ export default function ReportSearch() {
       return (
         <div className="rounded-xl border border-dashed border-gray-300 bg-surface px-4 py-9 text-center">
           <p className="text-sm font-medium text-gray-600">
-            No encontramos ningún reporte con el código <span className="font-bold text-gray-800">{result.codigo}</span>.
+            {t('trackingSearch.notFoundMsg', { code: result.codigo })}
           </p>
-          <p className="mt-1 text-xs text-gray-500">Verifica que el código sea correcto e inténtalo de nuevo.</p>
+          <p className="mt-1 text-xs text-gray-500">{t('trackingSearch.notFoundHint')}</p>
           <div className="mt-4 flex flex-wrap justify-center gap-2">
             <button
               type="button"
               onClick={clearSearch}
               className="rounded-lg border border-primary px-4 py-2 text-xs font-semibold text-primary transition-colors hover:bg-primary hover:text-white"
             >
-              Limpiar búsqueda
+              {t('trackingSearch.clearBtn')}
             </button>
             <Link
               to="/reporte/nuevo"
               className="inline-flex rounded-lg bg-action px-4 py-2 text-xs font-semibold text-white transition-colors hover:bg-red-700"
             >
-              Crear nuevo reporte
+              {t('trackingSearch.newReport')}
             </Link>
           </div>
         </div>
@@ -121,7 +119,7 @@ export default function ReportSearch() {
         <div className="flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-4 text-sm text-red-700">
           <AlertCircle className="mt-0.5 h-5 w-5 shrink-0" />
           <div>
-            <p className="font-semibold">No se pudo completar la consulta.</p>
+            <p className="font-semibold">{t('trackingSearch.errorMsg')}</p>
             <p className="mt-0.5 text-red-600">{result.message}</p>
           </div>
         </div>
@@ -129,7 +127,7 @@ export default function ReportSearch() {
     }
 
     return (
-      <ResultCard reporte={result.reporte} onOpen={() => navigate(`/reportes/${result.reporte.codigo_seguimiento}`)} />
+      <ResultCard reporte={result.reporte} dateLocale={dateLocale} onOpen={() => navigate(`/reportes/${result.reporte.codigo_seguimiento}`)} />
     )
   }
 
@@ -141,22 +139,21 @@ export default function ReportSearch() {
 
       <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-[0_8px_30px_-20px_rgba(17,24,39,0.35)] sm:p-6">
         <div className="border-b border-gray-100 pb-5">
-          <h2 id="report-search-heading" className="text-2xl font-black text-primary">Consultar un reporte</h2>
-          <p className="mt-1 text-sm text-gray-500">
-            Ingresa el <strong>código de seguimiento</strong> que recibiste al registrar tu denuncia
-            para consultar su estado y progreso.
-          </p>
+          <h2 id="report-search-heading" className="text-2xl font-black text-primary">{t('trackingSearch.heading')}</h2>
+          <p className="mt-1 text-sm text-gray-500"
+            dangerouslySetInnerHTML={{ __html: t('trackingSearch.description') }}
+          />
         </div>
 
         <div className="mt-5">
           <form
             role="search"
-            aria-label="Buscar reporte por código de seguimiento"
+            aria-label={t('trackingSearch.formAriaLabel')}
             className="flex flex-col gap-3 sm:flex-row"
             onSubmit={handleSubmit}
           >
             <div className="relative w-full">
-              <label htmlFor="report-search" className="sr-only">Código de seguimiento</label>
+              <label htmlFor="report-search" className="sr-only">{t('trackingSearch.codeLabel')}</label>
               <input
                 id="report-search"
                 type="text"
@@ -170,7 +167,7 @@ export default function ReportSearch() {
                 <button
                   type="button"
                   onClick={clearSearch}
-                  aria-label="Limpiar búsqueda"
+                  aria-label={t('trackingSearch.clearSearch')}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 transition-colors hover:text-gray-600"
                 >
                   <X className="h-4 w-4" />
@@ -183,7 +180,7 @@ export default function ReportSearch() {
               className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
             >
               <Search className="h-4 w-4" />
-              {loading ? 'Buscando...' : 'Buscar'}
+              {loading ? t('trackingSearch.searching') : t('trackingSearch.search')}
             </button>
           </form>
         </div>
@@ -196,13 +193,14 @@ export default function ReportSearch() {
   )
 }
 
-function ResultCard({ reporte, onOpen }: Readonly<{ reporte: DenunciaSeguimiento; onOpen: () => void }>) {
-  const fecha = new Date(reporte.Fecha_denuncia).toLocaleDateString('es-DO')
+function ResultCard({ reporte, dateLocale, onOpen }: Readonly<{ reporte: DenunciaSeguimiento; dateLocale: string; onOpen: () => void }>) {
+  const { t } = useTranslation()
+  const fecha = new Date(reporte.Fecha_denuncia).toLocaleDateString(dateLocale)
   return (
     <article className="rounded-xl border border-gray-100 bg-white p-5 shadow-sm">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">Código de seguimiento</p>
+          <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">{t('trackingSearch.trackingCodeLabel')}</p>
           <p className="text-lg font-black text-primary">{reporte.codigo_seguimiento}</p>
         </div>
         <StatusBadge status={reporte.Estado} />
@@ -210,16 +208,16 @@ function ResultCard({ reporte, onOpen }: Readonly<{ reporte: DenunciaSeguimiento
 
       <dl className="mt-4 grid gap-4 sm:grid-cols-3">
         <div>
-          <dt className="text-xs font-semibold uppercase tracking-wide text-gray-400">Fecha de reporte</dt>
+          <dt className="text-xs font-semibold uppercase tracking-wide text-gray-400">{t('trackingSearch.reportDateLabel')}</dt>
           <dd className="mt-1 text-sm font-semibold text-gray-700">{fecha}</dd>
         </div>
         <div>
-          <dt className="text-xs font-semibold uppercase tracking-wide text-gray-400">Tipo</dt>
-          <dd className="mt-1 text-sm font-semibold text-gray-700">{TIPO_LABEL[reporte.tipo_actividad] ?? reporte.tipo_actividad}</dd>
+          <dt className="text-xs font-semibold uppercase tracking-wide text-gray-400">{t('trackingSearch.typeLabel')}</dt>
+          <dd className="mt-1 text-sm font-semibold text-gray-700">{t(`tipos.${reporte.tipo_actividad}`, reporte.tipo_actividad)}</dd>
         </div>
         <div>
-          <dt className="text-xs font-semibold uppercase tracking-wide text-gray-400">Ubicación</dt>
-          <dd className="mt-1 text-sm font-semibold text-gray-700">{reporte.detalle_ubicacion || 'No especificada'}</dd>
+          <dt className="text-xs font-semibold uppercase tracking-wide text-gray-400">{t('trackingSearch.locationLabel')}</dt>
+          <dd className="mt-1 text-sm font-semibold text-gray-700">{reporte.detalle_ubicacion || t('trackingSearch.locationNone')}</dd>
         </div>
       </dl>
 
@@ -231,7 +229,7 @@ function ResultCard({ reporte, onOpen }: Readonly<{ reporte: DenunciaSeguimiento
           onClick={onOpen}
           className="inline-flex rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-primary/90"
         >
-          Ver detalle completo
+          {t('trackingSearch.viewDetail')}
         </button>
       </div>
     </article>

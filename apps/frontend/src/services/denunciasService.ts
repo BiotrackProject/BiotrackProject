@@ -123,14 +123,6 @@ export interface FiltrosDenuncias {
   por_pagina?: number
 }
 
-export const ESTADO_LABEL: Record<EstadoDenuncia, string> = {
-  Pendiente:        'Pendiente',
-  En_Investigacion: 'En Investigación',
-  Verificada:       'Verificada',
-  Resuelta:         'Resuelta',
-  Desestimada:      'Desestimada',
-}
-
 export const ESTADO_STYLES: Record<EstadoDenuncia, string> = {
   Pendiente:        'bg-yellow-100 text-yellow-800',
   En_Investigacion: 'bg-blue-100 text-blue-800',
@@ -139,16 +131,13 @@ export const ESTADO_STYLES: Record<EstadoDenuncia, string> = {
   Desestimada:      'bg-gray-100 text-gray-500',
 }
 
-export const TIPO_LABEL: Record<TipoActividad, string> = {
-  Extraccion_Rio:            'Extracción de río',
-  Extraccion_Playa:          'Extracción de playa',
-  Extraccion_Zona_Protegida: 'Extracción zona protegida',
-  Transporte_Ilegal:         'Transporte ilegal',
-  Otro:                      'Otro',
-}
+export const ESTADOS_DENUNCIA: EstadoDenuncia[] = [
+  'Pendiente', 'En_Investigacion', 'Verificada', 'Resuelta', 'Desestimada',
+]
 
-export const ESTADOS_DENUNCIA = Object.keys(ESTADO_LABEL) as EstadoDenuncia[]
-export const TIPOS_ACTIVIDAD = Object.keys(TIPO_LABEL) as TipoActividad[]
+export const TIPOS_ACTIVIDAD: TipoActividad[] = [
+  'Extraccion_Rio', 'Extraccion_Playa', 'Extraccion_Zona_Protegida', 'Transporte_Ilegal', 'Otro',
+]
 
 export interface CrearDenunciaInput {
   Descripcion: string
