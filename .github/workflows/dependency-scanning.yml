@@ -1,0 +1,55 @@
+# Security — Software Composition Analysis (SCA)
+#
+# Runs pnpm audit to detect known vulnerabilities in dependencies.
+# Two-level strategy:
+#   1. BLOCK  — high/critical in production deps  → fail the build
+#   2. REPORT — moderate/low in ALL deps          → log only, never block
+
+name: Security — SCA
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  audit:
+    name: pnpm audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.1.2
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile --ignore-scripts
+
+      - name: Audit production dependencies (BLOCKING)
+        run: pnpm audit --audit-level=high --prod
+
+      - name: Audit all dependencies (report only)
+        run: pnpm audit || true
+
+      - name: Generate JSON audit report
+        if: always()
+        run: pnpm audit --json > audit-report.json 2>/dev/null || true
+
+      - name: Upload audit report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: audit-report-${{ github.run_number }}
+          path: audit-report.json
+          retention-days: 30
+
+      - name: Show outdated packages
+        run: pnpm outdated --recursive || true
