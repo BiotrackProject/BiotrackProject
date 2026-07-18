@@ -1,7 +1,7 @@
 import { FormEvent, useEffect, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { Search, X, AlertCircle, FileSearch } from 'lucide-react'
-import { useTranslation } from 'react-i18next'
+import { Trans, useTranslation } from 'react-i18next'
 import isotipoGris from '../../assets/images/isotipogris.png'
 import StatusBadge from '../ui/StatusBadge'
 import {
@@ -140,9 +140,9 @@ export default function ReportSearch() {
       <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-[0_8px_30px_-20px_rgba(17,24,39,0.35)] sm:p-6">
         <div className="border-b border-gray-100 pb-5">
           <h2 id="report-search-heading" className="text-2xl font-black text-primary">{t('trackingSearch.heading')}</h2>
-          <p className="mt-1 text-sm text-gray-500"
-            dangerouslySetInnerHTML={{ __html: t('trackingSearch.description') }}
-          />
+          <p className="mt-1 text-sm text-gray-500">
+            <Trans i18nKey="trackingSearch.description" components={{ strong: <strong /> }} />
+          </p>
         </div>
 
         <div className="mt-5">
