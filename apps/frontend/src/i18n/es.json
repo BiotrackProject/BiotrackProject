@@ -330,7 +330,8 @@
     "requestAccess": "Solicitar registro",
     "connectionError": "Error de conexión con el servidor",
     "loginError": "Error al iniciar sesión",
-    "mobileTag": "Acceso BIOTRACK"
+    "mobileTag": "Acceso BIOTRACK",
+    "backToHome": "Volver al inicio"
   },
   "register": {
     "tag": "Solicitud de acceso",
@@ -356,7 +357,8 @@
     "goToLogin": "Ir al inicio de sesión",
     "checkSpam": "Revisa también tu carpeta de correo no deseado si no recibes respuesta en 24 horas.",
     "connectionError": "Error de conexión con el servidor",
-    "submitError": "Error al enviar la solicitud"
+    "submitError": "Error al enviar la solicitud",
+    "backToHome": "Volver al inicio"
   },
   "forgot": {
     "tag": "Recuperación de acceso",

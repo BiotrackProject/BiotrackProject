@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
+import { ArrowLeft } from 'lucide-react'
 import ImagePanel from '../../components/auth/ImagePanel'
 import { validateName, validateEmail } from '../../utils/validation'
 import * as authService from '../../services/authService'
@@ -131,6 +132,13 @@ export default function RegisterPage() {
         <div className="relative flex items-center px-6 py-10 sm:px-10 md:px-12 lg:px-16">
           <div className="pointer-events-none absolute right-5 top-5 h-14 w-14 border-r-2 border-t-2 border-primary/25" />
           <div className="w-full max-w-[460px]">
+            <Link
+              to="/"
+              className="mb-6 inline-flex items-center gap-1.5 text-[13px] font-semibold text-dark/70 transition-colors hover:text-primary"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              {t('register.backToHome')}
+            </Link>
             <p className="mb-4 text-[11px] font-semibold uppercase tracking-[0.22em] text-primary/75">
               {t('register.tag')}
             </p>

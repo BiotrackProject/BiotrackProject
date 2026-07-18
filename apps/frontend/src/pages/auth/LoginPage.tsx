@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { Eye, EyeOff } from 'lucide-react'
+import { ArrowLeft, Eye, EyeOff } from 'lucide-react'
 import ImagePanel from '../../components/auth/ImagePanel'
 import { validateEmail, validateLoginPassword } from '../../utils/validation'
 import { useAuth } from '../../context/AuthContext'
@@ -82,6 +82,13 @@ export default function LoginPage() {
         <div className="relative flex w-full items-center px-6 py-8 sm:px-10 md:px-12 lg:px-16">
           <div className="pointer-events-none absolute left-5 top-5 h-14 w-14 border-l-2 border-t-2 border-primary/25" />
           <div className="w-full max-w-[460px]">
+            <Link
+              to="/"
+              className="mb-6 inline-flex items-center gap-1.5 text-[13px] font-semibold text-dark/70 transition-colors hover:text-primary"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              {t('login.backToHome')}
+            </Link>
             <p className="mb-4 text-[11px] font-semibold uppercase tracking-[0.22em] text-primary/75">{t('login.tag')}</p>
             <h2 className="mb-3 text-[clamp(2rem,4.2vw,3.25rem)] leading-[0.95] font-extrabold text-primary">
               {t('login.title')}

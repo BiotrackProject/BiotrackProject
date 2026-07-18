@@ -330,7 +330,8 @@
     "requestAccess": "Request access",
     "connectionError": "Server connection error",
     "loginError": "Login error",
-    "mobileTag": "BIOTRACK Access"
+    "mobileTag": "BIOTRACK Access",
+    "backToHome": "Back to home"
   },
   "register": {
     "tag": "Access request",
@@ -356,7 +357,8 @@
     "goToLogin": "Go to sign in",
     "checkSpam": "Also check your spam folder if you don't receive a response within 24 hours.",
     "connectionError": "Server connection error",
-    "submitError": "Error submitting request"
+    "submitError": "Error submitting request",
+    "backToHome": "Back to home"
   },
   "forgot": {
     "tag": "Access recovery",
